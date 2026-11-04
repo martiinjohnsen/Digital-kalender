@@ -209,7 +209,7 @@ export function CalendarEditor({ id }: { id: string }) {
                 </button>
               ))}
             </div>
-            <div className="door-grid theme-advent">
+            <div className="door-grid">
               {doors.map((door) => {
                 const complete = isDoorComplete(door),
                   partial = hasDoorContent(door);

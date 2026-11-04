@@ -5,7 +5,6 @@ import { CalendarCard } from "./calendar-card";
 import { startNew } from "./new-calendar";
 import { Artwork } from "./artwork";
 import { Icon } from "./icons";
-import { completedCount, daysUntilAdvent } from "@/lib/model";
 import {
   isReceived,
   libraryCalendars,
@@ -65,37 +64,6 @@ export function CalendarLibrary() {
           />
         </div>
       </section>
-      <div className="dashboard-stats library-stats">
-        <div>
-          <span className="stat-icon">
-            <Icon name="calendar" size={19} />
-          </span>
-          <p>
-            <strong>{own.length}</strong>
-            <span>laget av meg</span>
-          </p>
-        </div>
-        <div>
-          <span className="stat-icon peach">
-            <Icon name="gift" size={19} />
-          </span>
-          <p>
-            <strong>
-              {own.reduce((count, c) => count + completedCount(c), 0)}
-            </strong>
-            <span>luker klare</span>
-          </p>
-        </div>
-        <div>
-          <span className="stat-icon sand">
-            <Icon name="star" size={19} />
-          </span>
-          <p>
-            <strong>{daysUntilAdvent(new Date().getFullYear())}</strong>
-            <span>dager til 1. desember</span>
-          </p>
-        </div>
-      </div>
       <div className="library-controls">
         <div className="filter-tabs library-filters" aria-label="Vis kalendere">
           {tabs.map((tab) => (

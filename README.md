@@ -15,7 +15,7 @@ npm run dev
 
 ## Funksjoner
 
-- Mine kalendere er startsiden, med oppretting, fremdrift, søk, sortering og filtrene Alle, Laget av meg og Delt med meg.
+- Mine kalendere er startsiden, med oppretting, søk, sortering og filtrene Alle, Laget av meg og Delt med meg.
 - To steg for å opprette kalender: navn, mottaker, avsender og år, deretter utseende.
 - Ni fargetemaer og seks motiver: hus, hytte, byhus, vinterpark, granskog og juleby. Gjenstander og animasjoner velges separat, med snømann, reinsdyr, grantrær, lys, snøfall, vinterbris og blinkende stjerner. Kan endres under Utseende i kalenderinnstillingene.
 - 24 luker med tekst, komprimerte bilder, YouTube, HTTPS-lenker, opplevelser og manuelt innlagte gavekort.

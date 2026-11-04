@@ -1800,14 +1800,14 @@ input[type="radio"] {
   transform: translateY(-2px);
 }
 .editor-door.filled {
-  color: var(--theme-color);
-  background: color-mix(in srgb, var(--theme-pale) 75%, transparent);
-  border: 1px solid color-mix(in srgb, var(--theme-color) 24%, white);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary-pale) 75%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, white);
 }
 .editor-door.partial {
-  color: #ab8e72;
-  background: #f5ede8a1;
-  border: 1px solid #eadbc9;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary-pale) 35%, #ffffff66);
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, white);
 }
 .door-top {
   display: flex;
@@ -5818,6 +5818,7 @@ input[type="radio"] {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  margin-top: 28px;
   margin-bottom: 22px;
 }
 .library-filters {
@@ -7130,21 +7131,6 @@ input[type="radio"] {
 .calendar-palette .sticky-actions {
   background: color-mix(in srgb, var(--theme-pale) 50%, #ffffffd9);
   border-color: var(--line);
-}
-.calendar-palette .editor-door {
-  background: #ffffff4a;
-  border: 1px solid color-mix(in srgb, var(--theme-color) 19%, #ffffff70);
-  color: var(--primary-dark);
-}
-.calendar-palette .editor-door.filled {
-  background: color-mix(in srgb, var(--theme-color) 12%, #ffffff88);
-  border-color: color-mix(in srgb, var(--theme-color) 30%, #ffffff50);
-}
-.calendar-palette .editor-door.partial {
-  background: color-mix(in srgb, var(--theme-color) 5%, #ffffff66);
-}
-.calendar-palette .editor-door:not(.filled):not(.partial) {
-  color: var(--muted);
 }
 .calendar-palette progress {
   accent-color: var(--theme-color);
