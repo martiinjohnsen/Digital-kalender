@@ -25,7 +25,7 @@ export function ShareDialog({
     }
   }
   return (
-    <Dialog title="Del litt adventsglede" onClose={onClose}>
+    <Dialog title="Del kalender" onClose={onClose}>
       <div className="share-content">
         <span className="large-icon">
           <Icon name="gift" size={30} />
@@ -38,6 +38,7 @@ export function ShareDialog({
             Lenken inneholder en kopi av kalenderen. Endringer etterpå følger
             ikke med. Den som har lenken, kan lese innholdet i alle lukene, også
             før desember. Bruk den til å prøve, og unngå private opplysninger.
+            Ikke del ekte gavekortkoder i prøvelenker.
           </p>
         </div>
         {!link ? (

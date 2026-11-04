@@ -1,15 +1,15 @@
 import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Luke · Ditt adventsverksted",
+    name: "Luke · Adventskalender",
     short_name: "Luke",
     description:
       "Personlige adventskalendere med små øyeblikk som bringer dere nærmere.",
-    start_url: "/",
+    start_url: "/calendars",
     scope: "/",
     display: "standalone",
     background_color: "#f8f7f2",
-    theme_color: "#284c3e",
+    theme_color: "#655078",
     lang: "nb",
     icons: [
       {

@@ -4,18 +4,25 @@ import { useCallback, useEffect, useState } from "react";
 import {
   availableDay,
   isDoorComplete,
+  isQuestionComplete,
+  questionsForDoor,
   youtubeId,
   safeLink,
-  kindInfo,
   type AdventCalendar,
-  type CalendarQuiz,
   type Door,
+  type GiftCard,
+  type QuizQuestion,
 } from "@/lib/model";
+import {
+  parseQuizProgress,
+  questionKey,
+  quizSummary,
+  type QuizProgress,
+} from "@/lib/quiz-progress";
 import { Artwork } from "./artwork";
 import { BrandMark, Icon } from "./icons";
 import { useStore } from "./provider";
 import { Dialog } from "./dialog";
-import { QuizPlayer } from "./calendar-quiz";
 import {
   DoorTransition,
   Celebration,
@@ -24,64 +31,87 @@ import {
 export function RecipientView({
   calendar,
   owner = false,
+  onSaveShared,
+  saved = false,
 }: {
   calendar: AdventCalendar;
   owner?: boolean;
+  onSaveShared?: () => void;
+  saved?: boolean;
 }) {
   const { data, toast } = useStore();
-  const [testMode, setTestMode] = useState(owner);
-  const [day, setDay] = useState<number | null>(null);
-  const [now, setNow] = useState(() => new Date());
-  const [opened, setOpened] = useState<number[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [quizOpen, setQuizOpen] = useState(false);
-  const [transitionDay, setTransitionDay] = useState<number | null>(null);
-  const [origin, setOrigin] = useState<DoorOrigin | undefined>();
+  const [testMode, setTestMode] = useState(owner),
+    [day, setDay] = useState<number | null>(null),
+    [now, setNow] = useState(() => new Date()),
+    [quizOpen, setQuizOpen] = useState(false),
+    [transitionDay, setTransitionDay] = useState<number | null>(null),
+    [origin, setOrigin] = useState<DoorOrigin>(),
+    [lockedAttempt, setLockedAttempt] = useState<{
+      day: number;
+      nonce: number;
+    } | null>(null);
+  const storageKey = `luke:progress:${calendar.receivedSourceId ?? calendar.id}:${calendar.year}:${owner ? (testMode ? "test" : "owner-date") : "recipient"}`;
+  const [state, setState] = useState<{
+    key: string;
+    opened: number[];
+    answers: QuizProgress;
+  }>({ key: "", opened: [], answers: {} });
+  useEffect(() => {
+    let opened: number[] = [];
+    let answers: QuizProgress = {};
+    try {
+      const value: unknown = JSON.parse(
+        localStorage.getItem(`${storageKey}:doors`) ?? "[]",
+      );
+      if (Array.isArray(value))
+        opened = value.filter(
+          (v): v is number => Number.isInteger(v) && v >= 1 && v <= 24,
+        );
+      answers = parseQuizProgress(localStorage.getItem(`${storageKey}:quiz`));
+    } catch {
+      /* Continue in memory when browser storage is unavailable. */
+    }
+    setState({ key: storageKey, opened, answers });
+  }, [storageKey]);
+  useEffect(() => {
+    if (state.key !== storageKey) return;
+    try {
+      localStorage.setItem(`${storageKey}:doors`, JSON.stringify(state.opened));
+      localStorage.setItem(`${storageKey}:quiz`, JSON.stringify(state.answers));
+    } catch {
+      toast(
+        "Fremdriften kunne ikke lagres på enheten. Den beholdes mens siden er åpen.",
+      );
+    }
+  }, [state, storageKey, toast]);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 15000);
+    return () => clearInterval(timer);
+  }, []);
+  useEffect(() => {
+    if (!lockedAttempt) return;
+    const timer = setTimeout(() => setLockedAttempt(null), 1700);
+    return () => clearTimeout(timer);
+  }, [lockedAttempt]);
   const finishOpening = useCallback(() => {
     setDay(transitionDay);
     setTransitionDay(null);
   }, [transitionDay]);
-  const key = `luke:opened:${calendar.id}:${calendar.year}:${calendar.updatedAt}`;
-  useEffect(() => {
-    try {
-      const previous: unknown = JSON.parse(localStorage.getItem(key) ?? "[]");
-      setOpened(
-        Array.isArray(previous)
-          ? previous.filter(
-              (d: unknown): d is number =>
-                Number.isInteger(d) && Number(d) >= 1 && Number(d) <= 24,
-            )
-          : [],
-      );
-    } catch {
-      setOpened([]);
-    }
-    setLoaded(true);
-    const timer = setInterval(() => setNow(new Date()), 30000);
-    return () => clearInterval(timer);
-  }, [key]);
-  useEffect(() => {
-    if (loaded) {
-      try {
-        localStorage.setItem(key, JSON.stringify(opened));
-      } catch {
-        /* Opening doors still works when small preference storage is unavailable. */
-      }
-    }
-  }, [opened, loaded, key]);
-  const limit = testMode ? 24 : availableDay(calendar.year, now);
+  const limit = owner && testMode ? 24 : availableDay(calendar.year, now);
+  const opened = state.key === storageKey ? state.opened : [];
+  const answers = state.key === storageKey ? state.answers : {};
+  const summary = quizSummary(calendar, answers, limit);
   function open(door: Door, element?: HTMLElement) {
-    if (transitionDay !== null) return;
+    if (transitionDay !== null || day !== null || state.key !== storageKey)
+      return;
     if (door.day > limit) {
+      setLockedAttempt({ day: door.day, nonce: Date.now() });
       toast(
         `Luke ${door.day} åpner ${door.day}. desember ${calendar.year}. Litt mer å glede seg til!`,
       );
       return;
     }
-    if (
-      !window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
-      day === null
-    ) {
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       const rect = element?.getBoundingClientRect();
       setOrigin(
         rect
@@ -95,42 +125,64 @@ export function RecipientView({
       setTransitionDay(door.day);
     } else setDay(door.day);
     if (isDoorComplete(door))
-      setOpened((previous) =>
-        previous.includes(door.day) ? previous : [...previous, door.day],
-      );
+      setState((previous) => ({
+        ...previous,
+        opened: previous.opened.includes(door.day)
+          ? previous.opened
+          : [...previous.opened, door.day],
+      }));
+  }
+  function answerQuestion(
+    index: number,
+    question: QuizQuestion,
+    answer: number,
+  ) {
+    if (day === null || day > limit) return;
+    const key = questionKey(day, index, question);
+    setState((previous) =>
+      previous.answers[key]
+        ? previous
+        : { ...previous, answers: { ...previous.answers, [key]: { answer } } },
+    );
   }
   return (
     <div
       className={`recipient-view theme-${calendar.theme} ${data.preferences.snow ? "with-snow" : ""}`}
     >
       <header className="recipient-topbar">
-        <Link
-          href={owner ? `/calendar/${calendar.id}` : "/"}
-          className="recipient-brand"
-        >
+        <Link href="/calendars" className="recipient-brand">
           <BrandMark />
           <span>luke.</span>
         </Link>
-        {owner ? (
-          <>
-            <span className="preview-label">FORHÅNDSVISNING</span>
+        <div className="recipient-topbar-actions">
+          {owner ? (
             <Link
               className="button recipient-back"
               href={`/calendar/${calendar.id}`}
             >
               <Icon name="back" size={16} />
-              <span>Til verkstedet</span>
+              <span>Til redigering</span>
             </Link>
-          </>
-        ) : (
-          <span className="recipient-made">En liten kalender med omtanke.</span>
-        )}
+          ) : onSaveShared ? (
+            <button
+              className="button secondary small-button"
+              onClick={onSaveShared}
+            >
+              <Icon name={saved ? "check" : "plus"} size={16} />
+              {saved ? "Lagret i Mine kalendere" : "Lagre kalender"}
+            </button>
+          ) : (
+            <Link href="/calendars" className="button secondary small-button">
+              Mine kalendere
+            </Link>
+          )}
+        </div>
       </header>
       {owner && (
         <div className="preview-controls">
           <span>
             <Icon name="eye" size={16} />
-            Slik ser kalenderen ut for mottakeren.
+            Forhåndsvisning
           </span>
           <label className="switch-label">
             <input
@@ -143,54 +195,50 @@ export function RecipientView({
           </label>
         </div>
       )}
-      <div className="recipient-content">
+      <section className="recipient-content" aria-label="Kalenderen">
         <div className="recipient-title">
-          <span className="recipient-kicker">
-            EN LITEN GLEDE, HVER DAG · {calendar.year}
-          </span>
           <h1>{calendar.title}</h1>
-          <p>{calendar.description}</p>
+          {calendar.description && <p>{calendar.description}</p>}
           {calendar.recipient && (
             <span className="recipient-to">
-              Til {calendar.recipient} <Icon name="heart" size={13} />
+              Til {calendar.recipient}
+              <Icon name="heart" size={13} />
             </span>
           )}
         </div>
         <div className="recipient-illustration">
-          <Artwork theme={calendar.theme} />
+          <Artwork theme={calendar.theme} scene={calendar.scene} />
         </div>
-        {calendar.quiz && (
+        {summary.total > 0 && (
           <button
             className="recipient-quiz-card"
             onClick={() => setQuizOpen(true)}
           >
             <span className="quiz-card-icon">
-              <Icon name="quiz" size={25} />
+              <Icon name="quiz" size={24} />
             </span>
             <span>
-              <small>LITT JULEMORO</small>
-              <strong>{calendar.quiz.title}</strong>
+              <strong>Quizoversikt</strong>
               <span>
-                {calendar.quiz.questions.length} spørsmål · Spill i ditt eget
-                tempo
+                {summary.answered} besvart · {summary.correct} riktige
               </span>
             </span>
-            <span className="quiz-card-play">
-              <Icon name="arrow" size={19} />
-            </span>
+            <Icon name="arrow" size={18} />
           </button>
         )}
         <div className="recipient-grid-intro">
           <span>
-            {testMode
+            {owner && testMode
               ? "Alle lukene er åpne i prøvemodus"
               : limit === 0
-                ? "Vi åpner den første luka 1. desember"
+                ? "Første luke åpner 1. desember"
                 : limit === 24
-                  ? "24 små øyeblikk. God jul!"
-                  : `I dag kan du åpne luke ${limit}`}
+                  ? "Alle lukene er åpne"
+                  : `Du kan åpne luke 1 til ${limit}`}
           </span>
-          <span>{opened.length} av 24 åpnet</span>
+          <span>
+            {opened.filter((value) => value <= limit).length} av 24 åpnet
+          </span>
         </div>
         <div className="recipient-door-grid">
           {calendar.doors
@@ -200,45 +248,53 @@ export function RecipientView({
               <button
                 key={door.day}
                 aria-label={`${door.day}. desember${door.day > limit ? ", låst" : opened.includes(door.day) ? ", allerede åpnet" : ", åpne luke"}`}
-                aria-disabled={door.day > limit}
-                className={`recipient-door ${opened.includes(door.day) ? "opened" : ""} ${door.day > limit ? "locked" : ""} ${door.day === 24 ? "christmas-door" : ""}`}
+                className={`recipient-door ${opened.includes(door.day) && door.day <= limit ? "opened" : ""} ${door.day > limit ? "locked" : ""} ${lockedAttempt?.day === door.day ? "lock-attempt" : ""}`}
                 onClick={(event) => open(door, event.currentTarget)}
               >
                 <span className="door-snow" aria-hidden="true">
-                  {door.day % 4 === 0 ? "✧" : door.day % 3 === 0 ? "✳" : ""}
+                  <Icon name="sparkles" size={16} />
                 </span>
                 <strong>{door.day}</strong>
                 <span>
-                  {opened.includes(door.day) ? (
+                  {opened.includes(door.day) && door.day <= limit ? (
                     <Icon name="check" size={15} />
                   ) : door.day > limit ? (
-                    <Icon name="lock" size={13} />
+                    <Icon name="lock" size={14} />
                   ) : (
                     <Icon name="gift" size={15} />
                   )}
                 </span>
+                {lockedAttempt?.day === door.day && (
+                  <span
+                    key={lockedAttempt.nonce}
+                    className="door-chain"
+                    aria-hidden="true"
+                  >
+                    <span className="chain-line" />
+                    <span className="chain-lock">
+                      <Icon name="lock" size={24} />
+                    </span>
+                  </span>
+                )}
               </button>
             ))}
         </div>
-        <div className="recipient-signature">
-          <Icon name="heart" size={22} />
-          <p>
-            {calendar.sender
-              ? `Med omtanke, fra ${calendar.sender}`
-              : "Laget med omtanke, bare for deg."}
+        {calendar.sender && (
+          <p className="recipient-signature">
+            Fra {calendar.sender}
+            <Icon name="heart" size={16} />
           </p>
-          <small>Det fineste ligger i det lille.</small>
-        </div>
-        {!owner && (
-          <div className="shared-note">
-            Dette er en prøvedeling av en kalender. Innholdet er en kopi fra da
-            lenken ble laget.
-          </div>
         )}
-      </div>
+        {!owner && (
+          <p className="shared-note">
+            Kalenderen er en lagret kopi fra da delingslenken ble laget.
+          </p>
+        )}
+      </section>
       <footer className="recipient-footer">
-        <Link href="/">
-          Lag din egen lille adventsglede <Icon name="arrow" size={14} />
+        <Link href="/calendars">
+          Lag din egen kalender
+          <Icon name="arrow" size={14} />
         </Link>
         <span>luke.</span>
       </footer>
@@ -250,26 +306,53 @@ export function RecipientView({
           onComplete={finishOpening}
         />
       )}{" "}
-      {quizOpen && calendar.quiz && (
-        <QuizPlayer quiz={calendar.quiz} onClose={() => setQuizOpen(false)} />
-      )}{" "}
-      {day !== null && (
+      {quizOpen && (
+        <Dialog title="Quizoversikt" onClose={() => setQuizOpen(false)}>
+          <div className="dialog-content quiz-overview">
+            <div className="quiz-score">
+              <div>
+                <strong>{summary.correct}</strong>
+                <span>riktige</span>
+              </div>
+              <div>
+                <strong>{summary.answered}</strong>
+                <span>besvart av {summary.total}</span>
+              </div>
+            </div>
+            <p className="field-help">
+              Svar på spørsmålene inne i lukene. Svar og poeng lagres på denne
+              enheten.{owner && testMode ? " Dette er dine prøvesvar." : ""}
+            </p>
+            <div className="quiz-day-list">
+              {summary.days.map((item) => (
+                <div key={item.day}>
+                  <strong>{item.day}. desember</strong>
+                  {item.locked ? (
+                    <span>
+                      <Icon name="lock" size={14} />
+                      Åpner {item.day}. desember
+                    </span>
+                  ) : (
+                    <span>
+                      {item.answered === 0
+                        ? `${item.total} ubesvarte spørsmål`
+                        : `${item.correct} riktige · ${item.answered} av ${item.total} besvart`}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </Dialog>
+      )}
+      {day !== null && day <= limit && (
         <DoorViewer
           key={day}
-          door={calendar.doors.find((d) => d.day === day)!}
-          sender={calendar.sender}
-          calendarQuiz={calendar.quiz}
+          door={calendar.doors.find((door) => door.day === day)!}
+          calendar={calendar}
+          answers={answers}
+          onAnswer={answerQuestion}
           onClose={() => setDay(null)}
-          onPrevious={
-            day > 1
-              ? () => open(calendar.doors.find((d) => d.day === day - 1)!)
-              : undefined
-          }
-          onNext={
-            day < Math.min(24, limit)
-              ? () => open(calendar.doors.find((d) => d.day === day + 1)!)
-              : undefined
-          }
         />
       )}
     </div>
@@ -277,44 +360,30 @@ export function RecipientView({
 }
 function DoorViewer({
   door,
-  sender,
-  calendarQuiz,
+  calendar,
+  answers,
+  onAnswer,
   onClose,
-  onPrevious,
-  onNext,
 }: {
   door: Door;
-  sender: string;
-  calendarQuiz?: CalendarQuiz;
+  calendar: AdventCalendar;
+  answers: QuizProgress;
+  onAnswer: (index: number, question: QuizQuestion, answer: number) => void;
   onClose: () => void;
-  onPrevious?: () => void;
-  onNext?: () => void;
 }) {
-  const [answer, setAnswer] = useState<number | null>(null);
   const [play, setPlay] = useState(false);
-  const [quizOpen, setQuizOpen] = useState(false);
-  const complete = isDoorComplete(door);
   const id = youtubeId(door.videoUrl ?? "");
+  const questions = questionsForDoor(door, calendar).filter(isQuestionComplete);
   return (
     <Dialog title={`${door.day}. desember`} onClose={onClose}>
       <div className="door-reveal">
         <Celebration effect={door.effect} />
         <div className="reveal-decoration" aria-hidden="true">
-          <span>✧</span>
-          <Icon
-            name={door.kind === "activity" ? "gift" : door.kind}
-            size={32}
-          />
-          <span>✧</span>
+          <Icon name="sparkles" size={25} />
         </div>
-        <p className="eyebrow">
-          {kindInfo[door.kind].name} · LUKE {door.day}
-        </p>
-        <h2>{door.title || "En liten glede er på vei"}</h2>
-        {!complete && (
-          <p className="empty-door-message">
-            Denne luka er ikke helt ferdig ennå. Her kommer det noe fint.
-          </p>
+        <h2>{door.title || "Denne luka er ikke ferdig ennå"}</h2>
+        {!isDoorComplete(door) && (
+          <p className="empty-door-message">Her kommer det mer innhold.</p>
         )}
         {door.image && (
           <img
@@ -322,8 +391,9 @@ function DoorViewer({
             src={door.image}
             alt={door.imageAlt || door.title || "Et bilde i kalenderen"}
           />
-        )}
-        <p className="reveal-body">{door.body}</p>
+        )}{" "}
+        {door.body && <p className="reveal-body">{door.body}</p>}
+        {door.giftCard && <GiftCardView gift={door.giftCard} />}{" "}
         {id &&
           (play ? (
             <div className="video-frame">
@@ -337,38 +407,52 @@ function DoorViewer({
             </div>
           ) : (
             <button className="video-consent" onClick={() => setPlay(true)}>
-              <Icon name="video" size={37} />
+              <Icon name="video" size={34} />
               <strong>Spill av videoen</strong>
               <small>Videoen lastes fra YouTube når du trykker.</small>
             </button>
           ))}
-        {door.kind === "quiz" && door.quiz && (
-          <div className="recipient-quiz">
-            {door.quiz.options.map((option, index) => (
-              <button
-                key={index}
-                disabled={answer !== null}
-                className={`quiz-answer ${answer !== null && index === door.quiz!.answerIndex ? "correct" : answer === index ? "incorrect" : ""}`}
-                onClick={() => setAnswer(index)}
-              >
-                <span>{String.fromCharCode(65 + index)}</span>
-                {option || `Alternativ ${index + 1}`}
-                {answer !== null && index === door.quiz!.answerIndex && (
-                  <Icon name="check" size={18} />
-                )}
-              </button>
-            ))}
-            {answer !== null && (
-              <div className="quiz-feedback" role="status">
-                <strong>
-                  {answer === door.quiz.answerIndex
-                    ? "Helt riktig!"
-                    : "Nesten! Det riktige svaret er markert."}
-                </strong>
-                {door.quiz.explanation && <p>{door.quiz.explanation}</p>}
-              </div>
-            )}
-          </div>
+        {questions.length > 0 && (
+          <section className="recipient-quiz">
+            <h3>
+              {questions.length === 1 ? "Dagens spørsmål" : "Dagens quiz"}
+            </h3>
+            {questions.map((question, index) => {
+              const attempt = answers[questionKey(door.day, index, question)];
+              return (
+                <div
+                  className="door-quiz-question"
+                  key={questionKey(door.day, index, question)}
+                >
+                  <h4>{question.title}</h4>
+                  {question.options.map((option, answer) => (
+                    <button
+                      key={answer}
+                      className={`quiz-answer ${attempt && answer === question.answerIndex ? "correct" : attempt?.answer === answer ? "incorrect" : ""}`}
+                      disabled={!!attempt}
+                      onClick={() => onAnswer(index, question, answer)}
+                    >
+                      <span>{String.fromCharCode(65 + answer)}</span>
+                      {option}
+                      {attempt && answer === question.answerIndex && (
+                        <Icon name="check" size={18} />
+                      )}
+                    </button>
+                  ))}
+                  {attempt && (
+                    <div className="quiz-feedback" role="status">
+                      <strong>
+                        {attempt.answer === question.answerIndex
+                          ? "Helt riktig!"
+                          : "Det riktige svaret er markert."}
+                      </strong>
+                      {question.explanation && <p>{question.explanation}</p>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </section>
         )}
         {door.link && safeLink(door.link.url) && (
           <a
@@ -381,46 +465,78 @@ function DoorViewer({
             <Icon name="external" size={16} />
           </a>
         )}
-        {door.showCalendarQuiz && calendarQuiz && (
-          <button
-            className="button secondary full reveal-link"
-            onClick={() => setQuizOpen(true)}
-          >
-            <Icon name="quiz" size={19} />
-            {calendarQuiz.title}
-            <Icon name="arrow" size={17} />
-          </button>
-        )}
-        {quizOpen && calendarQuiz && (
-          <QuizPlayer quiz={calendarQuiz} onClose={() => setQuizOpen(false)} />
-        )}
-        {sender && (
+        {calendar.sender && (
           <p className="reveal-sender">
-            Fra {sender} <Icon name="heart" size={12} />
+            Fra {calendar.sender}
+            <Icon name="heart" size={12} />
           </p>
         )}
         <div className="reveal-navigation">
-          <button
-            className="icon-button"
-            aria-label="Forrige luke"
-            disabled={!onPrevious}
-            onClick={onPrevious}
-          >
-            <Icon name="back" />
-          </button>
           <button className="button secondary" onClick={onClose}>
             Tilbake til kalenderen
-          </button>
-          <button
-            className="icon-button"
-            aria-label="Neste luke"
-            disabled={!onNext}
-            onClick={onNext}
-          >
-            <Icon name="arrow" />
           </button>
         </div>
       </div>
     </Dialog>
+  );
+}
+function GiftCardView({ gift }: { gift: GiftCard }) {
+  const [revealed, setRevealed] = useState(false);
+  const { toast } = useStore();
+  const expiry = gift.expiresOn
+    ? new Date(`${gift.expiresOn}T12:00:00Z`).toLocaleDateString("nb-NO")
+    : "";
+  return (
+    <section className="gift-card-reveal">
+      <Icon name="gift" size={30} />
+      <span>Gavekort</span>
+      <h3>{gift.merchant || "En liten gave"}</h3>
+      <strong className="gift-amount">
+        {gift.amount.toLocaleString("nb-NO")} kr
+      </strong>
+      {gift.code &&
+        (revealed ? (
+          <div className="gift-code">
+            <code>{gift.code}</code>
+            <button
+              className="icon-button"
+              aria-label="Kopier gavekortkode"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(gift.code);
+                  toast("Gavekortkoden er kopiert.");
+                } catch {
+                  toast("Marker og kopier koden manuelt.");
+                }
+              }}
+            >
+              <Icon name="copy" size={18} />
+            </button>
+          </div>
+        ) : (
+          <button
+            className="button secondary"
+            onClick={() => setRevealed(true)}
+          >
+            <Icon name="eye" size={17} />
+            Vis gavekortkode
+          </button>
+        ))}
+      {safeLink(gift.url) && (
+        <a
+          className="button primary"
+          href={safeLink(gift.url)!}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Åpne gavekortet
+          <Icon name="external" size={16} />
+        </a>
+      )}
+      {expiry && <p className="field-help">Utløpsdato: {expiry}</p>}
+      <p className="field-help">
+        Lagt inn av avsender. Vilkår og gyldighet følger gavekortet.
+      </p>
+    </section>
   );
 }

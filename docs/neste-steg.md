@@ -29,3 +29,7 @@ PWA er første steg og er allerede lagt til. Test hjemskjermikon, skjermstørrel
 ## Teknisk vedlikehold
 
 Basen bruker de installerte, lokalt tilgjengelige versjonene av Next.js og React. Før ordinær produksjonsbruk: oppdater til gjeldende støttede versjoner, oppdater låsefilen og kjør alle kontrollene på nytt. Ikke endre versjoner uten å gjøre et nytt bygg. Service workerens cache-navn bør endres ved større endringer i appskallet.
+
+## Gavekort
+
+Lukene har nå et eget giftCard-objekt og en manuell visning. Før leverandørintegrasjon må kjøp, utstedelse, betalingsbekreftelse, levering, saldo og refusjon modelleres. Hold ekte gavekortkoder serverbasert, med tilgang bare for mottakeren etter riktig dato. Ikke legg leverandørnøkler eller aktive gavekort i klientkode eller prøvelenker.

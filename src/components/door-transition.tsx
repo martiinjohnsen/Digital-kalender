@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, type CSSProperties } from "react";
+import { Icon } from "./icons";
 import type { DoorEffect, Theme } from "@/lib/model";
 export type DoorOrigin = { x: number; y: number; width: number };
 export function DoorTransition({
@@ -32,16 +33,15 @@ export function DoorTransition({
       <div className="door-flight" style={style}>
         <div className="opening-frame">
           <div className="opening-light">
-            <span>✧</span>
+            <Icon name="sparkles" size={48} />
           </div>
           <div className="opening-panel opening-left">
-            <span>{day}</span>
             <i />
           </div>
           <div className="opening-panel opening-right">
             <i />
           </div>
-          <span className="opening-caption">EN LITEN GLEDE</span>
+          <strong className="opening-number">{day}</strong>
         </div>
       </div>
     </div>
@@ -66,7 +66,7 @@ export function Celebration({ effect }: { effect?: DoorEffect }) {
             } as CSSProperties
           }
         >
-          {effect === "sparkles" ? "✧" : effect === "snow" ? "•" : ""}
+          {effect === "sparkles" ? <Icon name="sparkles" size={14} /> : ""}
         </span>
       ))}
     </div>

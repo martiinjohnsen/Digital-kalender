@@ -1,5 +1,5 @@
 /* Cache only this app's public shell. Calendar contents stay in IndexedDB. */
-const CACHE = "luke-shell-2026-11-04-v1";
+const CACHE = "luke-shell-2026-11-04-v2";
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
@@ -10,9 +10,9 @@ self.addEventListener("install", (event) => {
         "/icons/icon-512.png",
       ]);
       try {
-        const response = await fetch("/", { cache: "reload" });
+        const response = await fetch("/calendars", { cache: "reload" });
         if (response.ok) {
-          await cache.put("/", response.clone());
+          await cache.put("/calendars", response.clone());
           const html = await response.text();
           const assets = [
             ...new Set(

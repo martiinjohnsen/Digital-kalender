@@ -309,37 +309,15 @@ export function templateDoors(id: TemplateId): Door[] {
   });
 }
 export function initialData(): AppData {
-  const year = new Date().getFullYear();
-  const example = (
-    id: string,
-    title: string,
-    theme: Theme,
-    count: number,
-    template: TemplateId,
-  ): AdventCalendar => ({
-    ...createCalendar({
-      title,
-      recipient: "Mine favorittmennesker",
-      sender: "En som er glad i dere",
-      year,
-      theme,
-    }),
-    id,
-    demo: true,
-    doors: templateDoors(template).map((door, i) =>
-      i < count ? door : emptyDoor(i + 1),
-    ),
-  });
-  return {
-    version: 1,
-    preferences: { name: "", snow: true },
-    calendars: [
-      example("example-family", "Desember med familien", "advent", 8, "family"),
-      example("example-friends", "En liten julehilsen", "berry", 4, "love"),
-    ],
-  };
+  return { version: 1, preferences: { name: "", snow: true }, calendars: [] };
 }
 export const ideas = [
+  {
+    kind: "giftcard" as const,
+    title: "Et gavekort på noe godt",
+    body: "For eksempel 100 kr til matlevering 4. desember. Legg inn et gavekort du allerede har, med kode eller lenke.",
+    icon: "gift" as const,
+  },
   {
     kind: "message" as const,
     title: "En liten takk",

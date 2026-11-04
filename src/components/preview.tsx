@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useStore } from "./provider";
+import { isReceived } from "@/lib/calendar-library";
 import { RecipientView } from "./recipient-view";
 export function Preview({ id }: { id: string }) {
   const { data } = useStore();
@@ -14,5 +15,5 @@ export function Preview({ id }: { id: string }) {
         </Link>
       </div>
     );
-  return <RecipientView calendar={calendar} owner />;
+  return <RecipientView calendar={calendar} owner={!isReceived(calendar)} />;
 }

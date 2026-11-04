@@ -124,7 +124,9 @@ export function Provider({ children }: { children: ReactNode }) {
   if (!data)
     return (
       <main className="loading-screen">
-        <span className="loading-star">✳</span>
+        <span className="loading-star">
+          <Icon name="sparkles" size={28} />
+        </span>
         <p>Vi finner frem litt adventsglede …</p>
       </main>
     );

@@ -6,33 +6,38 @@ import { useStore } from "./provider";
 import { Artwork } from "./artwork";
 import { Icon } from "./icons";
 import { Dialog } from "./dialog";
+import { isReceived, ownerCopy } from "@/lib/calendar-library";
 export function CalendarCard({ calendar }: { calendar: AdventCalendar }) {
   const { add, remove, toast } = useStore();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const count = completedCount(calendar);
+  const received = isReceived(calendar);
+  const destination = `/calendar/${calendar.id}${received ? "/preview" : ""}`;
   return (
     <article className="calendar-card">
       <Link
-        href={`/calendar/${calendar.id}`}
+        href={destination}
         className={`calendar-cover theme-${calendar.theme}`}
         aria-label={`Åpne ${calendar.title}`}
       >
-        <Artwork theme={calendar.theme} />
+        <Artwork theme={calendar.theme} scene={calendar.scene} />
         <span className="cover-stamp">DESEMBER {calendar.year}</span>
         <span className="cover-title">{calendar.title}</span>
-        <span className="cover-caption">24 små øyeblikk</span>
+
         <span className="card-state">
-          {calendar.demo
-            ? "Eksempel"
-            : count === 24
-              ? "Alle luker fylt"
-              : "Underveis"}
+          {received
+            ? "Delt med meg"
+            : calendar.demo
+              ? "Eksempel"
+              : count === 24
+                ? "Alle luker fylt"
+                : "Underveis"}
         </span>
       </Link>
       <div className="calendar-card-body">
         <div className="card-title-row">
           <h3>
-            <Link href={`/calendar/${calendar.id}`}>{calendar.title}</Link>
+            <Link href={destination}>{calendar.title}</Link>
           </h3>
           <details className="card-menu">
             <summary aria-label={`Flere valg for ${calendar.title}`}>
@@ -41,14 +46,7 @@ export function CalendarCard({ calendar }: { calendar: AdventCalendar }) {
             <div>
               <button
                 onClick={(event) => {
-                  const copy = {
-                    ...structuredClone(calendar),
-                    id: crypto.randomUUID(),
-                    title: `${calendar.title.slice(0, 90)} (kopi)`,
-                    demo: false,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                  };
+                  const copy = ownerCopy(calendar);
                   if (!add(copy)) return;
                   event.currentTarget
                     .closest("details")
@@ -71,7 +69,9 @@ export function CalendarCard({ calendar }: { calendar: AdventCalendar }) {
         </div>
         <p className="card-recipient">
           <Icon name="heart" size={13} />
-          {calendar.recipient || "En liten glede til noen"}
+          {received
+            ? `Fra ${calendar.sender || "en venn"}`
+            : calendar.recipient || ""}
         </p>
         <div className="progress-label">
           <span>
@@ -87,16 +87,18 @@ export function CalendarCard({ calendar }: { calendar: AdventCalendar }) {
         <div className="card-bottom">
           <span>
             <span className={count === 24 ? "tiny-dot complete" : "tiny-dot"} />
-            {calendar.demo
-              ? "Utforsk og prøv selv"
-              : count === 24
-                ? "Klar for en gjennomgang"
-                : "En god start"}
+            {received
+              ? "Åpne kalenderen"
+              : calendar.demo
+                ? "Eksempel"
+                : count === 24
+                  ? "Klar"
+                  : "Under arbeid"}
           </span>
           <Link
-            href={`/calendar/${calendar.id}`}
+            href={destination}
             className="card-edit"
-            aria-label={`Rediger ${calendar.title}`}
+            aria-label={`${received ? "Åpne" : "Rediger"} ${calendar.title}`}
           >
             <Icon name="arrow" size={18} />
           </Link>
@@ -134,26 +136,5 @@ export function CalendarCard({ calendar }: { calendar: AdventCalendar }) {
         </Dialog>
       )}
     </article>
-  );
-}
-export function NewCalendarCard({ onClick }: { onClick: () => void }) {
-  return (
-    <button className="new-calendar-card" onClick={onClick}>
-      <span className="new-plus">
-        <Icon name="plus" size={26} />
-      </span>
-      <h3>Hvem vil du glede?</h3>
-      <p>
-        En liten kalender kan bety
-        <br />
-        mer enn du tror.
-      </p>
-      <span className="new-card-link">
-        Lag en ny kalender <Icon name="arrow" size={16} />
-      </span>
-      <span className="card-sprig" aria-hidden="true">
-        ✳
-      </span>
-    </button>
   );
 }

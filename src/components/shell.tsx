@@ -7,10 +7,8 @@ import { useStore } from "./provider";
 import { InstallButton } from "./pwa";
 import { Dialog } from "./dialog";
 import { NewCalendar, startNew } from "./new-calendar";
-import type { TemplateId } from "@/lib/templates";
 const links: { href: string; name: string; mobile: string; icon: IconName }[] =
   [
-    { href: "/", name: "Oversikt", mobile: "Hjem", icon: "home" },
     {
       href: "/calendars",
       name: "Mine kalendere",
@@ -31,25 +29,21 @@ const links: { href: string; name: string; mobile: string; icon: IconName }[] =
     },
   ];
 export function Shell({ children }: { children: ReactNode }) {
-  const path = usePathname();
-  const { data, status } = useStore();
-  const [newCalendar, setNewCalendar] = useState<{
-    templateId?: TemplateId;
-  } | null>(null);
-  const [help, setHelp] = useState(false);
+  const path = usePathname(),
+    { data, status } = useStore();
+  const [newCalendar, setNewCalendar] = useState(false),
+    [help, setHelp] = useState(false);
   useEffect(() => {
-    const listener = (event: Event) =>
-      setNewCalendar({
-        templateId: (event as CustomEvent<TemplateId | undefined>).detail,
-      });
+    const listener = () => setNewCalendar(true);
     window.addEventListener("luke:new", listener);
     return () => window.removeEventListener("luke:new", listener);
   }, []);
   const preview = path.endsWith("/preview") || path === "/receive";
-  const activeHref = path.startsWith("/calendar/") ? "/calendars" : path;
+  const active =
+    path.startsWith("/calendar/") || path === "/" ? "/calendars" : path;
   const pageName = path.startsWith("/calendar/")
-    ? "Kalenderverksted"
-    : (links.find((l) => l.href === path)?.name ?? "Luke");
+    ? "Kalender"
+    : (links.find((link) => link.href === active)?.name ?? "Luke");
   return (
     <>
       <a className="skip-link" href="#main">
@@ -57,29 +51,28 @@ export function Shell({ children }: { children: ReactNode }) {
       </a>
       {!preview && (
         <aside className="sidebar">
-          <Link href="/" className="brand" aria-label="Luke, til forsiden">
+          <Link
+            href="/calendars"
+            className="brand"
+            aria-label="Luke, til mine kalendere"
+          >
             <BrandMark />
             <span>
               luke<span className="brand-period">.</span>
             </span>
           </Link>
-          <div className="sidebar-tagline">Små øyeblikk. Litt nærmere.</div>
-          <div className="nav-caption">DITT ADVENTSVERKSTED</div>
           <nav aria-label="Hovedmeny">
-            {links.slice(0, 3).map((link) => (
+            {links.slice(0, 2).map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={
-                  activeHref === link.href ? "nav-item active" : "nav-item"
+                  active === link.href ? "nav-item active" : "nav-item"
                 }
-                aria-current={activeHref === link.href ? "page" : undefined}
+                aria-current={active === link.href ? "page" : undefined}
               >
                 <Icon name={link.icon} />
                 {link.name}
-                {link.href === "/calendars" && (
-                  <span className="nav-count">{data.calendars.length}</span>
-                )}
               </Link>
             ))}
           </nav>
@@ -94,38 +87,34 @@ export function Shell({ children }: { children: ReactNode }) {
             <InstallButton compact />
             <Link
               href="/settings"
-              className={path === "/settings" ? "nav-item active" : "nav-item"}
+              className={
+                active === "/settings" ? "nav-item active" : "nav-item"
+              }
             >
               <Icon name="settings" />
               Innstillinger
             </Link>
             <button className="nav-item" onClick={() => setHelp(true)}>
               <Icon name="help" />
-              Litt hjelp på veien
+              Hjelp
             </button>
-            <div className="sidebar-footer">
-              Laget for å deles med noen du liker.
-              <span>Luke · Første kapittel</span>
-            </div>
           </div>
         </aside>
       )}
       <div className={preview ? "app-frame preview-frame" : "app-frame"}>
         {!preview && (
           <header className="topbar">
-            <Link href="/" className="brand mobile-brand">
+            <Link href="/calendars" className="brand mobile-brand">
               <BrandMark />
               <span>luke.</span>
             </Link>
-            <div className="breadcrumb">
-              <span>Ditt verksted</span>
-              <Icon name="chevron" size={13} />
+            <span className="breadcrumb">
               <strong>{pageName}</strong>
-            </div>
+            </span>
             <div className="topbar-right">
               <span
                 className={`save-status ${status}`}
-                title="Kalenderne er lagret i nettleseren på denne enheten"
+                title="Kalenderne lagres i nettleseren på denne enheten"
               >
                 <span className="status-dot" />
                 {status === "saved"
@@ -158,14 +147,6 @@ export function Shell({ children }: { children: ReactNode }) {
         <main id="main" className={preview ? "preview-main" : "main-content"}>
           {children}
         </main>
-        {!preview && (
-          <footer className="main-footer">
-            <span>Små gleder, helt på din måte.</span>
-            <span>
-              Med omtanke <Icon name="heart" size={12} />
-            </span>
-          </footer>
-        )}
       </div>
       {!preview && (
         <nav className="bottom-nav" aria-label="Mobilmeny">
@@ -173,8 +154,8 @@ export function Shell({ children }: { children: ReactNode }) {
             <Link
               key={link.href}
               href={link.href}
-              aria-current={activeHref === link.href ? "page" : undefined}
-              className={activeHref === link.href ? "active" : ""}
+              aria-current={active === link.href ? "page" : undefined}
+              className={active === link.href ? "active" : ""}
             >
               <Icon name={link.icon} size={21} />
               <span>{link.mobile}</span>
@@ -182,34 +163,25 @@ export function Shell({ children }: { children: ReactNode }) {
           ))}
         </nav>
       )}
-      {newCalendar && (
-        <NewCalendar
-          templateId={newCalendar.templateId}
-          onClose={() => setNewCalendar(null)}
-        />
-      )}{" "}
+      {newCalendar && <NewCalendar onClose={() => setNewCalendar(false)} />}{" "}
       {help && (
-        <Dialog title="En liten hjelp på veien" onClose={() => setHelp(false)}>
+        <Dialog title="Slik bruker du Luke" onClose={() => setHelp(false)}>
           <div className="help-content">
-            <p className="dialog-intro">
-              Luke er et lite verksted for personlige adventskalendere. Begynn
-              enkelt, og fyll på når du får en idé.
-            </p>
             {[
               [
                 "calendar",
-                "1. Lag en kalender",
-                "Velg navn, mottaker og et uttrykk du liker. Du kan starte tomt eller med en ferdig mal.",
+                "1. Opprett en kalender",
+                "Velg navn, mottaker og hvordan kalenderen skal se ut.",
               ],
               [
                 "gift",
-                "2. Gjør lukene personlige",
-                "Trykk på en luke og legg til en hilsen, et bilde, en quiz, en video eller en opplevelse.",
+                "2. Fyll lukene",
+                "Legg inn tekst, bilder, gavekort eller video. Quizspørsmål og effekter kan legges til i samme luke.",
               ],
               [
                 "eye",
-                "3. Prøv kalenderen",
-                "Forhåndsvisning lar deg åpne alle lukene. Slå av prøvemodus for å se den vanlige datolåsen.",
+                "3. Forhåndsvis og del",
+                "Prøv kalenderen, eller slå av Åpne alle luker for å se datolåsen.",
               ],
             ].map(([icon, title, body]) => (
               <div className="help-step" key={title}>
@@ -223,19 +195,18 @@ export function Shell({ children }: { children: ReactNode }) {
               </div>
             ))}
             <div className="info-box">
-              <strong>Greit å vite om denne versjonen</strong>
+              <strong>Innholdet lagres på denne enheten</strong>
               <p>
-                Kalenderne lagres i nettleseren på denne enheten. Ta en
-                sikkerhetskopi i Innstillinger. Kontoer, samarbeid og ordinær
-                publisering kobles til senere. Prøvelenker inneholder innholdet
-                og er ikke egnet for hemmeligheter.
+                Ta en sikkerhetskopi i Innstillinger. Prøvelenker inneholder
+                hele kalenderkopien. Bruk dem til å prøve, og unngå private
+                opplysninger og gavekort med verdi.
               </p>
             </div>
             <button
               className="button primary full"
               onClick={() => setHelp(false)}
             >
-              Da er jeg klar <Icon name="arrow" size={17} />
+              Lukk
             </button>
           </div>
         </Dialog>

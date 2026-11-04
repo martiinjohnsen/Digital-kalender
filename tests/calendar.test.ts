@@ -11,9 +11,22 @@ import {
   parseBackup,
   safeLink,
   youtubeId,
+  DEFAULT_SCENE,
+  THEMES,
+  questionsForDoor,
 } from "../src/lib/model.ts";
 import { initialData, questions, templateDoors } from "../src/lib/templates.ts";
 import { decodeCalendar, encodeCalendar } from "../src/lib/share.ts";
+import {
+  libraryCalendars,
+  receivedCopy,
+  ownerCopy,
+} from "../src/lib/calendar-library.ts";
+import {
+  parseQuizProgress,
+  questionKey,
+  quizSummary,
+} from "../src/lib/quiz-progress.ts";
 const make = () =>
   createCalendar({
     title: "Jul med æ, ø og å 🎄",
@@ -61,7 +74,7 @@ test("each template contains 24 usable, valid doors", () => {
   }
 });
 test("backup parsing rejects invalid days, duplicate calendar IDs and unsupported data", () => {
-  const data = initialData();
+  const data = { ...initialData(), calendars: [make()] };
   assert.deepEqual(parseBackup(JSON.stringify(data)), data);
   const corrupt = structuredClone(data);
   corrupt.calendars[0].doors[0].day = 2;
@@ -152,13 +165,10 @@ test("calendar quizzes require complete options and a valid correct answer", () 
   quiz.questions[0].options[1] = " ";
   assert.equal(isCalendarQuiz(quiz), false);
 });
-test("initial examples are clearly marked and safe to reload", () => {
+test("a new workspace starts without example calendars", () => {
   const data = initialData();
-  assert.equal(
-    data.calendars.every((c) => c.demo && isCalendar(c)),
-    true,
-  );
-  assert.deepEqual(data.calendars.map(completedCount), [8, 4]);
+  assert.deepEqual(data.calendars, []);
+  assert.deepEqual(parseBackup(JSON.stringify(data)), data);
 });
 test("image and video doors are complete only when their media is present", () => {
   const door = {
@@ -209,4 +219,136 @@ test("an attached calendar quiz must exist, and completes a titled door", () => 
   };
   assert.equal(isCalendar(calendar), true);
   assert.equal(isDoorComplete(calendar.doors[0]), true);
+});
+
+test("gift cards require a merchant, positive amount and code or HTTPS redemption link", () => {
+  const calendar = make();
+  const door = calendar.doors[3];
+  door.kind = "giftcard";
+  door.title = "Middagen er på meg";
+  door.giftCard = {
+    merchant: "Matlevering",
+    amount: 100,
+    currency: "NOK",
+    code: "TEST-100",
+    url: "",
+    expiresOn: "2027-12-31",
+  };
+  assert.equal(isDoorComplete(door), true);
+  assert.deepEqual(
+    decodeCalendar(encodeCalendar(calendar)).doors[3].giftCard,
+    door.giftCard,
+  );
+  door.giftCard.code = "";
+  assert.equal(isDoorComplete(door), false);
+  door.giftCard.url = "https://example.com/gift";
+  assert.equal(isDoorComplete(door), true);
+  door.giftCard.amount = 0;
+  assert.equal(isDoorComplete(door), false);
+  door.kind = "message";
+  door.body = "En hilsen med et uferdig gavekort";
+  assert.equal(isDoorComplete(door), false);
+  door.giftCard.url = "javascript:alert(1)";
+  assert.equal(isCalendar(calendar), false);
+  door.giftCard.url = "";
+  door.giftCard.expiresOn = "2027-02-30";
+  assert.equal(isCalendar(calendar), false);
+});
+test("quiz questions can accompany a gift, image or message, and drafts remain editable", () => {
+  const calendar = make();
+  const door = calendar.doors[0];
+  door.title = "En hilsen og et spørsmål";
+  door.body = "God desember!";
+  door.questions = structuredClone(questions.slice(0, 2));
+  assert.equal(isDoorComplete(door), true);
+  assert.equal(isCalendar(calendar), true);
+  door.questions[0].options[0] = "";
+  assert.equal(isDoorComplete(door), false);
+  assert.equal(isCalendar(calendar), true);
+  door.questions[0].answerIndex = 99;
+  assert.equal(isCalendar(calendar), false);
+});
+test("old backups keep legacy questions and scenes while new options survive a backup round trip", () => {
+  const calendar = make();
+  delete calendar.scene;
+  delete calendar.access;
+  calendar.doors = templateDoors("family");
+  calendar.quiz = {
+    title: "Eldre quiz",
+    description: "",
+    questions: structuredClone(questions),
+  };
+  calendar.doors[0].showCalendarQuiz = true;
+  assert.equal(isCalendar(calendar), true);
+  assert.equal(
+    questionsForDoor(calendar.doors[0], calendar).length,
+    questions.length,
+  );
+  for (const theme of THEMES) {
+    calendar.theme = theme;
+    calendar.scene = {
+      ...DEFAULT_SCENE,
+      house: "cabin",
+      snowman: true,
+      reindeer: true,
+    };
+    assert.equal(isCalendar(calendar), true);
+    assert.deepEqual(
+      parseBackup(JSON.stringify({ ...initialData(), calendars: [calendar] }))
+        .calendars[0],
+      calendar,
+    );
+  }
+});
+test("received calendars stay separate from owned originals and can be filtered or refreshed", () => {
+  const owner = make();
+  const received = receivedCopy(owner);
+  assert.notEqual(received.id, owner.id);
+  assert.equal(received.receivedSourceId, owner.id);
+  const refreshed = receivedCopy({ ...owner, title: "Oppdatert" }, received);
+  assert.equal(refreshed.id, received.id);
+  assert.equal(refreshed.title, "Oppdatert");
+  const data = [owner, received];
+  assert.deepEqual(libraryCalendars(data, "owner"), [owner]);
+  assert.deepEqual(libraryCalendars(data, "received"), [received]);
+  assert.equal(libraryCalendars(data, "all", "FAMILIEN").length, 2);
+  const copy = ownerCopy(received);
+  assert.equal(copy.access, "owner");
+  assert.equal(copy.receivedSourceId, undefined);
+  assert.notEqual(copy.id, received.id);
+  assert.equal(isCalendar(refreshed), true);
+  assert.equal(isCalendar(copy), true);
+});
+test("quiz score counts only unlocked valid questions and invalidates edited questions", () => {
+  const calendar = make();
+  const question = structuredClone(questions[0]);
+  calendar.doors[0].questions = [question];
+  calendar.doors[4].questions = [question];
+  const first = questionKey(1, 0, question),
+    future = questionKey(5, 0, question);
+  const progress = {
+    [first]: { answer: question.answerIndex },
+    [future]: { answer: question.answerIndex },
+  };
+  let score = quizSummary(calendar, progress, 4);
+  assert.equal(score.total, 2);
+  assert.equal(score.answered, 1);
+  assert.equal(score.correct, 1);
+  assert.equal(score.unlocked, 1);
+  assert.equal(score.days[1].locked, true);
+  assert.equal(quizSummary(calendar, progress, 5).correct, 2);
+  calendar.doors[0].questions[0] = { ...question, title: "Et nytt spørsmål" };
+  assert.equal(quizSummary(calendar, progress, 4).answered, 0);
+  assert.deepEqual(
+    parseQuizProgress(
+      JSON.stringify({
+        ...progress,
+        bad: { answer: -1 },
+        "1-2-a": { answer: 5 },
+      }),
+    ),
+    progress,
+  );
+  assert.deepEqual(parseQuizProgress("malformed"), {});
+  assert.deepEqual(parseQuizProgress("A".repeat(40001)), {});
 });
