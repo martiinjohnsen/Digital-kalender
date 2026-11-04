@@ -49,22 +49,31 @@ export function Celebration({ effect }: { effect?: DoorEffect }) {
   if (!effect || effect === "none") return null;
   return (
     <div className={`celebration effect-${effect}`} aria-hidden="true">
-      {Array.from({ length: 26 }, (_, i) => (
+      {Array.from({ length: effect === "sparkles" ? 34 : 58 }, (_, i) => (
         <span
           key={i}
           style={
             {
               "--x": `${(i * 37 + 9) % 100}%`,
-              "--delay": `${(i % 7) * 0.14}s`,
-              "--duration": `${2.3 + (i % 5) * 0.3}s`,
-              "--rotation": `${i * 39}deg`,
-              "--particle-color": ["#b99ecf", "#d5b48a", "#e4bed6", "#aebfbb"][
-                i % 4
-              ],
+              "--y": `${8 + ((i * 43) % 80)}%`,
+              "--delay": `${(i % 13) * 0.065}s`,
+              "--duration": `${2.2 + (i % 7) * 0.16}s`,
+              "--drift": `${(i % 2 ? 1 : -1) * (20 + ((i * 13) % 65))}px`,
+              "--rotation": `${180 + i * 73}deg`,
+              "--particle-color": [
+                "var(--primary)",
+                "#d5b48a",
+                "#d6a6bb",
+                "#8fb5ad",
+              ][i % 4],
             } as CSSProperties
           }
         >
-          {effect === "sparkles" ? <Icon name="sparkles" size={14} /> : ""}
+          {effect === "sparkles" ? (
+            <Icon name="sparkles" size={i % 3 ? 19 : 28} />
+          ) : (
+            ""
+          )}
         </span>
       ))}
     </div>

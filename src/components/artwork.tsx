@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, type CSSProperties } from "react";
 import { DEFAULT_SCENE, type SceneSettings, type Theme } from "@/lib/model";
 
 function Window({
@@ -83,13 +83,16 @@ export function Artwork({
           fill="#f9ead1"
           opacity=".8"
         >
-          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+          {Array.from({ length: settings.twinkle ? 30 : 10 }, (_, i) => (
             <circle
               key={i}
-              cx={35 + ((i * 73) % 530)}
-              cy={30 + ((i * 37) % 165)}
-              r={i % 3 === 0 ? 2.3 : 1.5}
-              style={{ animationDelay: `${-i * 0.9}s` }}
+              cx={24 + ((i * 137 + i * i * 11) % 552)}
+              cy={22 + ((i * 61 + i * i * 7) % 210)}
+              r={i % 5 === 0 ? 2.7 : i % 3 === 0 ? 2 : 1.2}
+              style={{
+                animationDelay: `${-((i * 1.37) % 7)}s`,
+                animationDuration: `${1.5 + ((i * 17) % 23) / 10}s`,
+              }}
             />
           ))}
         </g>
@@ -356,9 +359,9 @@ export function Artwork({
       {settings.house === "village" && (
         <g>
           {[
-            [220, 220, 0.75],
-            [309, 201, 1],
-            [395, 225, 0.72],
+            [220, 241, 0.75],
+            [309, 215, 1],
+            [395, 243, 0.72],
           ].map(([x, y, scale], i) => (
             <g key={i} transform={`translate(${x} ${y}) scale(${scale})`}>
               <path
@@ -394,12 +397,14 @@ export function Artwork({
           ))}
         </g>
       )}
-      <path
-        d="M199 322h208"
-        stroke="#faf5eb"
-        strokeWidth="7"
-        strokeLinecap="round"
-      />
+      {["classic", "cabin", "townhouse"].includes(settings.house) && (
+        <path
+          d="M199 322h208"
+          stroke="#faf5eb"
+          strokeWidth="7"
+          strokeLinecap="round"
+        />
+      )}
       {settings.snowman && (
         <g transform="translate(148 307)">
           <ellipse
@@ -482,13 +487,27 @@ export function Artwork({
         <g
           className="scene-wind"
           stroke="#fff5e2"
-          strokeWidth="2"
+          strokeWidth="1.8"
           strokeLinecap="round"
-          opacity=".4"
         >
-          <path d="M24 148h82q20 0 17-13t-16-1m-51 24h92q25 0 28-16" />
-          <path d="M427 211h78q16 0 17-11t-12-6m-63 31h101" />
-          <path d="M56 72h38q13 0 13-9m342 14h53q18 0 18-11" />
+          {Array.from({ length: 9 }, (_, index) => {
+            const y = 48 + ((index * 83) % 245);
+            const length = 50 + ((index * 31) % 70);
+            return (
+              <path
+                key={index}
+                className="wind-trail"
+                d={`M-145 ${y}q${length / 2} ${index % 2 ? 8 : -9} ${length} 0q16-5 10-15t-15-1`}
+                style={
+                  {
+                    animationDelay: `${-((index * 1.73) % 7)}s`,
+                    animationDuration: `${3.1 + ((index * 13) % 26) / 10}s`,
+                    "--wind-rise": `${-9 - ((index * 11) % 30)}px`,
+                  } as CSSProperties
+                }
+              />
+            );
+          })}
         </g>
       )}
       {settings.snowfall && (

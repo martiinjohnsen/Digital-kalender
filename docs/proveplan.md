@@ -2,7 +2,7 @@
 
 ## Utført 4. november 2026
 
-- Typekontroll, 26 automatiske tester og produksjonsbygg bestått.
+- Typekontroll, 29 automatiske tester og produksjonsbygg bestått.
 - Lokal Chrome: opprettet kalender med Nordlys, hytte, snømann og reinsdyr.
 - Lagret en luke med 100 kr testgavekort og quizspørsmål i samme luke.
 - Åpnet luka, viste gavekortkoden og svarte riktig på spørsmålet.
@@ -14,8 +14,13 @@
 - Flyttet innholdsblokker med både drahåndtak og tastatur. Boksene krympet under dragging, og rekkefølgen og innholdet ble bevart etter lagring.
 - Lagt til en bildeblokk nederst, fjernet den og kontrollert at valget kunne legges tilbake.
 - Besvart et spørsmål med fem alternativer og to riktige svar, samt et spørsmål med skrevet svar. Begge ga riktig poengsum; avsenderkommentar og quizoversikt ble kontrollert.
-- Kontrollert kalenderens farger i redigeringssiden, lukeredigering og mottakervisning. Venstremenyen beholdt appens farger.
+- Kontrollert at redigeringssiden og lukeredigeringen beholder appens lilla farger. Forhåndsvisning og mottakervisning følger kalenderens eget tema.
 - Kontrollert redigeringssiden og lukedialogen ved 393 pikslers bredde i Chromes iPhone 16-emulering.
+- Lagret en luke med tekst uten egen overskrift. Den ble markert klar, og mottakervisningen viste dato og tekst.
+- Kontrollert det separate feltet for åpningseffekt og avspilling av konfetti og stjerner i forhåndsvisningen.
+- Kontrollert Granskog og Juleby uten den rette snøbasen, samt husenes plassering i snøen.
+- Kontrollert lenke med hengende ledd og lås i kalenderens temafarge, sammen med datomeldingen.
+- Rullet Inspirasjon ned og byttet til Mine kalendere. Hele toppfeltet og sideoverskriften var synlige etter sideskiftet.
 
 ## Videre kontroll
 

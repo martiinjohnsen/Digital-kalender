@@ -21,7 +21,7 @@
   box-sizing: border-box;
 }
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   scrollbar-gutter: stable;
 }
 body {
@@ -7263,7 +7263,11 @@ input[type="radio"] {
   transform-origin: center;
 }
 .scene-wind {
-  animation: scene-wind 10s ease-in-out infinite;
+  animation: none;
+}
+.scene-wind .wind-trail {
+  opacity: 0;
+  animation: scene-wind 4s linear infinite;
 }
 @keyframes scene-snowfall {
   from {
@@ -7296,27 +7300,26 @@ input[type="radio"] {
 @keyframes scene-twinkle {
   0%,
   100% {
-    opacity: 0.35;
-    transform: scale(0.8);
+    opacity: 0.18;
+    transform: scale(0.65);
   }
   50% {
     opacity: 1;
-    transform: scale(1.4);
+    transform: scale(1.7);
   }
 }
 @keyframes scene-wind {
-  0%,
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  14%,
+  70% {
+    opacity: 0.5;
+  }
   100% {
     opacity: 0;
-    transform: translateX(-55px);
-  }
-  25%,
-  65% {
-    opacity: 0.45;
-  }
-  90% {
-    opacity: 0;
-    transform: translateX(70px);
+    transform: translate(850px, var(--wind-rise));
   }
 }
 .block-door-editor {
@@ -8247,4 +8250,216 @@ input[type="radio"] {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+/* Editing uses Luke's own palette; artwork and recipient pages keep the chosen theme. */
+.editor-heading .heading-actions {
+  --action-size: 44px;
+  align-items: center;
+}
+.editor-heading .heading-actions > .button,
+.editor-heading .heading-actions > .calendar-settings-button {
+  height: var(--action-size);
+  min-height: var(--action-size);
+  border-radius: 12px;
+  margin: 0;
+}
+.editor-heading .heading-actions > .calendar-settings-button {
+  width: var(--action-size);
+  min-width: var(--action-size);
+  padding: 0;
+  flex: 0 0 var(--action-size);
+}
+.editor-page > .back-link {
+  min-height: 38px;
+  padding: 8px 13px;
+  font-size: 11px;
+  color: var(--primary);
+  margin-bottom: 23px;
+}
+.summary-content-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+.summary-content-grid > span {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff45;
+  align-items: flex-start;
+  min-width: 0;
+}
+.summary-content-grid > span > svg {
+  margin-top: 2px;
+}
+.summary-content-grid strong,
+.summary-content-grid small {
+  display: block;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+.summary-content-grid strong {
+  font-weight: 500;
+}
+.summary-content-grid small {
+  margin-top: 3px;
+  color: var(--muted);
+}
+.opening-effect-settings {
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+  margin-top: 26px;
+}
+.effect-settings-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 37px;
+  margin-bottom: 14px;
+}
+.effect-settings-heading > h3 {
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+}
+.opening-effect-preview {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 180px;
+  margin: 15px 0 24px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: radial-gradient(ellipse at center, #fff8, #eee8f25c);
+  --fall-distance: 225px;
+  color: var(--primary);
+}
+.effect-preview-date {
+  font: 31px/1.2 var(--serif);
+}
+.opening-effect-preview > span:last-child {
+  font-size: 10px;
+  color: var(--muted);
+}
+.celebration > span {
+  animation-name: opening-particle-fall;
+  animation-timing-function: cubic-bezier(0.18, 0.55, 0.7, 1);
+}
+.celebration.effect-snow > span {
+  width: 7px;
+  height: 7px;
+  background: #fffaf5;
+  box-shadow: 0 0 2px 1px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+.celebration.effect-snow > span:nth-child(3n) {
+  width: 4px;
+  height: 4px;
+}
+.celebration.effect-confetti > span {
+  width: 8px;
+  height: 14px;
+}
+.celebration.effect-confetti > span:nth-child(3n) {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.celebration.effect-sparkles > span {
+  top: var(--y);
+  animation-name: opening-star-burst;
+  filter: drop-shadow(0 0 5px #fff9);
+}
+.door-reveal > .reveal-date {
+  font-size: clamp(36px, 5vw, 48px);
+  margin: 8px 0 27px;
+  text-align: center;
+}
+.recipient-door-dialog > .dialog-header {
+  justify-content: flex-end;
+  border-bottom: 0;
+  padding: 14px 20px 0;
+  min-height: 52px;
+}
+.recipient-door-dialog > .dialog-header > h2 {
+  display: none;
+}
+.recipient-door > .door-chain {
+  --chain-metal: color-mix(in srgb, var(--theme-color) 85%, #443b47);
+  --chain-shine: color-mix(in srgb, var(--theme-pale) 70%, white);
+  background: color-mix(in srgb, var(--theme-pale) 15%, transparent);
+  overflow: hidden;
+}
+.door-chain-graphic {
+  position: absolute;
+  top: 50%;
+  left: -10%;
+  width: 120%;
+  height: auto;
+  transform: translateY(-40%);
+  filter: drop-shadow(0 3px 2px #30233628);
+  animation: chain-settle 0.65s ease-out both;
+}
+.recipient-door.lock-attempt > strong {
+  opacity: 0.3;
+}
+.recipient-door.lock-attempt > span:not(.door-chain) {
+  opacity: 0;
+}
+@keyframes opening-particle-fall {
+  0% {
+    opacity: 0;
+    transform: translate(0, -15px) rotate(0);
+  }
+  12%,
+  70% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--drift), var(--fall-distance, 650px))
+      rotate(var(--rotation));
+  }
+}
+@keyframes opening-star-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) rotate(-30deg);
+  }
+  24%,
+  48% {
+    opacity: 0.95;
+    transform: scale(1.25) rotate(10deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.4) rotate(55deg);
+  }
+}
+@keyframes chain-settle {
+  0% {
+    transform: translateY(-55%) rotate(-6deg);
+  }
+  45% {
+    transform: translateY(-37%) rotate(3deg);
+  }
+  75% {
+    transform: translateY(-41%) rotate(-1deg);
+  }
+  100% {
+    transform: translateY(-40%) rotate(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-wind .wind-trail,
+  .door-chain-graphic,
+  .celebration > span {
+    animation: none !important;
+  }
 }

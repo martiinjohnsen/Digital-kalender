@@ -271,10 +271,7 @@ export function RecipientView({
                     className="door-chain"
                     aria-hidden="true"
                   >
-                    <span className="chain-line" />
-                    <span className="chain-lock">
-                      <Icon name="lock" size={24} />
-                    </span>
+                    <DoorChain />
                   </span>
                 )}
               </button>
@@ -327,6 +324,75 @@ export function RecipientView({
     </div>
   );
 }
+function DoorChain() {
+  return (
+    <svg
+      className="door-chain-graphic"
+      viewBox="0 0 220 110"
+      fill="none"
+      aria-hidden="true"
+    >
+      <g className="chain-links">
+        {Array.from({ length: 17 }, (_, index) => {
+          const x = -10 + index * 15;
+          const t = Math.max(0, Math.min(1, x / 220));
+          const y = 22 + Math.sin(t * Math.PI) * 27;
+          const angle = Math.cos(t * Math.PI) * 20;
+          return (
+            <g key={index} transform={`translate(${x} ${y}) rotate(${angle})`}>
+              <ellipse
+                rx="11"
+                ry={index % 2 ? 4 : 6.5}
+                stroke="var(--chain-metal)"
+                strokeWidth="4"
+              />
+              <path
+                d={index % 2 ? "M-8-1q8-4 16 0" : "M-8-2q5-6 13-2"}
+                stroke="var(--chain-shine)"
+                strokeWidth="1.3"
+                strokeLinecap="round"
+              />
+            </g>
+          );
+        })}
+      </g>
+      <g className="chain-padlock">
+        <path
+          d="M101 65V53a9 9 0 0 1 18 0v12"
+          stroke="var(--chain-metal)"
+          strokeWidth="5"
+        />
+        <path
+          d="M102 56v-3a8 8 0 0 1 6-8"
+          stroke="var(--chain-shine)"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        <rect
+          x="94"
+          y="60"
+          width="32"
+          height="28"
+          rx="6"
+          fill="var(--chain-metal)"
+        />
+        <path
+          d="M98 67v-1q0-3 4-3h17"
+          stroke="var(--chain-shine)"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        <circle cx="110" cy="72" r="2.5" fill="var(--theme-pale)" />
+        <path
+          d="M110 73v6"
+          stroke="var(--theme-pale)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+      </g>
+    </svg>
+  );
+}
 function DoorViewer({
   door,
   calendar,
@@ -345,10 +411,14 @@ function DoorViewer({
   onClose: () => void;
 }) {
   return (
-    <Dialog title={`${door.day}. desember`} onClose={onClose}>
+    <Dialog
+      title={`${door.day}. desember`}
+      onClose={onClose}
+      className="recipient-door-dialog"
+    >
       <div className="door-reveal ordered-door-reveal">
         <Celebration effect={door.effect} />
-        <h2>{door.title || "Denne luka er ikke ferdig ennå"}</h2>
+        <h2 className="reveal-date">{door.day}. desember</h2>
         {!isDoorComplete(door) && (
           <p className="empty-door-message">Her kommer det mer innhold.</p>
         )}

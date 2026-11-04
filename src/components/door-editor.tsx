@@ -19,6 +19,8 @@ import { Icon, type IconName } from "./icons";
 import { Dialog } from "./dialog";
 import { DoorQuestionsEditor, blankQuestion } from "./door-questions";
 import { ContentStack } from "./content-stack";
+import { OpeningEffectPicker } from "./opening-effect-picker";
+const contentBlocks = DOOR_BLOCKS.filter((block) => block !== "effect");
 const emptyGift = (): GiftCard => ({
   merchant: "",
   amount: 100,
@@ -29,7 +31,9 @@ const emptyGift = (): GiftCard => ({
 });
 function editorDraft(door: Door, calendar: AdventCalendar): Door {
   const draft = structuredClone(door);
-  draft.contentOrder = doorBlockOrder(door);
+  draft.contentOrder = doorBlockOrder(door).filter(
+    (block) => block !== "effect",
+  );
   draft.questions = questionsForDoor(door, calendar);
   draft.kind = "message";
   delete draft.quiz;
@@ -78,7 +82,7 @@ export function DoorEditor({
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [draft]);
-  const order = doorBlockOrder(draft);
+  const order = doorBlockOrder(draft).filter((block) => block !== "effect");
   function change(patch: Partial<Door>) {
     setError("");
     setDraft((previous) => ({ ...previous, ...patch }));
@@ -369,28 +373,7 @@ export function DoorEditor({
           </>
         );
       case "effect":
-        return (
-          <div className="effect-options" aria-label="Velg åpningseffekt">
-            {(
-              [
-                ["none", "Ingen"],
-                ["snow", "Snøfall"],
-                ["sparkles", "Stjerner"],
-                ["confetti", "Konfetti"],
-              ] as const
-            ).map(([effect, label]) => (
-              <button
-                key={effect}
-                type="button"
-                className={draft.effect === effect ? "selected" : ""}
-                aria-pressed={(draft.effect ?? "none") === effect}
-                onClick={() => change({ effect })}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        );
+        return null;
     }
   }
   return (
@@ -398,7 +381,6 @@ export function DoorEditor({
       title={`Luke ${door.day} · ${door.day}. desember`}
       onClose={close}
       wide
-      className={`theme-${calendar.theme} calendar-palette`}
     >
       <div className="door-editor block-door-editor">
         <form
@@ -409,18 +391,9 @@ export function DoorEditor({
         >
           <div className="door-fixed-fields">
             <label>
-              Overskrift
-              <input
-                autoFocus
-                maxLength={120}
-                placeholder="Hva ligger bak luka?"
-                value={draft.title}
-                onChange={(event) => change({ title: event.target.value })}
-              />
-            </label>
-            <label>
               Tekst<span className="optional">Valgfritt</span>
               <textarea
+                autoFocus
                 rows={4}
                 maxLength={6000}
                 placeholder="En hilsen, en forklaring eller en liten overraskelse …"
@@ -440,8 +413,9 @@ export function DoorEditor({
           <div className="add-content-menu">
             <h3>Legg til</h3>
             <div>
-              {DOOR_BLOCKS.filter((block) => !order.includes(block)).map(
-                (block) => (
+              {contentBlocks
+                .filter((block) => !order.includes(block))
+                .map((block) => (
                   <button
                     key={block}
                     type="button"
@@ -451,13 +425,17 @@ export function DoorEditor({
                     <Icon name={blockIcons[block]} size={16} />
                     {blockNames[block]}
                   </button>
-                ),
-              )}
+                ))}
             </div>
-            {order.length === DOOR_BLOCKS.length && (
+            {order.length === contentBlocks.length && (
               <p className="field-help">Alle innholdstypene er lagt til.</p>
             )}
           </div>
+          <OpeningEffectPicker
+            value={draft.effect ?? "none"}
+            day={door.day}
+            onChange={(effect) => change({ effect })}
+          />
           {error && (
             <p role="alert" className="form-error">
               {error}

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   availableDay,
   completedCount,
+  calendarContentSummary,
   createCalendar,
   hasDoorContent,
   isCalendar,
@@ -72,7 +73,7 @@ test("partial custom content is preserved when filling empty doors", () => {
   );
   assert.equal(result[0].body, "Min uferdige hilsen");
   assert.equal(result[0].title, "");
-  assert.equal(result.filter(isDoorComplete).length, 23);
+  assert.equal(result.filter(isDoorComplete).length, 24);
 });
 test("each template contains 24 usable, valid doors", () => {
   for (const id of ["family", "team", "love", "calm"] as const) {
@@ -560,4 +561,83 @@ test("all six scene motifs and animation flags remain compatible with older cale
   delete calendar.scene!.wind;
   delete calendar.scene!.twinkle;
   assert.equal(isCalendar(calendar), true);
+});
+
+test("doors need content rather than a custom heading to be ready", () => {
+  const calendar = make();
+  const door = calendar.doors[0];
+  door.contentOrder = [];
+  assert.equal(isDoorComplete(door), false);
+  door.title = "En gammel overskrift";
+  assert.equal(isDoorComplete(door), false);
+  door.title = "";
+  door.body = "God desember!";
+  assert.equal(isDoorComplete(door), true);
+  door.body = "";
+  door.contentOrder = ["quiz"];
+  door.questions = structuredClone(questions.slice(0, 1));
+  assert.equal(isDoorComplete(door), true);
+  assert.equal(completedCount(calendar), 1);
+  assert.equal(isCalendar(calendar), true);
+  assert.deepEqual(decodeCalendar(encodeCalendar(calendar)).doors[0], door);
+  door.questions[0].title = "";
+  assert.equal(isDoorComplete(door), false);
+});
+
+test("an opening effect is preserved without making an empty door ready", () => {
+  const calendar = make();
+  const door = calendar.doors[0];
+  door.contentOrder = [];
+  door.effect = "confetti";
+  assert.equal(isDoorComplete(door), false);
+  door.body = "En hilsen";
+  assert.equal(isDoorComplete(door), true);
+  assert.equal(
+    decodeCalendar(encodeCalendar(calendar)).doors[0].effect,
+    "confetti",
+  );
+  assert.deepEqual(calendarContentSummary(calendar), {
+    counts: { message: 1 },
+    questionCount: 0,
+  });
+  door.contentOrder = ["effect"];
+  assert.equal(isDoorComplete(door), true);
+});
+
+test("the calendar summary includes every attached content type and counts quiz questions separately", () => {
+  const calendar = make();
+  const door = calendar.doors[0];
+  door.body = "En hilsen";
+  door.contentOrder = [
+    "giftcard",
+    "image",
+    "video",
+    "link",
+    "quiz",
+    "activity",
+  ];
+  door.questions = structuredClone(questions.slice(0, 2));
+  calendar.doors[1].questions = structuredClone(questions.slice(0, 1));
+  calendar.doors[1].effect = "snow";
+  const result = calendarContentSummary(calendar);
+  assert.deepEqual(result, {
+    counts: {
+      message: 1,
+      giftcard: 1,
+      image: 1,
+      video: 1,
+      link: 1,
+      quiz: 2,
+      activity: 1,
+    },
+    questionCount: 3,
+  });
+  const withoutImage = {
+    ...calendar,
+    doors: calendar.doors.map((item, index) =>
+      index === 0 ? removeDoorBlock(item, "image") : item,
+    ),
+  };
+  assert.equal(calendarContentSummary(withoutImage).counts.image, undefined);
+  assert.equal(calendarContentSummary(withoutImage).counts.quiz, 2);
 });

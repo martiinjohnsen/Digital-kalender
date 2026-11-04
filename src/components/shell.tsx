@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { BrandMark, Icon, type IconName } from "./icons";
 import { useStore } from "./provider";
 import { InstallButton } from "./pwa";
@@ -33,6 +33,12 @@ export function Shell({ children }: { children: ReactNode }) {
     { data, status } = useStore();
   const [newCalendar, setNewCalendar] = useState(false),
     [help, setHelp] = useState(false);
+  useLayoutEffect(() => {
+    const top = () => window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    top();
+    const frame = requestAnimationFrame(top);
+    return () => cancelAnimationFrame(frame);
+  }, [path]);
   useEffect(() => {
     const listener = () => setNewCalendar(true);
     window.addEventListener("luke:new", listener);
@@ -44,14 +50,6 @@ export function Shell({ children }: { children: ReactNode }) {
   const pageName = path.startsWith("/calendar/")
     ? "Kalender"
     : (links.find((link) => link.href === active)?.name ?? "Luke");
-  const selectedId = path.match(/^\/calendar\/([^/]+)/)?.[1];
-  const selectedCalendar = data.calendars.find(
-    (calendar) => calendar.id === selectedId,
-  );
-  const palette =
-    !preview && selectedCalendar
-      ? ` calendar-palette theme-${selectedCalendar.theme}`
-      : "";
   return (
     <>
       <a className="skip-link" href="#main">
@@ -109,9 +107,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
         </aside>
       )}
-      <div
-        className={preview ? "app-frame preview-frame" : `app-frame${palette}`}
-      >
+      <div className={preview ? "app-frame preview-frame" : "app-frame"}>
         {!preview && (
           <header className="topbar">
             <Link href="/calendars" className="brand mobile-brand">

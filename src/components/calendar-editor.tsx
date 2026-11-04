@@ -3,13 +3,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "./provider";
-import { Icon } from "./icons";
+import { Icon, type IconName } from "./icons";
 import { Artwork } from "./artwork";
 import { DoorEditor } from "./door-editor";
 import { ShareDialog } from "./share-dialog";
 import { AppearancePicker } from "./appearance-picker";
 import {
   completedCount,
+  calendarContentSummary,
   hasDoorContent,
   isDoorComplete,
   sceneFor,
@@ -64,6 +65,21 @@ export function CalendarEditor({ id }: { id: string }) {
       </div>
     );
   const count = completedCount(calendar);
+  const content = calendarContentSummary(calendar);
+  const contentLabels: {
+    kind: keyof typeof content.counts;
+    icon: IconName;
+    one: string;
+    many: string;
+  }[] = [
+    { kind: "message", icon: "message", one: "tekst", many: "tekster" },
+    { kind: "giftcard", icon: "gift", one: "gavekort", many: "gavekort" },
+    { kind: "image", icon: "image", one: "bilde", many: "bilder" },
+    { kind: "video", icon: "video", one: "video", many: "videoer" },
+    { kind: "link", icon: "external", one: "lenke", many: "lenker" },
+    { kind: "quiz", icon: "quiz", one: "quiz", many: "quizer" },
+    { kind: "activity", icon: "heart", one: "opplevelse", many: "opplevelser" },
+  ];
   const doors = calendar.doors.filter(
     (door) =>
       filter === "all" ||
@@ -91,7 +107,7 @@ export function CalendarEditor({ id }: { id: string }) {
   }
   return (
     <div className="page-enter editor-page">
-      <Link href="/calendars" className="back-link">
+      <Link href="/calendars" className="button secondary back-link">
         <Icon name="back" size={15} />
         Mine kalendere
       </Link>
@@ -193,7 +209,7 @@ export function CalendarEditor({ id }: { id: string }) {
                 </button>
               ))}
             </div>
-            <div className={`door-grid theme-${calendar.theme}`}>
+            <div className="door-grid theme-advent">
               {doors.map((door) => {
                 const complete = isDoorComplete(door),
                   partial = hasDoorContent(door);
@@ -246,21 +262,26 @@ export function CalendarEditor({ id }: { id: string }) {
                 value={count}
                 aria-label="Kalenderens fremdrift"
               />
-              <div className="calendar-content-counts">
-                <span>
-                  <Icon name="gift" size={15} />
-                  {calendar.doors.filter((door) => door.giftCard).length}{" "}
-                  gavekort
-                </span>
-                <span>
-                  <Icon name="quiz" size={15} />
-                  {calendar.doors.reduce(
-                    (sum, door) =>
-                      sum + questionsForDoor(door, calendar).length,
-                    0,
-                  )}{" "}
-                  spørsmål
-                </span>
+              <div
+                className="calendar-content-counts summary-content-grid"
+                aria-label="Innhold i kalenderen"
+              >
+                {contentLabels.map(({ kind, icon, one, many }) => {
+                  const amount = content.counts[kind] ?? 0;
+                  return amount ? (
+                    <span key={kind}>
+                      <Icon name={icon} size={16} />
+                      <span>
+                        <strong>
+                          {amount} {amount === 1 ? one : many}
+                        </strong>
+                        {kind === "quiz" && (
+                          <small>{content.questionCount} spørsmål</small>
+                        )}
+                      </span>
+                    </span>
+                  ) : null;
+                })}
               </div>
               {count < 24 ? (
                 <button

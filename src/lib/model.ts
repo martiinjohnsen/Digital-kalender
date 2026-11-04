@@ -217,14 +217,12 @@ export function safeLink(value: string): string | null {
 }
 export function isDoorComplete(door: Door): boolean {
   if (door.contentOrder !== undefined) {
-    if (!door.title.trim()) return false;
     const blocks = doorBlockOrder(door);
     if (!blocks.every((block) => isBlockComplete(door, block))) return false;
     return Boolean(
       door.body.trim() || blocks.some((block) => block !== "effect"),
     );
   }
-  if (!door.title.trim()) return false;
   if (door.questions?.some((question) => !isQuestionComplete(question)))
     return false;
   if (
@@ -265,6 +263,25 @@ export function isDoorComplete(door: Door): boolean {
 }
 export function completedCount(calendar: AdventCalendar): number {
   return calendar.doors.filter(isDoorComplete).length;
+}
+export function calendarContentSummary(calendar: AdventCalendar) {
+  const counts = new Map<DoorBlockKind | "message", number>();
+  let questionCount = 0;
+  for (const door of calendar.doors) {
+    if (door.body.trim())
+      counts.set("message", (counts.get("message") ?? 0) + 1);
+    const blocks = doorBlockOrder(door).filter((block) => block !== "effect");
+    if (door.kind === "activity" && !blocks.includes("activity"))
+      blocks.push("activity");
+    for (const block of blocks) counts.set(block, (counts.get(block) ?? 0) + 1);
+    questionCount += questionsForDoor(door, calendar).length;
+  }
+  return {
+    counts: Object.fromEntries(counts) as Partial<
+      Record<DoorBlockKind | "message", number>
+    >,
+    questionCount,
+  };
 }
 export function createCalendar(
   input: {
