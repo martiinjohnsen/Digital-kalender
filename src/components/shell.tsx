@@ -44,6 +44,14 @@ export function Shell({ children }: { children: ReactNode }) {
   const pageName = path.startsWith("/calendar/")
     ? "Kalender"
     : (links.find((link) => link.href === active)?.name ?? "Luke");
+  const selectedId = path.match(/^\/calendar\/([^/]+)/)?.[1];
+  const selectedCalendar = data.calendars.find(
+    (calendar) => calendar.id === selectedId,
+  );
+  const palette =
+    !preview && selectedCalendar
+      ? ` calendar-palette theme-${selectedCalendar.theme}`
+      : "";
   return (
     <>
       <a className="skip-link" href="#main">
@@ -101,7 +109,9 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
         </aside>
       )}
-      <div className={preview ? "app-frame preview-frame" : "app-frame"}>
+      <div
+        className={preview ? "app-frame preview-frame" : `app-frame${palette}`}
+      >
         {!preview && (
           <header className="topbar">
             <Link href="/calendars" className="brand mobile-brand">

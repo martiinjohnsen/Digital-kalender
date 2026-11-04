@@ -1,25 +1,36 @@
 import {
+  correctChoices,
   isQuestionComplete,
+  isQuizResponseCorrect,
   questionsForDoor,
+  validQuizResponse,
   type AdventCalendar,
   type QuizQuestion,
+  type QuizResponse,
 } from "./model.ts";
-export interface QuizAttempt {
-  answer: number;
-}
+export type QuizAttempt = QuizResponse;
 export type QuizProgress = Record<string, QuizAttempt>;
 export function questionKey(
   day: number,
   index: number,
   question: QuizQuestion,
 ): string {
-  const value = JSON.stringify([
+  // Keep the original key for unchanged, single-answer questions in existing calendars.
+  const definition: unknown[] = [
     day,
     index,
     question.title,
     question.options,
     question.answerIndex,
-  ]);
+  ];
+  if (question.type === "text")
+    definition.push("text", question.acceptedAnswers);
+  else if (
+    JSON.stringify(correctChoices(question)) !==
+    JSON.stringify([question.answerIndex])
+  )
+    definition.push(correctChoices(question));
+  const value = JSON.stringify(definition);
   let hash = 2166136261;
   for (let i = 0; i < value.length; i++) {
     hash ^= value.charCodeAt(i);
@@ -28,20 +39,48 @@ export function questionKey(
   return `${day}-${index}-${(hash >>> 0).toString(36)}`;
 }
 export function parseQuizProgress(raw: string | null): QuizProgress {
-  if (!raw || raw.length > 40000) return {};
+  if (!raw || raw.length > 400000) return {};
   try {
     const value: unknown = JSON.parse(raw);
     if (!value || typeof value !== "object" || Array.isArray(value)) return {};
     return Object.fromEntries(
-      Object.entries(value).filter(
-        ([key, attempt]) =>
-          /^\d{1,2}-\d{1,2}-[a-z0-9]+$/.test(key) &&
-          attempt &&
-          typeof attempt === "object" &&
+      Object.entries(value).filter(([key, value]) => {
+        if (
+          !/^\d{1,2}-\d{1,2}-[a-z0-9]+$/.test(key) ||
+          !value ||
+          typeof value !== "object"
+        )
+          return false;
+        const attempt = value as QuizResponse;
+        const fields = [
+          attempt.answer !== undefined,
+          attempt.answers !== undefined,
+          attempt.text !== undefined,
+        ].filter(Boolean).length;
+        if (fields !== 1) return false;
+        if (attempt.text !== undefined)
+          return (
+            typeof attempt.text === "string" &&
+            attempt.text.trim().length > 0 &&
+            attempt.text.length <= 300
+          );
+        if (attempt.answers !== undefined)
+          return (
+            Array.isArray(attempt.answers) &&
+            attempt.answers.length > 0 &&
+            attempt.answers.length <= 12 &&
+            new Set(attempt.answers).size === attempt.answers.length &&
+            attempt.answers.every(
+              (answer) =>
+                Number.isInteger(answer) && answer >= 0 && answer < 12,
+            )
+          );
+        return (
           Number.isInteger(attempt.answer) &&
-          attempt.answer >= 0 &&
-          attempt.answer < 4,
-      ),
+          attempt.answer! >= 0 &&
+          attempt.answer! < 12
+        );
+      }),
     );
   } catch {
     return {};
@@ -70,10 +109,10 @@ export function quizSummary(
         if (door.day > available) return;
         unlocked++;
         const attempt = progress[questionKey(door.day, index, question)];
-        if (!attempt || attempt.answer >= question.options.length) return;
+        if (!attempt || !validQuizResponse(question, attempt)) return;
         answered++;
         dayAnswered++;
-        if (attempt.answer === question.answerIndex) {
+        if (isQuizResponseCorrect(question, attempt)) {
           correct++;
           dayCorrect++;
         }

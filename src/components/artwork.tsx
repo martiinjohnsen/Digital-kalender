@@ -58,7 +58,7 @@ export function Artwork({
     cabin = settings.house === "cabin";
   return (
     <svg
-      className={`artwork theme-${theme} ${className}`}
+      className={`artwork theme-${theme} ${settings.wind ? "has-wind" : ""} ${className}`}
       viewBox="0 0 600 380"
       fill="none"
       aria-hidden="true"
@@ -77,14 +77,19 @@ export function Artwork({
         fill="var(--scene-halo)"
         opacity=".42"
       />
-      {settings.sky !== "clear" && (
-        <g fill="#f9ead1" opacity=".65">
+      {(settings.sky !== "clear" || settings.twinkle) && (
+        <g
+          className={settings.twinkle ? "scene-twinkle" : ""}
+          fill="#f9ead1"
+          opacity=".8"
+        >
           {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
             <circle
               key={i}
               cx={35 + ((i * 73) % 530)}
               cy={30 + ((i * 37) % 165)}
-              r={i % 3 === 0 ? 1.6 : 1}
+              r={i % 3 === 0 ? 2.3 : 1.5}
+              style={{ animationDelay: `${-i * 0.9}s` }}
             />
           ))}
         </g>
@@ -117,143 +122,276 @@ export function Artwork({
           <Pine x={548} y={308} scale={0.72} />
         </g>
       )}
-      {cabin ? (
+      {["classic", "cabin", "townhouse"].includes(settings.house) && (
+        <>
+          {cabin ? (
+            <g>
+              <path d="m196 319 104-202 108 202Z" fill="#ead4b5" />
+              <path
+                d="m183 321 117-220 121 220"
+                stroke="var(--scene-roof)"
+                strokeWidth="17"
+                strokeLinejoin="round"
+              />
+              <path
+                d="m180 315 120-221 123 221"
+                stroke="#f7efdf"
+                strokeWidth="6"
+                strokeLinejoin="round"
+              />
+              <Window x={260} y={237} width={30} height={37} />
+              <Window x={317} y={237} width={30} height={37} />
+              <path
+                d="M290 320v-31a14 14 0 0 1 28 0v31Z"
+                fill="var(--scene-roof)"
+              />
+              <path d="M296 320v-31a8 8 0 0 1 16 0v31Z" fill="#e1ac74" />
+              <circle
+                cx="304"
+                cy="202"
+                r="15"
+                fill="#f1d18b"
+                stroke="var(--scene-roof)"
+                strokeWidth="5"
+              />
+              {settings.lights && (
+                <g fill="#ffe9b4">
+                  {Array.from({ length: 9 }, (_, i) => (
+                    <circle
+                      key={i}
+                      cx={210 + i * 23}
+                      cy={300 - Math.min(i, 8 - i) * 40}
+                      r="2.5"
+                    />
+                  ))}
+                </g>
+              )}
+            </g>
+          ) : (
+            <g>
+              <path
+                d={tall ? "M230 137h149v183H230Z" : "M206 175h193v145H206Z"}
+                fill="#ead4b6"
+              />
+              <path
+                d={tall ? "M231 138h16v181h-16Z" : "M207 176h14v144h-14Z"}
+                fill="#c7a488"
+                opacity=".55"
+              />
+              <path
+                d={tall ? "m211 144 93-68 94 68Z" : "m185 181 117-98 120 98Z"}
+                fill="var(--scene-roof)"
+              />
+              <path
+                d={tall ? "m209 141 95-70 96 70" : "m182 178 120-100 123 100"}
+                stroke="#f7efdf"
+                strokeWidth="10"
+                strokeLinejoin="round"
+              />
+              <path
+                d={tall ? "M348 106V67h19v53Z" : "M355 117V79h23v57Z"}
+                fill="var(--scene-roof)"
+              />
+              <path
+                d={tall ? "M344 67h27" : "M351 78h31"}
+                stroke="#f7efdf"
+                strokeWidth="6"
+                strokeLinecap="round"
+              />
+              {tall ? (
+                <>
+                  <Window x={250} y={161} width={35} height={41} />
+                  <Window x={322} y={161} width={35} height={41} />
+                  <Window x={250} y={227} width={35} height={41} />
+                  <Window x={322} y={227} width={35} height={41} />
+                  <path
+                    d="M293 320v-41a12 12 0 0 1 24 0v41Z"
+                    fill="var(--scene-roof)"
+                  />
+                  <path d="M297 320v-40a8 8 0 0 1 16 0v40Z" fill="#dfaa72" />
+                </>
+              ) : (
+                <>
+                  <circle
+                    cx="302"
+                    cy="149"
+                    r="21"
+                    fill="#f0cb83"
+                    stroke="var(--scene-roof)"
+                    strokeWidth="6"
+                  />
+                  <path
+                    d="M302 129v39m-19-19h38"
+                    stroke="var(--scene-roof)"
+                    strokeWidth="2.5"
+                  />
+                  <Window x={235} y={206} />
+                  <Window x={334} y={206} />
+                  <path
+                    d="M284 320v-55a19 19 0 0 1 38 0v55Z"
+                    fill="var(--scene-roof)"
+                  />
+                  <path d="M290 320v-55a13 13 0 0 1 26 0v55Z" fill="#dfa66d" />
+                  <circle cx="311" cy="285" r="2" fill="#fff3d7" />
+                </>
+              )}
+              <circle
+                cx="302"
+                cy="246"
+                r="71"
+                fill={`url(#glow${id})`}
+                opacity=".28"
+              />
+              {settings.lights && (
+                <g>
+                  <path
+                    d={tall ? "M230 146h148" : "M207 187h192"}
+                    stroke="var(--scene-tree)"
+                    strokeWidth="5"
+                    strokeLinecap="round"
+                  />
+                  {Array.from({ length: 9 }, (_, i) => (
+                    <circle
+                      key={i}
+                      cx={(tall ? 236 : 216) + i * (tall ? 17 : 22)}
+                      cy={(tall ? 147 : 188) + (i % 2) * 4}
+                      r="2.6"
+                      fill="#ffe3a0"
+                    />
+                  ))}
+                </g>
+              )}
+            </g>
+          )}
+        </>
+      )}
+      {settings.house === "park" && (
         <g>
-          <path d="m196 319 104-202 108 202Z" fill="#ead4b5" />
-          <path
-            d="m183 321 117-220 121 220"
-            stroke="var(--scene-roof)"
-            strokeWidth="17"
-            strokeLinejoin="round"
+          <ellipse
+            cx="303"
+            cy="325"
+            rx="100"
+            ry="11"
+            fill="var(--scene-roof)"
+            opacity=".09"
           />
           <path
-            d="m180 315 120-221 123 221"
-            stroke="#f7efdf"
+            d="M225 259v63m146-63v63M218 284h162M231 284v-55m136 55v-55"
+            stroke="var(--scene-tree)"
+            strokeWidth="7"
+            strokeLinecap="round"
+          />
+          {[233, 248, 263].map((y) => (
+            <rect
+              key={y}
+              x="220"
+              y={y}
+              width="158"
+              height="10"
+              rx="3"
+              fill="#c69c79"
+            />
+          ))}
+          <path
+            d="M220 284h158"
+            stroke="#fcf3e4"
+            strokeWidth="5"
+            strokeLinecap="round"
+          />
+          <path
+            d="M410 316V155m-15 0h30l-5-30h-20Z"
+            stroke="var(--scene-tree)"
             strokeWidth="6"
             strokeLinejoin="round"
           />
-          <Window x={260} y={237} width={30} height={37} />
-          <Window x={317} y={237} width={30} height={37} />
-          <path
-            d="M290 320v-31a14 14 0 0 1 28 0v31Z"
-            fill="var(--scene-roof)"
-          />
-          <path d="M296 320v-31a8 8 0 0 1 16 0v31Z" fill="#e1ac74" />
-          <circle
-            cx="304"
-            cy="202"
-            r="15"
-            fill="#f1d18b"
-            stroke="var(--scene-roof)"
-            strokeWidth="5"
-          />
+          <path d="M397 127h26l-4 25h-18Z" fill="#f2d593" />
+          <circle cx="410" cy="140" r="49" fill={`url(#glow${id})`} />
           {settings.lights && (
-            <g fill="#ffe9b4">
+            <g fill="#ffe7a5">
               {Array.from({ length: 9 }, (_, i) => (
                 <circle
                   key={i}
-                  cx={210 + i * 23}
-                  cy={300 - Math.min(i, 8 - i) * 40}
+                  cx={231 + i * 17}
+                  cy={227 + (i % 2) * 3}
                   r="2.5"
                 />
               ))}
             </g>
           )}
         </g>
-      ) : (
+      )}
+      {settings.house === "forest" && (
         <g>
+          <Pine x={244} y={286} scale={1.5} />
+          <Pine x={342} y={297} scale={1.85} />
+          <Pine x={417} y={298} scale={1.1} />
           <path
-            d={tall ? "M230 137h149v183H230Z" : "M206 175h193v145H206Z"}
-            fill="#ead4b6"
-          />
-          <path
-            d={tall ? "M231 138h16v181h-16Z" : "M207 176h14v144h-14Z"}
-            fill="#c7a488"
-            opacity=".55"
-          />
-          <path
-            d={tall ? "m211 144 93-68 94 68Z" : "m185 181 117-98 120 98Z"}
-            fill="var(--scene-roof)"
-          />
-          <path
-            d={tall ? "m209 141 95-70 96 70" : "m182 178 120-100 123 100"}
-            stroke="#f7efdf"
-            strokeWidth="10"
-            strokeLinejoin="round"
-          />
-          <path
-            d={tall ? "M348 106V67h19v53Z" : "M355 117V79h23v57Z"}
-            fill="var(--scene-roof)"
-          />
-          <path
-            d={tall ? "M344 67h27" : "M351 78h31"}
-            stroke="#f7efdf"
-            strokeWidth="6"
+            d="m192 243 26-2-13-19m90 3 23-2-13-22m31-48 14 2-11-24m50 92 16-1-8-15"
+            stroke="#eee9dc"
+            strokeWidth="5"
             strokeLinecap="round"
+            opacity=".85"
           />
-          {tall ? (
-            <>
-              <Window x={250} y={161} width={35} height={41} />
-              <Window x={322} y={161} width={35} height={41} />
-              <Window x={250} y={227} width={35} height={41} />
-              <Window x={322} y={227} width={35} height={41} />
-              <path
-                d="M293 320v-41a12 12 0 0 1 24 0v41Z"
-                fill="var(--scene-roof)"
-              />
-              <path d="M297 320v-40a8 8 0 0 1 16 0v40Z" fill="#dfaa72" />
-            </>
-          ) : (
-            <>
-              <circle
-                cx="302"
-                cy="149"
-                r="21"
-                fill="#f0cb83"
-                stroke="var(--scene-roof)"
-                strokeWidth="6"
-              />
-              <path
-                d="M302 129v39m-19-19h38"
-                stroke="var(--scene-roof)"
-                strokeWidth="2.5"
-              />
-              <Window x={235} y={206} />
-              <Window x={334} y={206} />
-              <path
-                d="M284 320v-55a19 19 0 0 1 38 0v55Z"
-                fill="var(--scene-roof)"
-              />
-              <path d="M290 320v-55a13 13 0 0 1 26 0v55Z" fill="#dfa66d" />
-              <circle cx="311" cy="285" r="2" fill="#fff3d7" />
-            </>
-          )}
-          <circle
-            cx="302"
-            cy="246"
-            r="71"
-            fill={`url(#glow${id})`}
-            opacity=".28"
+          <path
+            d="M286 300v-33m-9 0h18l-3 20h-12Z"
+            stroke="#aa8e68"
+            strokeWidth="3"
+            fill="#f1d497"
           />
+          <circle cx="286" cy="277" r="42" fill={`url(#glow${id})`} />
           {settings.lights && (
-            <g>
-              <path
-                d={tall ? "M230 146h148" : "M207 187h192"}
-                stroke="var(--scene-tree)"
-                strokeWidth="5"
-                strokeLinecap="round"
-              />
-              {Array.from({ length: 9 }, (_, i) => (
+            <g fill="#ffe7a5">
+              {Array.from({ length: 15 }, (_, i) => (
                 <circle
                   key={i}
-                  cx={(tall ? 236 : 216) + i * (tall ? 17 : 22)}
-                  cy={(tall ? 147 : 188) + (i % 2) * 4}
-                  r="2.6"
-                  fill="#ffe3a0"
+                  cx={309 + (i % 5) * 16}
+                  cy={180 + Math.floor(i / 5) * 32 + ((i % 5) % 2) * 7}
+                  r="2.5"
                 />
               ))}
             </g>
           )}
+        </g>
+      )}
+      {settings.house === "village" && (
+        <g>
+          {[
+            [220, 220, 0.75],
+            [309, 201, 1],
+            [395, 225, 0.72],
+          ].map(([x, y, scale], i) => (
+            <g key={i} transform={`translate(${x} ${y}) scale(${scale})`}>
+              <path
+                d="M-44 15h88v85h-88Z"
+                fill={i === 1 ? "#ead4b6" : "#d5b998"}
+              />
+              <path d="m-53 20 53-54 53 54Z" fill="var(--scene-roof)" />
+              <path
+                d="m-53 17 53-54 53 54"
+                stroke="#f8efdd"
+                strokeWidth="6"
+                strokeLinejoin="round"
+              />
+              <Window x={-30} y={37} width={20} height={25} />
+              <Window x={10} y={37} width={20} height={25} />
+              <path
+                d="M-9 100V75a9 9 0 0 1 18 0v25Z"
+                fill="var(--scene-roof)"
+              />
+              {settings.lights && (
+                <g fill="#ffe7a5">
+                  {Array.from({ length: 6 }, (_, j) => (
+                    <circle
+                      key={j}
+                      cx={-37 + j * 15}
+                      cy={23 + (j % 2) * 3}
+                      r="2.5"
+                    />
+                  ))}
+                </g>
+              )}
+            </g>
+          ))}
         </g>
       )}
       <path
@@ -263,27 +401,44 @@ export function Artwork({
         strokeLinecap="round"
       />
       {settings.snowman && (
-        <g transform="translate(151 295)">
-          <ellipse cy="12" rx="23" ry="25" fill="#f9f6ef" />
-          <circle cy="-17" r="16" fill="#fffaf2" />
-          <path d="m3-20 14 4-14 3Z" fill="#cb8c59" />
-          <circle cx="-5" cy="-22" r="1.7" fill="#5d4c65" />
-          <path d="M-12-3h26l-2 8h-23Z" fill="var(--scene-roof)" />
-          <path d="M9 2v16h7V3" fill="var(--scene-roof)" />
+        <g transform="translate(148 307)">
+          <ellipse
+            cy="22"
+            rx="25"
+            ry="5"
+            fill="var(--scene-roof)"
+            opacity=".1"
+          />
           <path
-            d="M-19 0-33-13m52 16 15-14"
-            stroke="#9e8065"
-            strokeWidth="2.7"
+            d="m-14-20-20-20m7 7-1-10m7 9-10 1m45 12 20-20m-7 7 1-10m-7 9 10 1"
+            stroke="#aa8665"
+            strokeWidth="2.5"
             strokeLinecap="round"
           />
+          <circle r="22" fill="#f6f3ed" />
+          <circle cy="-24" r="17" fill="#faf8f1" />
+          <circle cy="-47" r="13" fill="#fffaf2" />
           <path
-            d="M-17-32h34m-27 0v-16h20v16Z"
-            fill="var(--scene-tree)"
+            d="M-15-59h30m-24-1v-15H9v15"
             stroke="var(--scene-tree)"
             strokeWidth="3"
+            fill="var(--scene-tree)"
+            strokeLinejoin="round"
           />
-          <circle cy="13" r="2" fill="#7e6b84" />
-          <circle cy="23" r="2" fill="#7e6b84" />
+          <circle cx="-5" cy="-50" r="1.4" fill="#554657" />
+          <circle cx="3" cy="-50" r="1.4" fill="#554657" />
+          <path d="m2-46 15 3-15 3Z" fill="#ce925f" />
+          <path
+            d="m-5-40 3 1 3-1"
+            stroke="#806779"
+            strokeWidth="1.2"
+            strokeLinecap="round"
+          />
+          <path d="M-15-35q15 6 30 0v7q-15 5-30-1Z" fill="var(--scene-roof)" />
+          <path d="M8-29v18l7-3-1-18" fill="var(--scene-roof)" />
+          <circle cy="-22" r="2" fill="#756479" />
+          <circle cy="-10" r="2" fill="#756479" />
+          <circle cy="3" r="2" fill="#756479" />
         </g>
       )}
       {settings.reindeer && (
@@ -323,15 +478,34 @@ export function Artwork({
         <rect x="177" y="304" width="25" height="20" rx="2" fill="#bfa06d" />
         <path d="M188 304v20m-13-16h29" stroke="#f4ead4" strokeWidth="3" />
       </g>
+      {settings.wind && (
+        <g
+          className="scene-wind"
+          stroke="#fff5e2"
+          strokeWidth="2"
+          strokeLinecap="round"
+          opacity=".4"
+        >
+          <path d="M24 148h82q20 0 17-13t-16-1m-51 24h92q25 0 28-16" />
+          <path d="M427 211h78q16 0 17-11t-12-6m-63 31h101" />
+          <path d="M56 72h38q13 0 13-9m342 14h53q18 0 18-11" />
+        </g>
+      )}
       {settings.snowfall && (
-        <g className="scene-snowfall" fill="#fff7ef" opacity=".7">
-          {Array.from({ length: 20 }, (_, i) => (
+        <g
+          className={`scene-snowfall ${settings.wind ? "snow-in-wind" : ""}`}
+          fill="#fffaf1"
+        >
+          {Array.from({ length: 32 }, (_, i) => (
             <circle
               key={i}
-              cx={17 + ((i * 83) % 570)}
-              cy={14 + ((i * 47) % 293)}
-              r={i % 3 === 0 ? 2 : 1.3}
-              style={{ animationDelay: `${i * 0.2}s` }}
+              cx={10 + ((i * 83) % 580)}
+              cy={(i * 47) % 380}
+              r={i % 4 === 0 ? 2.7 : 1.6}
+              style={{
+                animationDelay: `${-i * 0.73}s`,
+                animationDuration: `${5 + (i % 5) * 0.8}s`,
+              }}
             />
           ))}
         </g>

@@ -17,10 +17,11 @@ npm run dev
 
 - Mine kalendere er startsiden, med oppretting, fremdrift, søk, sortering og filtrene Alle, Laget av meg og Delt med meg.
 - To steg for å opprette kalender: navn, mottaker, avsender og år, deretter utseende.
-- Ni fargetemaer, tre hus og valg for snømann, reinsdyr, grantrær, lys, snøfall og himmel. Kan endres i kalenderinnstillingene.
+- Ni fargetemaer og seks motiver: hus, hytte, byhus, vinterpark, granskog og juleby. Gjenstander og animasjoner velges separat, med snømann, reinsdyr, grantrær, lys, snøfall, vinterbris og blinkende stjerner. Kan endres under Utseende i kalenderinnstillingene.
 - 24 luker med tekst, komprimerte bilder, YouTube, HTTPS-lenker, opplevelser og manuelt innlagte gavekort.
+- Vedlegg er egne innholdsbokser. De kan fjernes, legges tilbake og dras i rekkefølge på mobil og datamaskin. Boksene krymper til overskrifter under draoperasjonen, og mottakeren ser den lagrede rekkefølgen. Håndtaket støtter også piltaster.
 - Gavekort har butikk, beløp, kode, innløsningslenke og utløpsdato. Ingen kjøps- eller leverandørintegrasjon foreløpig.
-- Valgfrie quizspørsmål inne i hver luke, også sammen med gavekort eller annet innhold. 2–4 svaralternativer, riktig svar og forklaring.
+- Valgfrie quizspørsmål inne i hver luke, også sammen med gavekort eller annet innhold. Inntil 12 svaralternativer, ett eller flere riktige svar, eller fritekstsvar med godkjente svarvarianter. Kommentarer vises med avsenders navn etter innsending.
 - Mottakerens quizoversikt viser besvart og riktig per dag. Fremdrift lagres lokalt. Eiers prøvesvar er adskilt fra mottakerens.
 - Døranimasjon med sentrert tall, valgfri snø, stjerner eller konfetti. Redusert bevegelse respekteres.
 - Datoåpning etter norsk tid. Fremtidige luker rister og viser lenke, lås og åpningsdato. En åpen luke har bare retur til kalenderen.
@@ -53,7 +54,7 @@ Vercel bygger automatisk fra main. Velg Next.js som rammeverk, roten av repoet s
 npm run check
 ```
 
-Dette kjører typekontroll, 19 automatiske tester og produksjonsbygg. Reglene for norsk midnatt, gavekort, spørsmål, bakoverkompatibilitet, delte kopier, quizpoeng, import og trygge lenker er testet.
+Dette kjører typekontroll, 26 automatiske tester og produksjonsbygg. Reglene for norsk midnatt, gavekort, spørsmål, bakoverkompatibilitet, delte kopier, quizpoeng, import og trygge lenker er testet.
 
 Se [prøveplan](docs/proveplan.md) og [videre utvikling](docs/neste-steg.md).
 

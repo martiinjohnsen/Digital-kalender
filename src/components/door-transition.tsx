@@ -32,9 +32,7 @@ export function DoorTransition({
       <div className="opening-glow" />
       <div className="door-flight" style={style}>
         <div className="opening-frame">
-          <div className="opening-light">
-            <Icon name="sparkles" size={48} />
-          </div>
+          <div className="opening-light" />
           <div className="opening-panel opening-left">
             <i />
           </div>

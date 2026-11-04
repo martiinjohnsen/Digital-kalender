@@ -14,6 +14,8 @@ import {
   isDoorComplete,
   sceneFor,
   kindInfo,
+  doorBlockOrder,
+  blockNames,
   questionsForDoor,
   type AdventCalendar,
   type Door,
@@ -207,27 +209,18 @@ export function CalendarEditor({ id }: { id: string }) {
                     </span>
                     <strong>{door.day}</strong>
                     <span className="door-type">
-                      <Icon
-                        name={
-                          partial
-                            ? door.kind === "activity" ||
-                              door.kind === "giftcard"
-                              ? "gift"
-                              : door.kind
-                            : "plus"
-                        }
-                        size={15}
-                      />
                       <span>
-                        {partial ? kindInfo[door.kind].name : "Legg til"}
+                        {partial
+                          ? door.contentOrder
+                            ? doorBlockOrder(door)
+                                .filter((block) => block !== "effect")
+                                .map((block) => blockNames[block])
+                                .slice(0, 2)
+                                .join(" · ") || "Hilsen"
+                            : kindInfo[door.kind].name
+                          : "Legg til"}
                       </span>
                     </span>
-                    {questionsForDoor(door, calendar).length > 0 &&
-                      door.kind !== "quiz" && (
-                        <span className="door-quiz-badge" title="Har quiz">
-                          <Icon name="quiz" size={12} />
-                        </span>
-                      )}
                   </button>
                 );
               })}
@@ -488,8 +481,9 @@ function CalendarSettings({
           )}
         </section>
         <section className="settings-card">
-          <h3>Uttrykk</h3>
+          <h3>Utseende</h3>
           <AppearancePicker
+            title={draft.title}
             value={{ theme: draft.theme, scene: draft.scene }}
             onChange={(value) => setDraft({ ...draft, ...value })}
           />

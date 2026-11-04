@@ -37,7 +37,7 @@ export default function InspirationPage() {
         {ideas.map((idea, index) =>
           filter === "all" || filter === idea.kind ? (
             <article
-              className={`idea-card ${idea.kind === "giftcard" ? "gift-idea" : ""}`}
+              className="idea-card uniform-idea-card"
               id={`idea-${index}`}
               key={idea.title}
             >
@@ -51,20 +51,6 @@ export default function InspirationPage() {
                 <h2>{idea.title}</h2>
                 <p>{idea.body}</p>
               </div>
-              {idea.kind === "giftcard" && (
-                <>
-                  <div className="gift-example">
-                    <span>EKSEMPEL · 4. DESEMBER</span>
-                    <strong>100 kr</strong>
-                    <span>Gavekort på matlevering</span>
-                    <Icon name="gift" size={35} />
-                  </div>
-                  <p className="field-help">
-                    Du kan legge inn egne gavekort nå. Direkte kjøp i Luke er
-                    ikke tilgjengelig ennå.
-                  </p>
-                </>
-              )}
             </article>
           ) : null,
         )}

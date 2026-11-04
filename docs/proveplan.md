@@ -2,13 +2,20 @@
 
 ## Utført 4. november 2026
 
-- Typekontroll, 19 automatiske tester og produksjonsbygg bestått.
+- Typekontroll, 26 automatiske tester og produksjonsbygg bestått.
 - Lokal Chrome: opprettet kalender med Nordlys, hytte, snømann og reinsdyr.
 - Lagret en luke med 100 kr testgavekort og quizspørsmål i samme luke.
 - Åpnet luka, viste gavekortkoden og svarte riktig på spørsmålet.
 - Lastet siden på nytt og verifiserte at svaret og poengsummen var bevart.
 - Slått av prøvemodus. Fremtidige luker forble låst. Klikk viste lenke, lås og melding med riktig dato.
 - Kontrollert mottakervisning i Chromes iPhone 16-emulering. Dette erstatter ikke testing på fysisk iPhone.
+- Kontrollert like inspirasjonskort, tydelige filterknapper, søkefelt og sorteringspil i lokal Chrome.
+- Kontrollert seks motiver og forhåndsvisninger med snømann, reinsdyr, snøfall, vind og blinkende stjerner.
+- Flyttet innholdsblokker med både drahåndtak og tastatur. Boksene krympet under dragging, og rekkefølgen og innholdet ble bevart etter lagring.
+- Lagt til en bildeblokk nederst, fjernet den og kontrollert at valget kunne legges tilbake.
+- Besvart et spørsmål med fem alternativer og to riktige svar, samt et spørsmål med skrevet svar. Begge ga riktig poengsum; avsenderkommentar og quizoversikt ble kontrollert.
+- Kontrollert kalenderens farger i redigeringssiden, lukeredigering og mottakervisning. Venstremenyen beholdt appens farger.
+- Kontrollert redigeringssiden og lukedialogen ved 393 pikslers bredde i Chromes iPhone 16-emulering.
 
 ## Videre kontroll
 

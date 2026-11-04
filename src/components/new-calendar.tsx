@@ -36,7 +36,12 @@ export function NewCalendar({ onClose }: { onClose: () => void }) {
     toast("Kalenderen er opprettet.");
   }
   return (
-    <Dialog title="Opprett kalender" onClose={onClose} wide={step === 1}>
+    <Dialog
+      title="Opprett kalender"
+      onClose={onClose}
+      wide={step === 1}
+      className={`theme-${appearance.theme} calendar-palette`}
+    >
       <div className="wizard">
         <div className="step-label">
           <span className={step === 0 ? "active" : "done"}>
@@ -44,7 +49,7 @@ export function NewCalendar({ onClose }: { onClose: () => void }) {
           </span>
           <i />
           <span className={step === 1 ? "active" : ""}>
-            2 <span>Velg uttrykk</span>
+            2 <span>Velg utseende</span>
           </span>
         </div>
         <form
@@ -121,7 +126,7 @@ export function NewCalendar({ onClose }: { onClose: () => void }) {
               type="submit"
               disabled={!title.trim()}
             >
-              {step === 0 ? "Velg uttrykk" : "Opprett kalender"}
+              {step === 0 ? "Velg utseende" : "Opprett kalender"}
               <Icon name={step === 0 ? "arrow" : "plus"} size={17} />
             </button>
           </div>

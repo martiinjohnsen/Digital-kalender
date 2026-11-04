@@ -22,7 +22,6 @@ export function CalendarCard({ calendar }: { calendar: AdventCalendar }) {
       >
         <Artwork theme={calendar.theme} scene={calendar.scene} />
         <span className="cover-stamp">DESEMBER {calendar.year}</span>
-        <span className="cover-title">{calendar.title}</span>
 
         <span className="card-state">
           {received

@@ -1,20 +1,24 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
-  kindInfo,
+  DOOR_BLOCKS,
+  blockNames,
+  doorBlockOrder,
+  removeDoorBlock,
   youtubeId,
   safeLink,
   isDoorComplete,
   questionsForDoor,
   type Door,
-  type DoorKind,
+  type DoorBlockKind,
   type AdventCalendar,
   type GiftCard,
 } from "@/lib/model";
 import { compressImage } from "@/lib/storage";
-import { Icon } from "./icons";
+import { Icon, type IconName } from "./icons";
 import { Dialog } from "./dialog";
 import { DoorQuestionsEditor, blankQuestion } from "./door-questions";
+import { ContentStack } from "./content-stack";
 const emptyGift = (): GiftCard => ({
   merchant: "",
   amount: 100,
@@ -25,11 +29,22 @@ const emptyGift = (): GiftCard => ({
 });
 function editorDraft(door: Door, calendar: AdventCalendar): Door {
   const draft = structuredClone(door);
+  draft.contentOrder = doorBlockOrder(door);
   draft.questions = questionsForDoor(door, calendar);
+  draft.kind = "message";
   delete draft.quiz;
   delete draft.showCalendarQuiz;
   return draft;
 }
+const blockIcons: Record<DoorBlockKind, IconName> = {
+  giftcard: "gift",
+  image: "image",
+  video: "video",
+  quiz: "quiz",
+  link: "external",
+  activity: "heart",
+  effect: "sparkles",
+};
 export function DoorEditor({
   door,
   calendar,
@@ -42,15 +57,18 @@ export function DoorEditor({
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState(() => editorDraft(door, calendar));
-  const baseline = useRef(JSON.stringify(editorDraft(door, calendar)));
+  const baseline = useRef(JSON.stringify(editorDraft(door, calendar))),
+    alive = useRef(true),
+    uploadToken = useRef(0),
+    stackAnchor = useRef<HTMLDivElement>(null);
   const [error, setError] = useState(""),
     [uploading, setUploading] = useState(false),
     [discard, setDiscard] = useState(false);
-  const alive = useRef(true);
   useEffect(() => {
     alive.current = true;
     return () => {
       alive.current = false;
+      uploadToken.current++;
     };
   }, []);
   useEffect(() => {
@@ -60,39 +78,65 @@ export function DoorEditor({
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [draft]);
-  function change(value: Partial<Door>) {
+  const order = doorBlockOrder(draft);
+  function change(patch: Partial<Door>) {
     setError("");
-    setDraft((previous) => ({ ...previous, ...value }));
-  }
-  function kind(value: DoorKind) {
-    change({
-      kind: value,
-      ...(value === "giftcard" && !draft.giftCard
-        ? { giftCard: emptyGift() }
-        : {}),
-      ...(value === "quiz" && !draft.questions?.length
-        ? { questions: [blankQuestion()] }
-        : {}),
-    });
+    setDraft((previous) => ({ ...previous, ...patch }));
   }
   function close() {
     if (JSON.stringify(draft) !== baseline.current) setDiscard(true);
     else onClose();
   }
+  function add(block: DoorBlockKind) {
+    const patch: Partial<Door> = { contentOrder: [...order, block] };
+    if (block === "giftcard") patch.giftCard = emptyGift();
+    if (block === "quiz") patch.questions = [blankQuestion()];
+    if (block === "image") patch.image = "";
+    if (block === "video") patch.videoUrl = "";
+    if (block === "link") patch.link = { label: "Åpne lenken", url: "" };
+    if (block === "activity") patch.activity = { title: "", body: "" };
+    if (block === "effect") patch.effect = "snow";
+    change(patch);
+    requestAnimationFrame(() =>
+      stackAnchor.current
+        ?.querySelector(`[data-block="${block}"]`)
+        ?.scrollIntoView({
+          block: "nearest",
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+            .matches
+            ? "instant"
+            : "smooth",
+        }),
+    );
+  }
+  function remove(block: DoorBlockKind) {
+    if (block === "image") {
+      uploadToken.current++;
+      setUploading(false);
+    }
+    setDraft((previous) => removeDoorBlock(previous, block));
+    setError("");
+  }
   async function upload(file?: File) {
     if (!file) return;
+    const token = ++uploadToken.current;
     setUploading(true);
     setError("");
     try {
       const image = await compressImage(file);
-      if (alive.current) change({ image });
-    } catch (err) {
-      if (alive.current)
+      if (alive.current && uploadToken.current === token)
+        setDraft((previous) =>
+          doorBlockOrder(previous).includes("image")
+            ? { ...previous, image }
+            : previous,
+        );
+    } catch (error) {
+      if (alive.current && uploadToken.current === token)
         setError(
-          err instanceof Error ? err.message : "Bildet kunne ikke åpnes.",
+          error instanceof Error ? error.message : "Bildet kunne ikke åpnes.",
         );
     } finally {
-      if (alive.current) setUploading(false);
+      if (alive.current && uploadToken.current === token) setUploading(false);
     }
   }
   function gift(patch: Partial<GiftCard>) {
@@ -104,198 +148,89 @@ export function DoorEditor({
       return;
     }
     if (draft.link?.url.trim() && !safeLink(draft.link.url)) {
-      setError("Lenken må begynne med https:// og være en gyldig nettadresse.");
+      setError("Bruk en gyldig nettadresse som begynner med https://.");
       return;
     }
     if (draft.giftCard?.url.trim() && !safeLink(draft.giftCard.url)) {
-      setError(
-        "Innløsningslenken på gavekortet må være en gyldig HTTPS-adresse.",
-      );
+      setError("Innløsningslenken må være en gyldig HTTPS-adresse.");
       return;
     }
-    const cleaned = { ...draft };
-    if (!cleaned.image) delete cleaned.image;
-    if (cleaned.link && !cleaned.link.url.trim()) delete cleaned.link;
-    if (cleaned.videoUrl) cleaned.videoUrl = cleaned.videoUrl.trim();
-    if (!cleaned.questions?.length) delete cleaned.questions;
-    onSave(cleaned);
+    onSave({ ...draft, contentOrder: order, videoUrl: draft.videoUrl?.trim() });
   }
-  return (
-    <Dialog
-      title={`Luke ${door.day} · ${door.day}. desember`}
-      onClose={close}
-      wide
-    >
-      <div className="door-editor">
-        <div className="kind-picker" aria-label="Velg innholdstype">
-          {(Object.keys(kindInfo) as DoorKind[]).map((value) => (
-            <button
-              type="button"
-              key={value}
-              className={draft.kind === value ? "selected" : ""}
-              aria-pressed={draft.kind === value}
-              onClick={() => kind(value)}
-            >
-              <Icon
-                name={
-                  value === "activity" || value === "giftcard" ? "gift" : value
-                }
-                size={21}
+  function renderBlock(block: DoorBlockKind): ReactNode {
+    switch (block) {
+      case "giftcard": {
+        const value = draft.giftCard ?? emptyGift();
+        return (
+          <>
+            <p className="field-help block-intro">
+              Legg inn et gavekort du allerede har. Direkte kjøp kommer senere.
+            </p>
+            <div className="form-row">
+              <label>
+                Butikk eller tjeneste
+                <input
+                  maxLength={100}
+                  placeholder="For eksempel Foodora"
+                  value={value.merchant}
+                  onChange={(event) => gift({ merchant: event.target.value })}
+                />
+              </label>
+              <label>
+                Beløp i kroner
+                <input
+                  type="number"
+                  min="0"
+                  max="1000000"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={value.amount}
+                  onChange={(event) =>
+                    gift({ amount: Number(event.target.value) })
+                  }
+                />
+              </label>
+            </div>
+            <label>
+              Gavekortkode
+              <input
+                maxLength={500}
+                autoComplete="off"
+                spellCheck={false}
+                value={value.code}
+                onChange={(event) => gift({ code: event.target.value })}
               />
-              <span>{kindInfo[value].name}</span>
-            </button>
-          ))}
-        </div>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            save();
-          }}
-        >
-          <label>
-            Overskrift
-            <input
-              autoFocus
-              maxLength={120}
-              placeholder={
-                draft.kind === "giftcard"
-                  ? "For eksempel: Middagen er på meg"
-                  : "Hva ligger bak luka?"
-              }
-              value={draft.title}
-              onChange={(event) => change({ title: event.target.value })}
-            />
-          </label>
-          {draft.giftCard && (
-            <section className="gift-card-editor">
-              <div className="gift-editor-heading">
-                <Icon name="gift" size={22} />
-                <h3>Gavekort</h3>
-                {draft.kind !== "giftcard" && (
-                  <button
-                    type="button"
-                    className="icon-button"
-                    aria-label="Fjern gavekort"
-                    onClick={() => change({ giftCard: undefined })}
-                  >
-                    <Icon name="close" size={16} />
-                  </button>
-                )}
-              </div>
-              <p className="field-help">
-                Legg inn et gavekort du allerede har. Direkte kjøp i Luke kommer
-                senere.
-              </p>
-              <div className="form-row">
-                <label>
-                  Butikk eller tjeneste
-                  <input
-                    maxLength={100}
-                    placeholder="For eksempel Foodora"
-                    value={draft.giftCard.merchant}
-                    onChange={(event) => gift({ merchant: event.target.value })}
-                  />
-                </label>
-                <label>
-                  Beløp i kroner
-                  <input
-                    type="number"
-                    min="0"
-                    max="1000000"
-                    step="0.01"
-                    inputMode="decimal"
-                    value={draft.giftCard.amount}
-                    onChange={(event) =>
-                      gift({
-                        amount:
-                          event.target.value === ""
-                            ? 0
-                            : Number(event.target.value),
-                      })
-                    }
-                  />
-                </label>
-              </div>
-              <label>
-                Gavekortkode
-                <span className="optional">Kode eller lenke må fylles ut</span>
-                <input
-                  autoComplete="off"
-                  spellCheck={false}
-                  maxLength={500}
-                  placeholder="Koden på gavekortet"
-                  value={draft.giftCard.code}
-                  onChange={(event) => gift({ code: event.target.value })}
-                />
-              </label>
-              <label>
-                Innløsningslenke
-                <input
-                  type="url"
-                  maxLength={2000}
-                  placeholder="https://…"
-                  value={draft.giftCard.url}
-                  onChange={(event) => gift({ url: event.target.value })}
-                />
-              </label>
-              <label>
-                Gyldig til<span className="optional">Valgfritt</span>
-                <input
-                  type="date"
-                  value={draft.giftCard.expiresOn}
-                  onChange={(event) => gift({ expiresOn: event.target.value })}
-                />
-              </label>
-            </section>
-          )}
-          {(draft.kind === "image" || draft.image !== undefined) && (
-            <div className="image-upload">
-              {draft.image ? (
-                <>
-                  <img
-                    src={draft.image}
-                    alt={draft.imageAlt || "Valgt bilde"}
-                  />
-                  <div>
-                    <label className="button secondary small-button">
-                      Bytt bilde
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        disabled={uploading}
-                        onChange={(event) => {
-                          void upload(event.target.files?.[0]);
-                          event.target.value = "";
-                        }}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      className="button text small-button"
-                      onClick={() => change({ image: undefined, imageAlt: "" })}
-                    >
-                      Fjern bilde
-                    </button>
-                  </div>
-                  <label>
-                    Bildebeskrivelse
-                    <span className="optional">For skjermlesere</span>
-                    <input
-                      maxLength={300}
-                      value={draft.imageAlt ?? ""}
-                      onChange={(event) =>
-                        change({ imageAlt: event.target.value })
-                      }
-                    />
-                  </label>
-                </>
-              ) : (
-                <label className="upload-drop">
-                  <Icon name="image" size={28} />
-                  <strong>
-                    {uploading ? "Behandler bildet …" : "Velg bilde"}
-                  </strong>
-                  <span>JPG, PNG eller WebP · maks 20 MB</span>
+            </label>
+            <label>
+              Innløsningslenke
+              <span className="optional">Kode eller lenke må fylles ut</span>
+              <input
+                type="url"
+                maxLength={2000}
+                placeholder="https://…"
+                value={value.url}
+                onChange={(event) => gift({ url: event.target.value })}
+              />
+            </label>
+            <label>
+              Gyldig til<span className="optional">Valgfritt</span>
+              <input
+                type="date"
+                value={value.expiresOn}
+                onChange={(event) => gift({ expiresOn: event.target.value })}
+              />
+            </label>
+          </>
+        );
+      }
+      case "image":
+        return (
+          <div className="image-upload">
+            {draft.image ? (
+              <>
+                <img src={draft.image} alt={draft.imageAlt || "Valgt bilde"} />
+                <label className="button secondary small-button">
+                  {uploading ? "Behandler bildet …" : "Bytt bilde"}
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
@@ -306,147 +241,223 @@ export function DoorEditor({
                     }}
                   />
                 </label>
-              )}
-            </div>
-          )}
-          {(draft.kind === "video" || draft.videoUrl !== undefined) && (
-            <label>
-              YouTube-lenke
-              <input
-                type="url"
-                maxLength={500}
-                placeholder="https://www.youtube.com/watch?v=…"
-                value={draft.videoUrl ?? ""}
-                onChange={(event) => change({ videoUrl: event.target.value })}
-              />
-            </label>
-          )}
-          <label>
-            Tekst<span className="optional">Valgfritt</span>
-            <textarea
-              rows={4}
-              maxLength={6000}
-              placeholder="En hilsen, en forklaring eller en liten overraskelse …"
-              value={draft.body}
-              onChange={(event) => change({ body: event.target.value })}
-            />
-          </label>
-          <div className="attachment-buttons">
-            {draft.kind !== "image" && draft.image === undefined && (
-              <button
-                className="button secondary small-button"
-                type="button"
-                onClick={() => change({ image: "" })}
-              >
-                <Icon name="image" size={15} />
-                Bilde
-              </button>
-            )}
-            {draft.kind !== "video" && draft.videoUrl === undefined && (
-              <button
-                className="button secondary small-button"
-                type="button"
-                onClick={() => change({ videoUrl: "" })}
-              >
-                <Icon name="video" size={15} />
-                Video
-              </button>
-            )}
-            {!draft.link && (
-              <button
-                className="button secondary small-button"
-                type="button"
-                onClick={() =>
-                  change({ link: { label: "Åpne lenken", url: "" } })
-                }
-              >
-                <Icon name="external" size={15} />
-                Lenke
-              </button>
-            )}
-            {!draft.questions?.length && (
-              <button
-                className="button secondary small-button"
-                type="button"
-                onClick={() => change({ questions: [blankQuestion()] })}
-              >
-                <Icon name="quiz" size={15} />
-                Legg til quiz
-              </button>
+                <label>
+                  Bildebeskrivelse
+                  <span className="optional">For skjermlesere</span>
+                  <input
+                    maxLength={300}
+                    value={draft.imageAlt ?? ""}
+                    onChange={(event) =>
+                      change({ imageAlt: event.target.value })
+                    }
+                  />
+                </label>
+              </>
+            ) : (
+              <label className="upload-drop">
+                <Icon name="image" size={26} />
+                <strong>
+                  {uploading ? "Behandler bildet …" : "Velg bilde"}
+                </strong>
+                <span>JPG, PNG eller WebP · maks 20 MB</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  disabled={uploading}
+                  onChange={(event) => {
+                    void upload(event.target.files?.[0]);
+                    event.target.value = "";
+                  }}
+                />
+              </label>
             )}
           </div>
-          {draft.link && (
-            <section className="link-editor">
-              <label>
-                Tekst på knappen
-                <input
-                  maxLength={100}
-                  value={draft.link.label}
-                  onChange={(event) =>
-                    change({
-                      link: { ...draft.link!, label: event.target.value },
-                    })
-                  }
-                />
-              </label>
-              <label>
-                Nettadresse
-                <input
-                  type="url"
-                  maxLength={2000}
-                  placeholder="https://…"
-                  value={draft.link.url}
-                  onChange={(event) =>
-                    change({
-                      link: { ...draft.link!, url: event.target.value },
-                    })
-                  }
-                />
-              </label>
-              <button
-                type="button"
-                className="text-link"
-                onClick={() => change({ link: undefined })}
-              >
-                Fjern lenke
-              </button>
-            </section>
-          )}
-          {Boolean(draft.questions?.length) && (
-            <DoorQuestionsEditor
-              value={draft.questions!}
-              onChange={(questions) => change({ questions })}
+        );
+      case "video":
+        return (
+          <label>
+            YouTube-lenke
+            <input
+              type="url"
+              maxLength={500}
+              placeholder="https://www.youtube.com/watch?v=…"
+              value={draft.videoUrl ?? ""}
+              onChange={(event) => change({ videoUrl: event.target.value })}
             />
-          )}
-          <details className="effect-disclosure">
-            <summary>
-              <Icon name="sparkles" size={17} />
-              Effekt når luka åpnes
-              <span>
-                {draft.effect === "snow"
-                  ? "Snø"
-                  : draft.effect === "sparkles"
-                    ? "Stjerner"
-                    : draft.effect === "confetti"
-                      ? "Konfetti"
-                      : "Ingen"}
-              </span>
-            </summary>
+          </label>
+        );
+      case "link":
+        return (
+          <>
             <label>
-              Velg effekt
-              <select
-                value={draft.effect ?? "none"}
+              Tekst på knappen
+              <input
+                maxLength={100}
+                value={draft.link?.label ?? ""}
                 onChange={(event) =>
-                  change({ effect: event.target.value as Door["effect"] })
+                  change({
+                    link: {
+                      url: draft.link?.url ?? "",
+                      label: event.target.value,
+                    },
+                  })
                 }
-              >
-                <option value="none">Ingen</option>
-                <option value="sparkles">Stjerner</option>
-                <option value="snow">Snøfall</option>
-                <option value="confetti">Konfetti</option>
-              </select>
+              />
             </label>
-          </details>
+            <label>
+              Nettadresse
+              <input
+                type="url"
+                maxLength={2000}
+                placeholder="https://…"
+                value={draft.link?.url ?? ""}
+                onChange={(event) =>
+                  change({
+                    link: {
+                      label: draft.link?.label ?? "Åpne lenken",
+                      url: event.target.value,
+                    },
+                  })
+                }
+              />
+            </label>
+          </>
+        );
+      case "quiz":
+        return (
+          <DoorQuestionsEditor
+            value={draft.questions ?? []}
+            onChange={(questions) => change({ questions })}
+          />
+        );
+      case "activity":
+        return (
+          <>
+            <label>
+              Navn på opplevelsen
+              <input
+                maxLength={120}
+                placeholder="For eksempel: Kakao og en vintertur"
+                value={draft.activity?.title ?? ""}
+                onChange={(event) =>
+                  change({
+                    activity: {
+                      title: event.target.value,
+                      body: draft.activity?.body ?? "",
+                    },
+                  })
+                }
+              />
+            </label>
+            <label>
+              Beskrivelse
+              <textarea
+                rows={3}
+                maxLength={3000}
+                placeholder="Hva skal dere gjøre?"
+                value={draft.activity?.body ?? ""}
+                onChange={(event) =>
+                  change({
+                    activity: {
+                      title: draft.activity?.title ?? "",
+                      body: event.target.value,
+                    },
+                  })
+                }
+              />
+            </label>
+          </>
+        );
+      case "effect":
+        return (
+          <div className="effect-options" aria-label="Velg åpningseffekt">
+            {(
+              [
+                ["none", "Ingen"],
+                ["snow", "Snøfall"],
+                ["sparkles", "Stjerner"],
+                ["confetti", "Konfetti"],
+              ] as const
+            ).map(([effect, label]) => (
+              <button
+                key={effect}
+                type="button"
+                className={draft.effect === effect ? "selected" : ""}
+                aria-pressed={(draft.effect ?? "none") === effect}
+                onClick={() => change({ effect })}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        );
+    }
+  }
+  return (
+    <Dialog
+      title={`Luke ${door.day} · ${door.day}. desember`}
+      onClose={close}
+      wide
+      className={`theme-${calendar.theme} calendar-palette`}
+    >
+      <div className="door-editor block-door-editor">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            save();
+          }}
+        >
+          <div className="door-fixed-fields">
+            <label>
+              Overskrift
+              <input
+                autoFocus
+                maxLength={120}
+                placeholder="Hva ligger bak luka?"
+                value={draft.title}
+                onChange={(event) => change({ title: event.target.value })}
+              />
+            </label>
+            <label>
+              Tekst<span className="optional">Valgfritt</span>
+              <textarea
+                rows={4}
+                maxLength={6000}
+                placeholder="En hilsen, en forklaring eller en liten overraskelse …"
+                value={draft.body}
+                onChange={(event) => change({ body: event.target.value })}
+              />
+            </label>
+          </div>
+          <div ref={stackAnchor}>
+            <ContentStack
+              order={order}
+              onOrderChange={(contentOrder) => change({ contentOrder })}
+              onRemove={remove}
+              renderBlock={renderBlock}
+            />
+          </div>
+          <div className="add-content-menu">
+            <h3>Legg til</h3>
+            <div>
+              {DOOR_BLOCKS.filter((block) => !order.includes(block)).map(
+                (block) => (
+                  <button
+                    key={block}
+                    type="button"
+                    className="button secondary small-button"
+                    onClick={() => add(block)}
+                  >
+                    <Icon name={blockIcons[block]} size={16} />
+                    {blockNames[block]}
+                  </button>
+                ),
+              )}
+            </div>
+            {order.length === DOOR_BLOCKS.length && (
+              <p className="field-help">Alle innholdstypene er lagt til.</p>
+            )}
+          </div>
           {error && (
             <p role="alert" className="form-error">
               {error}

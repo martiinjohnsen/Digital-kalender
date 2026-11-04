@@ -18,12 +18,31 @@ export function AppearancePicker({
   function scene(change: Partial<SceneSettings>) {
     onChange({ ...value, scene: { ...value.scene, ...change } });
   }
+  const groups = [
+    {
+      title: "Gjenstander",
+      options: [
+        ["snowman", "Snømann"],
+        ["reindeer", "Reinsdyr"],
+        ["trees", "Grantrær"],
+        ["lights", "Julelys"],
+      ] as const,
+    },
+    {
+      title: "Animasjoner",
+      options: [
+        ["snowfall", "Snøfall"],
+        ["wind", "Vinterbris"],
+        ["twinkle", "Blinkende stjerner"],
+      ] as const,
+    },
+  ];
   return (
     <div className="appearance-picker">
-      <div className="appearance-live">
+      <figure className="appearance-preview">
         <Artwork theme={value.theme} scene={value.scene} />
-        {title && <span>{title}</span>}
-      </div>
+        {title && <figcaption>{title}</figcaption>}
+      </figure>
       <fieldset className="appearance-fieldset">
         <legend>Farger</legend>
         <div className="color-options">
@@ -31,9 +50,7 @@ export function AppearancePicker({
             <button
               type="button"
               key={theme}
-              className={
-                value.theme === theme ? "color-option selected" : "color-option"
-              }
+              className={`color-option ${value.theme === theme ? "selected" : ""}`}
               aria-pressed={value.theme === theme}
               onClick={() => onChange({ ...value, theme })}
             >
@@ -46,36 +63,26 @@ export function AppearancePicker({
         </div>
       </fieldset>
       <fieldset className="appearance-fieldset">
-        <legend>Huset</legend>
+        <legend>Motiv</legend>
         <div className="house-options">
           {(
             [
               ["classic", "Hus"],
               ["cabin", "Hytte"],
               ["townhouse", "Byhus"],
+              ["park", "Vinterpark"],
+              ["forest", "Granskog"],
+              ["village", "Juleby"],
             ] as const
           ).map(([house, label]) => (
             <button
               type="button"
               key={house}
               aria-pressed={value.scene.house === house}
-              className={
-                value.scene.house === house
-                  ? "house-option selected"
-                  : "house-option"
-              }
+              className={`house-option ${value.scene.house === house ? "selected" : ""}`}
               onClick={() => scene({ house })}
             >
-              <Artwork
-                theme={value.theme}
-                scene={{
-                  ...value.scene,
-                  house,
-                  snowman: false,
-                  reindeer: false,
-                  snowfall: false,
-                }}
-              />
+              <Artwork theme={value.theme} scene={{ ...value.scene, house }} />
               <span>
                 {label}
                 {value.scene.house === house && <Icon name="check" size={14} />}
@@ -84,46 +91,59 @@ export function AppearancePicker({
           ))}
         </div>
       </fieldset>
+      {groups.map((group) => (
+        <fieldset key={group.title} className="appearance-fieldset">
+          <legend>{group.title}</legend>
+          <div className="scene-toggles">
+            {group.options.map(([key, label]) => (
+              <label className="scene-toggle" key={key}>
+                <span>{label}</span>
+                <span className="switch-label">
+                  <input
+                    type="checkbox"
+                    aria-label={label}
+                    checked={Boolean(value.scene[key])}
+                    onChange={(event) => scene({ [key]: event.target.checked })}
+                  />
+                  <span className="switch" />
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ))}
       <fieldset className="appearance-fieldset">
-        <legend>Legg til litt jul</legend>
-        <div className="scene-toggles">
+        <legend>Himmel</legend>
+        <div className="sky-options">
           {(
             [
-              ["snowman", "Snømann"],
-              ["reindeer", "Reinsdyr"],
-              ["trees", "Grantrær"],
-              ["lights", "Julelys"],
-              ["snowfall", "Snøfall"],
+              ["stars", "Stjernehimmel"],
+              ["moon", "Måneskinn"],
+              ["clear", "Rolig himmel"],
             ] as const
-          ).map(([key, label]) => (
-            <label className="scene-toggle" key={key}>
-              <span>{label}</span>
-              <span className="switch-label">
-                <input
-                  type="checkbox"
-                  aria-label={label}
-                  checked={value.scene[key]}
-                  onChange={(event) => scene({ [key]: event.target.checked })}
-                />
-                <span className="switch" />
+          ).map(([sky, label]) => (
+            <button
+              type="button"
+              key={sky}
+              aria-pressed={value.scene.sky === sky}
+              className={`sky-option ${value.scene.sky === sky ? "selected" : ""}`}
+              onClick={() => scene({ sky })}
+            >
+              <span className={`sky-swatch sky-${sky}`} aria-hidden="true">
+                {sky === "stars" ? (
+                  <Icon name="star" size={20} />
+                ) : sky === "moon" ? (
+                  <span className="moon-swatch" />
+                ) : (
+                  <span className="clear-swatch" />
+                )}
               </span>
-            </label>
+              <span>{label}</span>
+              {value.scene.sky === sky && <Icon name="check" size={14} />}
+            </button>
           ))}
         </div>
       </fieldset>
-      <label className="sky-choice">
-        Himmel
-        <select
-          value={value.scene.sky}
-          onChange={(event) =>
-            scene({ sky: event.target.value as SceneSettings["sky"] })
-          }
-        >
-          <option value="stars">Stjerner</option>
-          <option value="moon">Måneskinn</option>
-          <option value="clear">Rolig himmel</option>
-        </select>
-      </label>
     </div>
   );
 }

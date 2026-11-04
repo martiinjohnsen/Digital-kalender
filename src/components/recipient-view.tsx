@@ -5,6 +5,9 @@ import {
   availableDay,
   isDoorComplete,
   isQuestionComplete,
+  doorBlockOrder,
+  validQuizResponse,
+  type QuizResponse,
   questionsForDoor,
   youtubeId,
   safeLink,
@@ -23,6 +26,8 @@ import { Artwork } from "./artwork";
 import { BrandMark, Icon } from "./icons";
 import { useStore } from "./provider";
 import { Dialog } from "./dialog";
+import { DoorQuizPlayer } from "./door-quiz-player";
+import { QuizOverview } from "./quiz-overview";
 import {
   DoorTransition,
   Celebration,
@@ -135,19 +140,20 @@ export function RecipientView({
   function answerQuestion(
     index: number,
     question: QuizQuestion,
-    answer: number,
+    response: QuizResponse,
   ) {
-    if (day === null || day > limit) return;
+    if (day === null || day > limit || !validQuizResponse(question, response))
+      return;
     const key = questionKey(day, index, question);
     setState((previous) =>
       previous.answers[key]
         ? previous
-        : { ...previous, answers: { ...previous.answers, [key]: { answer } } },
+        : { ...previous, answers: { ...previous.answers, [key]: response } },
     );
   }
   return (
     <div
-      className={`recipient-view theme-${calendar.theme} ${data.preferences.snow ? "with-snow" : ""}`}
+      className={`recipient-view calendar-palette theme-${calendar.theme} ${data.preferences.snow ? "with-snow" : ""}`}
     >
       <header className="recipient-topbar">
         <Link href="/calendars" className="recipient-brand">
@@ -251,18 +257,13 @@ export function RecipientView({
                 className={`recipient-door ${opened.includes(door.day) && door.day <= limit ? "opened" : ""} ${door.day > limit ? "locked" : ""} ${lockedAttempt?.day === door.day ? "lock-attempt" : ""}`}
                 onClick={(event) => open(door, event.currentTarget)}
               >
-                <span className="door-snow" aria-hidden="true">
-                  <Icon name="sparkles" size={16} />
-                </span>
                 <strong>{door.day}</strong>
                 <span>
                   {opened.includes(door.day) && door.day <= limit ? (
                     <Icon name="check" size={15} />
                   ) : door.day > limit ? (
                     <Icon name="lock" size={14} />
-                  ) : (
-                    <Icon name="gift" size={15} />
-                  )}
+                  ) : null}
                 </span>
                 {lockedAttempt?.day === door.day && (
                   <span
@@ -307,43 +308,11 @@ export function RecipientView({
         />
       )}{" "}
       {quizOpen && (
-        <Dialog title="Quizoversikt" onClose={() => setQuizOpen(false)}>
-          <div className="dialog-content quiz-overview">
-            <div className="quiz-score">
-              <div>
-                <strong>{summary.correct}</strong>
-                <span>riktige</span>
-              </div>
-              <div>
-                <strong>{summary.answered}</strong>
-                <span>besvart av {summary.total}</span>
-              </div>
-            </div>
-            <p className="field-help">
-              Svar på spørsmålene inne i lukene. Svar og poeng lagres på denne
-              enheten.{owner && testMode ? " Dette er dine prøvesvar." : ""}
-            </p>
-            <div className="quiz-day-list">
-              {summary.days.map((item) => (
-                <div key={item.day}>
-                  <strong>{item.day}. desember</strong>
-                  {item.locked ? (
-                    <span>
-                      <Icon name="lock" size={14} />
-                      Åpner {item.day}. desember
-                    </span>
-                  ) : (
-                    <span>
-                      {item.answered === 0
-                        ? `${item.total} ubesvarte spørsmål`
-                        : `${item.correct} riktige · ${item.answered} av ${item.total} besvart`}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </Dialog>
+        <QuizOverview
+          summary={summary}
+          testMode={owner && testMode}
+          onClose={() => setQuizOpen(false)}
+        />
       )}
       {day !== null && day <= limit && (
         <DoorViewer
@@ -368,103 +337,81 @@ function DoorViewer({
   door: Door;
   calendar: AdventCalendar;
   answers: QuizProgress;
-  onAnswer: (index: number, question: QuizQuestion, answer: number) => void;
+  onAnswer: (
+    index: number,
+    question: QuizQuestion,
+    response: QuizResponse,
+  ) => void;
   onClose: () => void;
 }) {
-  const [play, setPlay] = useState(false);
-  const id = youtubeId(door.videoUrl ?? "");
-  const questions = questionsForDoor(door, calendar).filter(isQuestionComplete);
   return (
     <Dialog title={`${door.day}. desember`} onClose={onClose}>
-      <div className="door-reveal">
+      <div className="door-reveal ordered-door-reveal">
         <Celebration effect={door.effect} />
-        <div className="reveal-decoration" aria-hidden="true">
-          <Icon name="sparkles" size={25} />
-        </div>
         <h2>{door.title || "Denne luka er ikke ferdig ennå"}</h2>
         {!isDoorComplete(door) && (
           <p className="empty-door-message">Her kommer det mer innhold.</p>
         )}
-        {door.image && (
-          <img
-            className="reveal-image"
-            src={door.image}
-            alt={door.imageAlt || door.title || "Et bilde i kalenderen"}
-          />
-        )}{" "}
         {door.body && <p className="reveal-body">{door.body}</p>}
-        {door.giftCard && <GiftCardView gift={door.giftCard} />}{" "}
-        {id &&
-          (play ? (
-            <div className="video-frame">
-              <iframe
-                title={door.title}
-                src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1`}
-                allow="autoplay; encrypted-media; picture-in-picture"
-                allowFullScreen
-                referrerPolicy="strict-origin-when-cross-origin"
-              />
-            </div>
-          ) : (
-            <button className="video-consent" onClick={() => setPlay(true)}>
-              <Icon name="video" size={34} />
-              <strong>Spill av videoen</strong>
-              <small>Videoen lastes fra YouTube når du trykker.</small>
-            </button>
-          ))}
-        {questions.length > 0 && (
-          <section className="recipient-quiz">
-            <h3>
-              {questions.length === 1 ? "Dagens spørsmål" : "Dagens quiz"}
-            </h3>
-            {questions.map((question, index) => {
-              const attempt = answers[questionKey(door.day, index, question)];
-              return (
-                <div
-                  className="door-quiz-question"
-                  key={questionKey(door.day, index, question)}
-                >
-                  <h4>{question.title}</h4>
-                  {question.options.map((option, answer) => (
-                    <button
-                      key={answer}
-                      className={`quiz-answer ${attempt && answer === question.answerIndex ? "correct" : attempt?.answer === answer ? "incorrect" : ""}`}
-                      disabled={!!attempt}
-                      onClick={() => onAnswer(index, question, answer)}
-                    >
-                      <span>{String.fromCharCode(65 + answer)}</span>
-                      {option}
-                      {attempt && answer === question.answerIndex && (
-                        <Icon name="check" size={18} />
-                      )}
-                    </button>
-                  ))}
-                  {attempt && (
-                    <div className="quiz-feedback" role="status">
-                      <strong>
-                        {attempt.answer === question.answerIndex
-                          ? "Helt riktig!"
-                          : "Det riktige svaret er markert."}
-                      </strong>
-                      {question.explanation && <p>{question.explanation}</p>}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </section>
-        )}
-        {door.link && safeLink(door.link.url) && (
-          <a
-            className="button secondary reveal-link"
-            href={safeLink(door.link.url)!}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {door.link.label || "Åpne lenken"}
-            <Icon name="external" size={16} />
-          </a>
-        )}
+        <div className="revealed-blocks">
+          {doorBlockOrder(door).map((block) => {
+            switch (block) {
+              case "image":
+                return door.image ? (
+                  <img
+                    key={block}
+                    className="reveal-image"
+                    src={door.image}
+                    alt={door.imageAlt || door.title || "Et bilde i kalenderen"}
+                  />
+                ) : null;
+              case "giftcard":
+                return door.giftCard ? (
+                  <GiftCardView key={block} gift={door.giftCard} />
+                ) : null;
+              case "video":
+                return youtubeId(door.videoUrl ?? "") ? (
+                  <VideoBlock
+                    key={block}
+                    url={door.videoUrl!}
+                    title={door.title}
+                  />
+                ) : null;
+              case "link":
+                return door.link && safeLink(door.link.url) ? (
+                  <a
+                    key={block}
+                    className="button secondary reveal-link"
+                    href={safeLink(door.link.url)!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {door.link.label || "Åpne lenken"}
+                    <Icon name="external" size={16} />
+                  </a>
+                ) : null;
+              case "quiz":
+                return (
+                  <DoorQuizPlayer
+                    key={block}
+                    door={door}
+                    calendar={calendar}
+                    answers={answers}
+                    onAnswer={onAnswer}
+                  />
+                );
+              case "activity":
+                return door.activity ? (
+                  <section key={block} className="activity-reveal">
+                    <h3>{door.activity.title}</h3>
+                    <p>{door.activity.body}</p>
+                  </section>
+                ) : null;
+              default:
+                return null;
+            }
+          })}
+        </div>
         {calendar.sender && (
           <p className="reveal-sender">
             Fra {calendar.sender}
@@ -478,6 +425,27 @@ function DoorViewer({
         </div>
       </div>
     </Dialog>
+  );
+}
+function VideoBlock({ url, title }: { url: string; title: string }) {
+  const [play, setPlay] = useState(false);
+  const id = youtubeId(url);
+  return play ? (
+    <div className="video-frame">
+      <iframe
+        title={title}
+        src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1`}
+        allow="autoplay; encrypted-media; picture-in-picture"
+        allowFullScreen
+        referrerPolicy="strict-origin-when-cross-origin"
+      />
+    </div>
+  ) : (
+    <button className="video-consent" onClick={() => setPlay(true)}>
+      <Icon name="video" size={34} />
+      <strong>Spill av videoen</strong>
+      <small>Videoen lastes fra YouTube når du trykker.</small>
+    </button>
   );
 }
 function GiftCardView({ gift }: { gift: GiftCard }) {

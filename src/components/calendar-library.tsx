@@ -58,7 +58,9 @@ export function CalendarLibrary() {
               reindeer: false,
               trees: true,
               lights: true,
-              snowfall: false,
+              snowfall: true,
+              wind: true,
+              twinkle: true,
             }}
           />
         </div>
@@ -127,14 +129,17 @@ export function CalendarLibrary() {
               </button>
             )}
           </div>
-          <select
-            aria-label="Sorter kalendere"
-            value={sort}
-            onChange={(event) => setSort(event.target.value)}
-          >
-            <option value="newest">Sist endret</option>
-            <option value="name">Navn A–Å</option>
-          </select>
+          <div className="sort-control">
+            <select
+              aria-label="Sorter kalendere"
+              value={sort}
+              onChange={(event) => setSort(event.target.value)}
+            >
+              <option value="newest">Sist endret</option>
+              <option value="name">Navn A–Å</option>
+            </select>
+            <Icon name="chevron" size={16} />
+          </div>
         </div>
       </div>
       <div className="calendar-grid">

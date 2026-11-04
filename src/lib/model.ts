@@ -19,13 +19,15 @@ export type DoorKind =
   | "giftcard";
 export type DoorEffect = "none" | "snow" | "sparkles" | "confetti";
 export interface SceneSettings {
-  house: "classic" | "cabin" | "townhouse";
+  house: "classic" | "cabin" | "townhouse" | "park" | "forest" | "village";
   sky: "stars" | "moon" | "clear";
   snowman: boolean;
   reindeer: boolean;
   trees: boolean;
   lights: boolean;
   snowfall: boolean;
+  wind?: boolean;
+  twinkle?: boolean;
 }
 export const DEFAULT_SCENE: SceneSettings = {
   house: "classic",
@@ -35,6 +37,8 @@ export const DEFAULT_SCENE: SceneSettings = {
   trees: true,
   lights: true,
   snowfall: false,
+  wind: false,
+  twinkle: false,
 };
 export interface GiftCard {
   merchant: string;
@@ -45,6 +49,9 @@ export interface GiftCard {
   expiresOn: string;
 }
 export interface QuizQuestion {
+  type?: "choice" | "text";
+  correctAnswers?: number[];
+  acceptedAnswers?: string[];
   title: string;
   options: string[];
   answerIndex: number;
@@ -54,6 +61,30 @@ export interface CalendarQuiz {
   title: string;
   description: string;
   questions: QuizQuestion[];
+}
+export const DOOR_BLOCKS = [
+  "giftcard",
+  "image",
+  "video",
+  "link",
+  "quiz",
+  "activity",
+  "effect",
+] as const;
+export type DoorBlockKind = (typeof DOOR_BLOCKS)[number];
+export const blockNames: Record<DoorBlockKind, string> = {
+  giftcard: "Gavekort",
+  image: "Bilde",
+  video: "Video",
+  link: "Lenke",
+  quiz: "Quiz",
+  activity: "Opplevelse",
+  effect: "Åpningseffekt",
+};
+export interface QuizResponse {
+  answer?: number;
+  answers?: number[];
+  text?: string;
 }
 export interface Door {
   day: number;
@@ -69,6 +100,8 @@ export interface Door {
   showCalendarQuiz?: boolean;
   questions?: QuizQuestion[];
   giftCard?: GiftCard;
+  contentOrder?: DoorBlockKind[];
+  activity?: { title: string; body: string };
 }
 export interface AdventCalendar {
   id: string;
@@ -159,10 +192,14 @@ export function hasDoorContent(door: Door): boolean {
       door.link?.url ||
       door.showCalendarQuiz ||
       door.giftCard?.merchant ||
+      door.contentOrder?.length ||
+      door.activity?.title ||
+      door.activity?.body ||
       door.questions?.some(
         (question) =>
           question.title.trim() ||
-          question.options.some((option) => option.trim()),
+          question.options.some((option) => option.trim()) ||
+          question.acceptedAnswers?.some((answer) => answer.trim()),
       ) ||
       (door.effect && door.effect !== "none") ||
       door.quiz?.options.some((option) => option.trim()),
@@ -179,6 +216,14 @@ export function safeLink(value: string): string | null {
   }
 }
 export function isDoorComplete(door: Door): boolean {
+  if (door.contentOrder !== undefined) {
+    if (!door.title.trim()) return false;
+    const blocks = doorBlockOrder(door);
+    if (!blocks.every((block) => isBlockComplete(door, block))) return false;
+    return Boolean(
+      door.body.trim() || blocks.some((block) => block !== "effect"),
+    );
+  }
   if (!door.title.trim()) return false;
   if (door.questions?.some((question) => !isQuestionComplete(question)))
     return false;
@@ -294,36 +339,224 @@ function record(value: unknown): value is Record<string, unknown> {
 function string(value: unknown, max: number): value is string {
   return typeof value === "string" && value.length <= max;
 }
-export function isQuestionComplete(question: QuizQuestion): boolean {
-  return Boolean(
-    question.title.trim() &&
-      question.options.length >= 2 &&
-      question.options.every((option) => option.trim()) &&
-      question.answerIndex >= 0 &&
-      question.answerIndex < question.options.length,
+export function correctChoices(question: QuizQuestion): number[] {
+  return [...new Set(question.correctAnswers ?? [question.answerIndex])].sort(
+    (a, b) => a - b,
   );
 }
-function isQuestion(value: unknown): value is QuizQuestion {
-  return (
-    record(value) &&
-    string(value.title, 200) &&
-    Array.isArray(value.options) &&
-    value.options.length >= 2 &&
-    value.options.length <= 4 &&
-    value.options.every((option) => string(option, 180)) &&
-    Number.isInteger(value.answerIndex) &&
-    Number(value.answerIndex) >= 0 &&
-    Number(value.answerIndex) < value.options.length &&
-    string(value.explanation, 1000)
+export function normalizeAnswer(value: string): string {
+  return value
+    .normalize("NFKC")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("nb-NO");
+}
+export function isQuestionComplete(question: QuizQuestion): boolean {
+  if (!question.title.trim()) return false;
+  if (question.type === "text")
+    return Boolean(
+      question.acceptedAnswers?.length &&
+        question.acceptedAnswers.every((answer) => normalizeAnswer(answer)),
+    );
+  const correct = correctChoices(question);
+  return Boolean(
+    question.options.length >= 2 &&
+      question.options.every((option) => option.trim()) &&
+      correct.length &&
+      correct.every(
+        (index) =>
+          Number.isInteger(index) &&
+          index >= 0 &&
+          index < question.options.length,
+      ),
   );
+}
+export function validQuizResponse(
+  question: QuizQuestion,
+  response: QuizResponse,
+): boolean {
+  if (question.type === "text")
+    return (
+      typeof response.text === "string" &&
+      response.text.length <= 300 &&
+      Boolean(normalizeAnswer(response.text))
+    );
+  const answers =
+    response.answers ??
+    (response.answer !== undefined ? [response.answer] : []);
+  return (
+    answers.length > 0 &&
+    answers.length <= question.options.length &&
+    new Set(answers).size === answers.length &&
+    answers.every(
+      (index) =>
+        Number.isInteger(index) &&
+        index >= 0 &&
+        index < question.options.length,
+    )
+  );
+}
+export function isQuizResponseCorrect(
+  question: QuizQuestion,
+  response: QuizResponse,
+): boolean {
+  if (!validQuizResponse(question, response)) return false;
+  if (question.type === "text")
+    return Boolean(
+      question.acceptedAnswers?.some(
+        (answer) => normalizeAnswer(answer) === normalizeAnswer(response.text!),
+      ),
+    );
+  const selected = [...(response.answers ?? [response.answer!])].sort(
+    (a, b) => a - b,
+  );
+  return JSON.stringify(selected) === JSON.stringify(correctChoices(question));
+}
+function isQuestion(value: unknown): value is QuizQuestion {
+  if (
+    !record(value) ||
+    !string(value.title, 200) ||
+    !string(value.explanation, 1000) ||
+    !Array.isArray(value.options) ||
+    !value.options.every((option) => string(option, 180)) ||
+    !Number.isInteger(value.answerIndex)
+  )
+    return false;
+  if (
+    value.type !== undefined &&
+    !["choice", "text"].includes(String(value.type))
+  )
+    return false;
+  if (value.type === "text")
+    return (
+      value.options.length === 0 &&
+      value.answerIndex === 0 &&
+      Array.isArray(value.acceptedAnswers) &&
+      value.acceptedAnswers.length <= 20 &&
+      value.acceptedAnswers.every((answer) => string(answer, 300)) &&
+      value.correctAnswers === undefined
+    );
+  if (
+    value.options.length < 2 ||
+    value.options.length > 12 ||
+    Number(value.answerIndex) < 0 ||
+    Number(value.answerIndex) >= value.options.length
+  )
+    return false;
+  const optionCount = value.options.length;
+  return (
+    value.acceptedAnswers === undefined &&
+    (value.correctAnswers === undefined ||
+      (Array.isArray(value.correctAnswers) &&
+        value.correctAnswers.length <= value.options.length &&
+        new Set(value.correctAnswers).size === value.correctAnswers.length &&
+        value.correctAnswers.every(
+          (index) =>
+            Number.isInteger(index) &&
+            Number(index) >= 0 &&
+            Number(index) < optionCount,
+        )))
+  );
+}
+export function doorBlockOrder(door: Door): DoorBlockKind[] {
+  const inferred: DoorBlockKind[] = [];
+  if (
+    door.giftCard ||
+    (door.contentOrder === undefined && door.kind === "giftcard")
+  )
+    inferred.push("giftcard");
+  if (
+    door.image !== undefined ||
+    (door.contentOrder === undefined && door.kind === "image")
+  )
+    inferred.push("image");
+  if (
+    door.videoUrl !== undefined ||
+    (door.contentOrder === undefined && door.kind === "video")
+  )
+    inferred.push("video");
+  if (door.link) inferred.push("link");
+  if (
+    door.questions?.length ||
+    door.quiz ||
+    door.showCalendarQuiz ||
+    (door.contentOrder === undefined && door.kind === "quiz")
+  )
+    inferred.push("quiz");
+  if (door.activity) inferred.push("activity");
+  if (door.effect && door.effect !== "none") inferred.push("effect");
+  return [...new Set([...(door.contentOrder ?? []), ...inferred])];
+}
+export function moveDoorBlock(
+  order: DoorBlockKind[],
+  from: number,
+  to: number,
+): DoorBlockKind[] {
+  if (from < 0 || from >= order.length || to < 0 || to >= order.length)
+    return order;
+  const next = [...order];
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
+}
+export function removeDoorBlock(door: Door, block: DoorBlockKind): Door {
+  const next = {
+    ...door,
+    kind: "message" as const,
+    contentOrder: doorBlockOrder(door).filter((value) => value !== block),
+  };
+  if (block === "image") {
+    delete next.image;
+    delete next.imageAlt;
+  }
+  if (block === "video") delete next.videoUrl;
+  if (block === "link") delete next.link;
+  if (block === "quiz") {
+    delete next.questions;
+    delete next.quiz;
+    delete next.showCalendarQuiz;
+  }
+  if (block === "giftcard") delete next.giftCard;
+  if (block === "activity") delete next.activity;
+  if (block === "effect") delete next.effect;
+  return next;
+}
+function isBlockComplete(door: Door, block: DoorBlockKind): boolean {
+  switch (block) {
+    case "image":
+      return Boolean(door.image);
+    case "video":
+      return Boolean(youtubeId(door.videoUrl ?? ""));
+    case "link":
+      return Boolean(door.link && safeLink(door.link.url));
+    case "quiz": {
+      const questions = questionsForDoor(door);
+      return questions.length > 0 && questions.every(isQuestionComplete);
+    }
+    case "giftcard":
+      return Boolean(
+        door.giftCard?.merchant.trim() &&
+          door.giftCard.amount > 0 &&
+          (door.giftCard.code.trim() || safeLink(door.giftCard.url)),
+      );
+    case "activity":
+      return Boolean(door.activity?.title.trim() && door.activity.body.trim());
+    case "effect":
+      return true;
+  }
 }
 export function isScene(value: unknown): value is SceneSettings {
   return (
     record(value) &&
-    ["classic", "cabin", "townhouse"].includes(String(value.house)) &&
+    ["classic", "cabin", "townhouse", "park", "forest", "village"].includes(
+      String(value.house),
+    ) &&
     ["stars", "moon", "clear"].includes(String(value.sky)) &&
     ["snowman", "reindeer", "trees", "lights", "snowfall"].every(
       (key) => typeof value[key] === "boolean",
+    ) &&
+    ["wind", "twinkle"].every(
+      (key) => value[key] === undefined || typeof value[key] === "boolean",
     )
   );
 }
@@ -353,20 +586,7 @@ export function isCalendarQuiz(value: unknown): value is CalendarQuiz {
     Array.isArray(value.questions) &&
     value.questions.length >= 1 &&
     value.questions.length <= 30 &&
-    value.questions.every(
-      (q) =>
-        record(q) &&
-        string(q.title, 200) &&
-        Boolean(q.title.trim()) &&
-        Array.isArray(q.options) &&
-        q.options.length >= 2 &&
-        q.options.length <= 4 &&
-        q.options.every((o) => string(o, 180) && Boolean(o.trim())) &&
-        Number.isInteger(q.answerIndex) &&
-        Number(q.answerIndex) >= 0 &&
-        Number(q.answerIndex) < q.options.length &&
-        string(q.explanation, 1000),
-    )
+    value.questions.every((q) => isQuestion(q) && isQuestionComplete(q))
   );
 }
 export function isCalendar(value: unknown): value is AdventCalendar {
@@ -419,6 +639,23 @@ export function isCalendar(value: unknown): value is AdventCalendar {
       return false;
     seen.add(Number(door.day));
     if (
+      door.contentOrder !== undefined &&
+      (!Array.isArray(door.contentOrder) ||
+        door.contentOrder.length > DOOR_BLOCKS.length ||
+        new Set(door.contentOrder).size !== door.contentOrder.length ||
+        !door.contentOrder.every((block) =>
+          DOOR_BLOCKS.includes(block as DoorBlockKind),
+        ))
+    )
+      return false;
+    if (
+      door.activity !== undefined &&
+      (!record(door.activity) ||
+        !string(door.activity.title, 120) ||
+        !string(door.activity.body, 3000))
+    )
+      return false;
+    if (
       door.questions !== undefined &&
       (!Array.isArray(door.questions) ||
         door.questions.length > 32 ||
@@ -456,9 +693,10 @@ export function isCalendar(value: unknown): value is AdventCalendar {
     if (
       door.image !== undefined &&
       (!string(door.image, 800000) ||
-        !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(
-          door.image,
-        ))
+        (door.image !== "" &&
+          !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(
+            door.image,
+          )))
     )
       return false;
     if (door.imageAlt !== undefined && !string(door.imageAlt, 300))
@@ -474,7 +712,7 @@ export function isCalendar(value: unknown): value is AdventCalendar {
       (!record(door.link) ||
         !string(door.link.label, 100) ||
         !string(door.link.url, 2000) ||
-        !safeLink(door.link.url))
+        (door.link.url !== "" && !safeLink(door.link.url)))
     )
       return false;
     if (
