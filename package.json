@@ -1,0 +1,28 @@
+{
+  "name": "luke-advent",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack -p 3001",
+    "build": "next build --webpack",
+    "start": "next start -p 3001",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "check": "npm run typecheck && npm test && npm run build"
+  },
+  "dependencies": {
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "20.19.33",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "type": "module"
+}

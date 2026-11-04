@@ -1,0 +1,4 @@
+{
+  "folders": [{ "name": "Digital kalender · Luke", "path": "." }],
+  "settings": { "files.exclude": { "**/.next": true, "**/node_modules": true } }
+}
