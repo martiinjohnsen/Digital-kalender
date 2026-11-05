@@ -158,6 +158,7 @@ export function CalendarLibrary() {
           )}
         </div>
       )}
+      <footer className="field-help"><Link href="/privacy">Personvern</Link></footer>
     </div>
   );
 }
