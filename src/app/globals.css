@@ -8961,3 +8961,6 @@ input[type="radio"] {
   .walkthrough-caption { padding-top: 14px; }
   .inspiration-walkthrough { margin-bottom: 44px; }
 }
+
+/* Keep the editor example focused on its complete text and quiz blocks. */
+.example-screen .example-add { display: none; }
