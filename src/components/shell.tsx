@@ -8,6 +8,7 @@ import { useStore } from "./provider";
 import { InstallButton } from "./pwa";
 import { Dialog } from "./dialog";
 import { NewCalendar, startNew } from "./new-calendar";
+import { gettingStarted } from "@/lib/getting-started";
 const links: { href: string; name: string; mobile: string; icon: IconName }[] =
   [
     {
@@ -189,31 +190,16 @@ export function Shell({ children }: { children: ReactNode }) {
         <NewCalendar onClose={() => setNewCalendar(false)} />
       )}{" "}
       {help && (
-        <Dialog title="Slik bruker du Luke" onClose={() => setHelp(false)}>
+        <Dialog title={gettingStarted.title} onClose={() => setHelp(false)}>
           <div className="help-content">
-            {[
-              [
-                "calendar",
-                "1. Opprett en kalender",
-                "Logg inn med Google. Velg navn, mottaker og utseende på kalenderen.",
-              ],
-              [
-                "gift",
-                "2. Fyll lukene",
-                "Legg inn tekst, bilder, gavekort eller video. Quizspørsmål og effekter kan legges til i samme luke.",
-              ],
-              [
-                "eye",
-                "3. Forhåndsvis og del",
-                "Se kalenderen slik mottakeren vil se den. Del invitasjonen, så vises kalenderen på mottakerens konto.",
-              ],
-            ].map(([icon, title, body]) => (
+            <p className="dialog-intro">{gettingStarted.description}</p>
+            {gettingStarted.steps.map(({ icon, title, body }, index) => (
               <div className="help-step" key={title}>
                 <span className="soft-icon">
-                  <Icon name={icon as IconName} />
+                  <Icon name={icon} />
                 </span>
                 <div>
-                  <h3>{title}</h3>
+                  <h3>{index + 1}. {title}</h3>
                   <p>{body}</p>
                 </div>
               </div>

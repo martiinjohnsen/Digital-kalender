@@ -4,21 +4,18 @@ import { Artwork } from "@/components/artwork";
 import { Icon } from "@/components/icons";
 import { ideas } from "@/lib/templates";
 import { kindInfo } from "@/lib/model";
+import { gettingStarted } from "@/lib/getting-started";
 export default function InspirationPage() {
   const [filter, setFilter] = useState("all");
   return (
     <div className="page-enter inspiration-page">
       <section className="inspiration-walkthrough" aria-labelledby="walkthrough-title">
         <div className="walkthrough-heading">
-          <h1 id="walkthrough-title">Slik bruker du Luke</h1>
-          <p>Opprett kalenderen, fyll lukene og del den med noen du er glad i.</p>
+          <h1 id="walkthrough-title">{gettingStarted.title}</h1>
+          <p>{gettingStarted.description}</p>
         </div>
         <div className="walkthrough-grid">
-          {[
-            ["Opprett og velg utseende", "Gi kalenderen et navn, velg mottaker og finn fargene og vintermotivet som passer deg."],
-            ["Fyll lukene", "Legg inn en hilsen, et bilde, en quiz eller en liten overraskelse. Du bestemmer innholdet."],
-            ["Forhåndsvis og del", "Se gjennom kalenderen du har fylt, og send en invitasjon. Mottakeren logger inn og åpner én luke om dagen."],
-          ].map(([title, body], index) => (
+          {gettingStarted.steps.map(({ title, body }, index) => (
             <article className="walkthrough-card" key={title}>
               <div className="walkthrough-screen" role="img" aria-label={`Eksempel: ${title}`}>
                 <ExampleScreen step={index} />

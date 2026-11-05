@@ -13,15 +13,14 @@ import {
   safeLink,
   type AdventCalendar,
   type Door,
-  type GiftCard,
   type QuizQuestion,
 } from "@/lib/model";
 import {
-  parseQuizProgress,
   questionKey,
   quizSummary,
   type QuizProgress,
 } from "@/lib/quiz-progress";
+import { readLocalProgress, writeLocalProgress } from "@/lib/local-progress";
 import { Artwork } from "./artwork";
 import { BrandMark, Icon } from "./icons";
 import { useStore } from "./provider";
@@ -29,7 +28,8 @@ import { useAccount } from "./account-provider";
 import { authMessage } from "@/lib/cloud/client";
 import { Dialog } from "./dialog";
 import { DoorQuizPlayer } from "./door-quiz-player";
-import { QuizOverview } from "./quiz-overview";
+import { CalendarOverview } from "./calendar-overview";
+import { GiftCardView, VideoBlock } from "./door-content";
 import {
   DoorTransition,
   Celebration,
@@ -53,7 +53,7 @@ export function RecipientView({
   const [testMode, setTestMode] = useState(owner),
     [day, setDay] = useState<number | null>(null),
     [now, setNow] = useState(() => new Date()),
-    [quizOpen, setQuizOpen] = useState(false),
+    [overviewOpen, setOverviewOpen] = useState(false),
     [transitionDay, setTransitionDay] = useState<number | null>(null),
     [origin, setOrigin] = useState<DoorOrigin>(),
     [lockedAttempt, setLockedAttempt] = useState<{
@@ -61,41 +61,42 @@ export function RecipientView({
       nonce: number;
     } | null>(null);
   const storageKey = `luke:progress:${account.user ? account.user.id + ":" : ""}${calendar.receivedSourceId ?? calendar.id}:${calendar.year}:${owner ? (testMode ? "test" : "owner-date") : "recipient"}`;
+  const preferenceKey = `luke:preview-saving:${account.user?.id ?? "local"}:${calendar.id}:${calendar.year}`;
+  const [previewSaving, setPreviewSaving] = useState({ key: "", save: false });
+  const savePreviewProgress = previewSaving.key === preferenceKey && previewSaving.save;
+  const rememberProgress = !owner || savePreviewProgress;
+  const progressKey = `${storageKey}:${rememberProgress ? "saved" : "temporary"}`;
   const [state, setState] = useState<{
     key: string;
     opened: number[];
     answers: QuizProgress;
   }>({ key: "", opened: [], answers: {} });
   useEffect(() => {
+    if (!owner) return;
+    let save = false;
+    try { save = localStorage.getItem(preferenceKey) === "true"; } catch { /* Use a fresh preview. */ }
+    setPreviewSaving({ key: preferenceKey, save });
+  }, [owner, preferenceKey]);
+  useEffect(() => {
     if (remote) return;
-    let opened: number[] = [];
-    let answers: QuizProgress = {};
+    let progress = { opened: [] as number[], answers: {} as QuizProgress };
     try {
-      const value: unknown = JSON.parse(
-        localStorage.getItem(`${storageKey}:doors`) ?? "[]",
-      );
-      if (Array.isArray(value))
-        opened = value.filter(
-          (v): v is number => Number.isInteger(v) && v >= 1 && v <= 24,
-        );
-      answers = parseQuizProgress(localStorage.getItem(`${storageKey}:quiz`));
+      progress = readLocalProgress(localStorage, storageKey, rememberProgress);
     } catch {
       /* Continue in memory when browser storage is unavailable. */
     }
-    setState({ key: storageKey, opened, answers });
-  }, [storageKey, remote]);
+    setState({ key: progressKey, ...progress });
+  }, [storageKey, progressKey, remote, rememberProgress]);
   useEffect(() => {
-    if (remote) return;
-    if (state.key !== storageKey) return;
+    if (remote || !rememberProgress || state.key !== progressKey) return;
     try {
-      localStorage.setItem(`${storageKey}:doors`, JSON.stringify(state.opened));
-      localStorage.setItem(`${storageKey}:quiz`, JSON.stringify(state.answers));
+      writeLocalProgress(localStorage, storageKey, state, rememberProgress);
     } catch {
       toast(
         "Fremdriften kunne ikke lagres på enheten. Den beholdes mens siden er åpen.",
       );
     }
-  }, [state, storageKey, toast, remote]);
+  }, [state, storageKey, progressKey, toast, remote, rememberProgress]);
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 15000);
     return () => clearInterval(timer);
@@ -117,12 +118,12 @@ export function RecipientView({
         : availableDay(calendar.year, now);
   const opened = remote
     ? (store.progress[calendar.id]?.opened ?? [])
-    : state.key === storageKey
+    : state.key === progressKey
       ? state.opened
       : [];
   const answers = remote
     ? (store.progress[calendar.id]?.answers ?? {})
-    : state.key === storageKey
+    : state.key === progressKey
       ? state.answers
       : {};
   const summary = quizSummary(calendar, answers, limit);
@@ -130,7 +131,7 @@ export function RecipientView({
     if (
       transitionDay !== null ||
       day !== null ||
-      (!remote && state.key !== storageKey)
+      (!remote && state.key !== progressKey)
     )
       return;
     if (door.day > limit) {
@@ -145,10 +146,10 @@ export function RecipientView({
       setOrigin(
         rect
           ? {
-              x: rect.x + rect.width / 2,
-              y: rect.y + rect.height / 2,
-              width: rect.width,
-            }
+            x: rect.x + rect.width / 2,
+            y: rect.y + rect.height / 2,
+            width: rect.width,
+          }
           : undefined,
       );
       setTransitionDay(door.day);
@@ -222,15 +223,38 @@ export function RecipientView({
             <Icon name="eye" size={16} />
             Forhåndsvisning
           </span>
-          <label className="switch-label">
-            <input
-              type="checkbox"
-              checked={testMode}
-              onChange={(event) => setTestMode(event.target.checked)}
-            />
-            <span className="switch" />
-            Åpne alle luker
-          </label>
+          <div className="preview-options">
+            <label className="switch-label">
+              <input
+                type="checkbox"
+                checked={testMode}
+                onChange={(event) => setTestMode(event.target.checked)}
+              />
+              <span className="switch" />
+              Åpne alle luker
+            </label>
+            <label className="switch-label" title="Gjelder bare dine egne prøvesvar og åpnede luker.">
+              <input
+                type="checkbox"
+                checked={savePreviewProgress}
+                onChange={(event) => {
+                  const save = event.target.checked;
+                  setPreviewSaving({ key: preferenceKey, save });
+                  try { localStorage.setItem(preferenceKey, String(save)); } catch {
+                    toast("Valget brukes nå, men kunne ikke lagres til neste besøk.");
+                  }
+                }}
+              />
+              <span className="switch" />
+              Lagre fremdrift
+            </label>
+            {!savePreviewProgress && (opened.length > 0 || Object.keys(answers).length > 0) && (
+              <button
+                className="button secondary small-button preview-reset"
+                onClick={() => setState({ key: progressKey, opened: [], answers: {} })}
+              >Start på nytt</button>
+            )}
+          </div>
         </div>
       )}
       <section className="recipient-content" aria-label="Kalenderen">
@@ -247,23 +271,19 @@ export function RecipientView({
         <div className="recipient-illustration">
           <Artwork theme={calendar.theme} scene={calendar.scene} />
         </div>
-        {summary.total > 0 && (
-          <button
-            className="recipient-quiz-card"
-            onClick={() => setQuizOpen(true)}
-          >
-            <span className="quiz-card-icon">
-              <Icon name="quiz" size={24} />
-            </span>
-            <span>
-              <strong>Quizoversikt</strong>
-              <span>
-                {summary.answered} besvart · {summary.correct} riktige
-              </span>
-            </span>
-            <Icon name="arrow" size={18} />
-          </button>
-        )}
+        <button
+          className="recipient-quiz-card recipient-overview-card"
+          onClick={() => setOverviewOpen(true)}
+        >
+          <span className="quiz-card-icon">
+            <Icon name="calendar" size={24} />
+          </span>
+          <span>
+            <strong>Kalenderoversikt</strong>
+            <span>Alt du har fått i kalenderen, samlet på ett sted.</span>
+          </span>
+          <Icon name="arrow" size={18} />
+        </button>
         <div className="recipient-grid-intro">
           <span>
             {owner && testMode
@@ -338,12 +358,20 @@ export function RecipientView({
           onComplete={finishOpening}
         />
       )}{" "}
-      {quizOpen && (
-        <QuizOverview
+      {overviewOpen && (
+        <CalendarOverview
+          calendar={calendar}
+          opened={opened}
+          available={limit}
           summary={summary}
           testMode={owner && testMode}
           cloud={remote}
-          onClose={() => setQuizOpen(false)}
+          rememberProgress={rememberProgress}
+          onClose={() => setOverviewOpen(false)}
+          onOpenDoor={(value) => {
+            setOverviewOpen(false);
+            setDay(value);
+          }}
         />
       )}
       {day !== null && day <= limit && (
@@ -530,86 +558,5 @@ function DoorViewer({
         </div>
       </div>
     </Dialog>
-  );
-}
-function VideoBlock({ url, title }: { url: string; title: string }) {
-  const [play, setPlay] = useState(false);
-  const id = youtubeId(url);
-  return play ? (
-    <div className="video-frame">
-      <iframe
-        title={title}
-        src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1`}
-        allow="autoplay; encrypted-media; picture-in-picture"
-        allowFullScreen
-        referrerPolicy="strict-origin-when-cross-origin"
-      />
-    </div>
-  ) : (
-    <button className="video-consent" onClick={() => setPlay(true)}>
-      <Icon name="video" size={34} />
-      <strong>Spill av videoen</strong>
-      <small>Videoen lastes fra YouTube når du trykker.</small>
-    </button>
-  );
-}
-function GiftCardView({ gift }: { gift: GiftCard }) {
-  const [revealed, setRevealed] = useState(false);
-  const { toast } = useStore();
-  const expiry = gift.expiresOn
-    ? new Date(`${gift.expiresOn}T12:00:00Z`).toLocaleDateString("nb-NO")
-    : "";
-  return (
-    <section className="gift-card-reveal">
-      <Icon name="gift" size={30} />
-      <span>Gavekort</span>
-      <h3>{gift.merchant || "En liten gave"}</h3>
-      <strong className="gift-amount">
-        {gift.amount.toLocaleString("nb-NO")} kr
-      </strong>
-      {gift.code &&
-        (revealed ? (
-          <div className="gift-code">
-            <code>{gift.code}</code>
-            <button
-              className="icon-button"
-              aria-label="Kopier gavekortkode"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(gift.code);
-                  toast("Gavekortkoden er kopiert.");
-                } catch {
-                  toast("Marker og kopier koden manuelt.");
-                }
-              }}
-            >
-              <Icon name="copy" size={18} />
-            </button>
-          </div>
-        ) : (
-          <button
-            className="button secondary"
-            onClick={() => setRevealed(true)}
-          >
-            <Icon name="eye" size={17} />
-            Vis gavekortkode
-          </button>
-        ))}
-      {safeLink(gift.url) && (
-        <a
-          className="button primary"
-          href={safeLink(gift.url)!}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Åpne gavekortet
-          <Icon name="external" size={16} />
-        </a>
-      )}
-      {expiry && <p className="field-help">Utløpsdato: {expiry}</p>}
-      <p className="field-help">
-        Lagt inn av avsender. Vilkår og gyldighet følger gavekortet.
-      </p>
-    </section>
   );
 }

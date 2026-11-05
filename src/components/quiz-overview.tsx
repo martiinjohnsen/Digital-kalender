@@ -1,79 +1,78 @@
 import { quizSummary } from "@/lib/quiz-progress";
-import { Dialog } from "./dialog";
 import { Icon } from "./icons";
 export function QuizOverview({
   summary,
   testMode,
   cloud = false,
-  onClose,
+  rememberProgress = true,
 }: {
   summary: ReturnType<typeof quizSummary>;
   testMode: boolean;
   cloud?: boolean;
-  onClose: () => void;
+  rememberProgress?: boolean;
 }) {
   const percent = summary.total
     ? Math.round((summary.answered / summary.total) * 100)
     : 0;
   return (
-    <Dialog title="Quizoversikt" onClose={onClose}>
-      <div className="quiz-dashboard">
-        <dl className="quiz-overview-stats">
-          <div>
-            <dt>Riktige svar</dt>
-            <dd>{summary.correct}</dd>
-          </div>
-          <div>
-            <dt>Besvart</dt>
-            <dd>
-              {summary.answered}
-              <span> / {summary.total}</span>
-            </dd>
-          </div>
-        </dl>
-        <div className="quiz-total-progress">
-          <span>Fremdrift</span>
-          <strong>{percent} %</strong>
-          <progress
-            max={Math.max(summary.total, 1)}
-            value={summary.answered}
-            aria-label={`${summary.answered} av ${summary.total} spørsmål besvart`}
-          />
+    <div className="quiz-dashboard">
+      <dl className="quiz-overview-stats">
+        <div>
+          <dt>Riktige svar</dt>
+          <dd>{summary.correct}</dd>
         </div>
-        <div className="quiz-overview-days">
-          {summary.days.map((day) => (
-            <div
-              className={`quiz-overview-day ${day.locked ? "is-locked" : ""}`}
-              key={day.day}
-            >
-              <span className="quiz-day-number">{day.day}</span>
-              <div>
-                <strong>{day.day}. desember</strong>
-                <span>
-                  {day.locked
-                    ? `Åpner ${day.day}. desember`
-                    : `${day.answered} av ${day.total} besvart`}
-                </span>
-              </div>
-              <span className="quiz-day-result">
-                {day.locked ? (
-                  <Icon name="lock" size={16} />
-                ) : day.answered ? (
-                  `${day.correct} riktige`
-                ) : (
-                  "Ubesvart"
-                )}
+        <div>
+          <dt>Besvart</dt>
+          <dd>
+            {summary.answered}
+            <span> / {summary.total}</span>
+          </dd>
+        </div>
+      </dl>
+      <div className="quiz-total-progress">
+        <span>Fremdrift</span>
+        <strong>{percent} %</strong>
+        <progress
+          max={Math.max(summary.total, 1)}
+          value={summary.answered}
+          aria-label={`${summary.answered} av ${summary.total} spørsmål besvart`}
+        />
+      </div>
+      <div className="quiz-overview-days">
+        {summary.days.map((day) => (
+          <div
+            className={`quiz-overview-day ${day.locked ? "is-locked" : ""}`}
+            key={day.day}
+          >
+            <span className="quiz-day-number">{day.day}</span>
+            <div>
+              <strong>{day.day}. desember</strong>
+              <span>
+                {day.locked
+                  ? `Åpner ${day.day}. desember`
+                  : `${day.answered} av ${day.total} besvart`}
               </span>
             </div>
-          ))}
-        </div>
-        <p className="quiz-storage-note">
-          {testMode ? "Dette er dine prøvesvar. " : ""}
-          {cloud
+            <span className="quiz-day-result">
+              {day.locked ? (
+                <Icon name="lock" size={16} />
+              ) : day.answered ? (
+                `${day.correct} riktige`
+              ) : (
+                "Ubesvart"
+              )}
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="quiz-storage-note">
+        {testMode ? "Dette er dine prøvesvar. " : ""}
+        {!rememberProgress
+          ? "Prøvesvarene brukes bare i denne forhåndsvisningen."
+          : cloud
             ? "Svar og poeng lagres på kontoen din."
             : "Svar og poeng lagres på denne enheten."}
-        </p>
-      </div>
-    </Dialog>
+      </p>
+    </div>
   );
 }

@@ -18,58 +18,77 @@ export function CalendarCard({ calendar }: { calendar: AdventCalendar }) {
   const destination = `/calendar/${calendar.id}${received ? "/preview" : ""}`;
   return (
     <article className="calendar-card">
-      <Link
-        href={destination}
-        className={`calendar-cover theme-${calendar.theme}`}
-        aria-label={`Åpne ${calendar.title}`}
-      >
-        <Artwork theme={calendar.theme} scene={calendar.scene} fit="cover" />
-        <span className="cover-stamp">DESEMBER {calendar.year}</span>
+      <div className="calendar-card-visual">
+        <Link
+          href={destination}
+          className={`calendar-cover theme-${calendar.theme}`}
+          aria-label={`Åpne ${calendar.title}`}
+        >
+          <Artwork theme={calendar.theme} scene={calendar.scene} fit="cover" />
+          <span className="cover-stamp">DESEMBER {calendar.year}</span>
 
-        <span className="card-state">
-          {received
-            ? "Delt med meg"
-            : calendar.demo
-              ? "Eksempel"
-              : count === 24
-                ? "Alle luker fylt"
-                : "Underveis"}
-        </span>
-      </Link>
+          <span className="card-state">
+            {received
+              ? "Delt med meg"
+              : calendar.demo
+                ? "Eksempel"
+                : count === 24
+                  ? "Alle luker fylt"
+                  : "Underveis"}
+          </span>
+        </Link>
+        <details
+          className="card-menu"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.currentTarget.removeAttribute("open");
+              event.currentTarget.querySelector("summary")?.focus();
+            }
+          }}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget))
+              event.currentTarget.removeAttribute("open");
+          }}
+        >
+          <summary aria-label={`Flere valg for ${calendar.title}`}>
+            <Icon name="more" size={20} />
+          </summary>
+          <div>
+            {(!received || !calendar.remote) && (
+              <button
+                onClick={(event) => {
+                  const copy = ownerCopy(calendar);
+                  if (!add(copy)) return;
+                  event.currentTarget
+                    .closest("details")
+                    ?.removeAttribute("open");
+                  toast("En kopi av kalenderen er lagt til.");
+                }}
+              >
+                <Icon name="copy" size={16} />
+                Dupliser kalender
+              </button>
+            )}
+            <button
+              className="danger-text"
+              onClick={(event) => {
+                const menu = event.currentTarget.closest("details");
+                menu?.removeAttribute("open");
+                menu?.querySelector("summary")?.focus();
+                setConfirmDelete(true);
+              }}
+            >
+              <Icon name="trash" size={16} />
+              {received ? "Fjern fra mine kalendere" : "Slett kalender"}
+            </button>
+          </div>
+        </details>
+      </div>
       <div className="calendar-card-body">
         <div className="card-title-row">
           <h3>
             <Link href={destination}>{calendar.title}</Link>
           </h3>
-          <details className="card-menu">
-            <summary aria-label={`Flere valg for ${calendar.title}`}>
-              <Icon name="more" size={20} />
-            </summary>
-            <div>
-              {(!received || !calendar.remote) && (
-                <button
-                  onClick={(event) => {
-                    const copy = ownerCopy(calendar);
-                    if (!add(copy)) return;
-                    event.currentTarget
-                      .closest("details")
-                      ?.removeAttribute("open");
-                    toast("En kopi av kalenderen er lagt til.");
-                  }}
-                >
-                  <Icon name="copy" size={16} />
-                  Lag en kopi
-                </button>
-              )}
-              <button
-                className="danger-text"
-                onClick={() => setConfirmDelete(true)}
-              >
-                <Icon name="trash" size={16} />
-                {received ? "Fjern fra mine kalendere" : "Slett kalender"}
-              </button>
-            </div>
-          </details>
         </div>
         <p className="card-recipient">
           <Icon name="heart" size={13} />
@@ -132,9 +151,9 @@ export function CalendarCard({ calendar }: { calendar: AdventCalendar }) {
               <button
                 className="button danger"
                 onClick={() => {
-                  remove(calendar.id);
+                  if (!remove(calendar.id)) return;
                   setConfirmDelete(false);
-                  toast("Kalenderen er slettet.");
+                  toast(received ? "Kalenderen er fjernet fra dine kalendere." : "Kalenderen er slettet.");
                 }}
               >
                 {received ? "Fjern kalender" : "Slett kalender"}
