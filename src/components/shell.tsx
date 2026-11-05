@@ -195,7 +195,7 @@ export function Shell({ children }: { children: ReactNode }) {
               [
                 "calendar",
                 "1. Opprett en kalender",
-                "Logg inn eller opprett en konto. Velg navn, mottaker og utseende på kalenderen.",
+                "Logg inn med Google. Velg navn, mottaker og utseende på kalenderen.",
               ],
               [
                 "gift",
@@ -205,7 +205,7 @@ export function Shell({ children }: { children: ReactNode }) {
               [
                 "eye",
                 "3. Forhåndsvis og del",
-                "Prøv kalenderen, eller slå av Åpne alle luker for å se datolåsen.",
+                "Se kalenderen slik mottakeren vil se den. Del invitasjonen, så vises kalenderen på mottakerens konto.",
               ],
             ].map(([icon, title, body]) => (
               <div className="help-step" key={title}>

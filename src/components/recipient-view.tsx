@@ -47,7 +47,7 @@ export function RecipientView({
   saved?: boolean;
 }) {
   const store = useStore();
-  const { data, toast } = store;
+  const { toast } = store;
   const account = useAccount();
   const remote = !!calendar.remote && !owner;
   const [testMode, setTestMode] = useState(owner),
@@ -185,7 +185,7 @@ export function RecipientView({
   }
   return (
     <div
-      className={`recipient-view calendar-palette theme-${calendar.theme} ${data.preferences.snow ? "with-snow" : ""}`}
+      className={`recipient-view calendar-palette theme-${calendar.theme} with-snow`}
     >
       <header className="recipient-topbar">
         <Link href="/calendars" className="recipient-brand">
@@ -317,7 +317,9 @@ export function RecipientView({
         )}
         {!owner && (
           <p className="shared-note">
-            Kalenderen er en lagret kopi fra da delingslenken ble laget.
+            {remote
+              ? "Delt med deg. Nye endringer fra avsender vises automatisk."
+              : "Dette er en eldre kalenderkopi. Be avsenderen om en ny invitasjon for å få oppdateringer."}
           </p>
         )}
       </section>

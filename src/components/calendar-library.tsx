@@ -148,7 +148,7 @@ export function CalendarLibrary() {
               : search
               ? "Prøv et annet søk."
               : filter === "received"
-                ? "Kalendere du lagrer fra en delingslenke, vises her."
+                ? "Kalendere andre deler med kontoen din, vises her."
                 : "Opprett en kalender for å begynne."}
           </p>
           {!cloud && (

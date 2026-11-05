@@ -186,11 +186,11 @@ export function ShareDialog({
           }}
         >
           <Icon name="download" size={17} />
-          Last ned kalenderfil
+          Last ned sikkerhetskopi
         </button>
         <p className="field-help">
-          Kalenderfilen er din sikkerhetskopi. Den inneholder også luker som
-          ennå ikke har åpnet.
+          Kun til eget bruk. Del kalenderen med invitasjonen over. Sikkerhetskopien
+          inneholder også luker som ennå ikke har åpnet.
         </p>
       </div>
     </Dialog>
