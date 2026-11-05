@@ -40,7 +40,7 @@ export function NewCalendar({ onClose }: { onClose: () => void }) {
       title="Opprett kalender"
       onClose={onClose}
       wide={step === 1}
-      className={`theme-${appearance.theme} calendar-palette`}
+      className="new-calendar-dialog"
     >
       <div className="wizard">
         <div className="step-label">

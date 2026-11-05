@@ -19,11 +19,29 @@ export function Dialog({
   useEffect(() => {
     returnFocus.current = document.activeElement as HTMLElement;
     const dialog = ref.current;
+    const viewport = window.visualViewport;
+    const resize = () => {
+      dialog?.style.setProperty(
+        "--dialog-viewport-height",
+        `${viewport?.height ?? window.innerHeight}px`,
+      );
+      dialog?.style.setProperty(
+        "--dialog-viewport-top",
+        `${viewport?.offsetTop ?? 0}px`,
+      );
+    };
+    resize();
     dialog?.showModal();
+    viewport?.addEventListener("resize", resize);
+    viewport?.addEventListener("scroll", resize);
+    window.addEventListener("resize", resize);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       dialog?.close();
+      viewport?.removeEventListener("resize", resize);
+      viewport?.removeEventListener("scroll", resize);
+      window.removeEventListener("resize", resize);
       document.body.style.overflow = previousOverflow;
       returnFocus.current?.focus();
     };
