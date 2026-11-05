@@ -8860,3 +8860,27 @@ input[type="radio"] {
     display: none;
   }
 }
+
+/* Keep account actions readable at every screen width. */
+.topbar-right .topbar-login {
+  min-height: 40px;
+  padding: 0 18px;
+  color: var(--primary);
+  white-space: nowrap;
+}
+.google-login {
+  width: 100%;
+  min-height: 54px;
+  margin-top: 28px;
+  background: #fff;
+  gap: 12px;
+}
+.google-login svg { flex-shrink: 0; }
+.google-login-note {
+  margin: 16px 0 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.library-empty > .button { margin-top: 18px; }
