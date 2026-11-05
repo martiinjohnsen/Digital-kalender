@@ -79,9 +79,6 @@ export function GiftCardView({ gift }: { gift: GiftCard }) {
         </a>
       )}
       {expiry && <p className="field-help">Utløpsdato: {expiry}</p>}
-      <p className="field-help">
-        Lagt inn av avsender. Vilkår og gyldighet følger gavekortet.
-      </p>
     </section>
   );
 }

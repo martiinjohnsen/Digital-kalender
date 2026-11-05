@@ -1455,10 +1455,25 @@ input[type="radio"] {
     var(--dialog-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) -
       env(safe-area-inset-bottom, 0px) - 48px
   );
-  overflow: auto;
+  overflow: hidden;
   backdrop-filter: blur(30px) saturate(1.2);
   animation: dialog-centered-in 0.2s ease both;
   overscroll-behavior: contain;
+}
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.dialog-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.dialog-scroll:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -3px;
 }
 .dialog::backdrop {
   background: #32213d66;
@@ -1470,6 +1485,7 @@ input[type="radio"] {
 }
 .dialog-header {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   padding: 21px 27px;
@@ -2560,6 +2576,9 @@ input[type="radio"] {
   color: #a68cb7;
   margin-left: 10px;
 }
+.toast > svg,
+.toast > button { flex-shrink: 0; }
+.toast-message { min-width: 0; line-height: 1.6; }
 .offline-banner,
 .storage-warning {
   position: relative;
@@ -3680,8 +3699,10 @@ input[type="radio"] {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     bottom: 10px;
-    left: 14px;
-    right: 14px;
+    left: 50%;
+    right: auto;
+    width: calc(100% - 28px);
+    transform: translateX(-50%);
     margin-bottom: env(safe-area-inset-bottom, 0px);
     background: #fffaffc9;
     border: 1px solid #fffffff2;
@@ -3693,6 +3714,10 @@ input[type="radio"] {
     border-radius: 22px;
     height: 65px;
     padding: 6px;
+    transition:
+      width .32s cubic-bezier(.34,1.12,.64,1),
+      height .32s cubic-bezier(.34,1.12,.64,1),
+      border-radius .32s ease;
   }
   .bottom-nav > a {
     display: flex;
@@ -3704,6 +3729,7 @@ input[type="radio"] {
     color: #ac98b9;
     border: 1px solid transparent;
     border-radius: 16px;
+    transition: gap .25s ease, border-radius .25s ease;
   }
   .bottom-nav > a.active {
     background: #e6d9f091;
@@ -3714,6 +3740,31 @@ input[type="radio"] {
   .bottom-nav > a > svg {
     width: 20px;
     height: 20px;
+    flex-shrink: 0;
+    transition: width .25s ease, height .25s ease;
+  }
+  .bottom-nav > a > span {
+    max-height: 18px;
+    overflow: hidden;
+    opacity: 1;
+    transition: max-height .25s ease, opacity .18s ease;
+  }
+  .bottom-nav.is-compact:not(:has(a:focus-visible)) {
+    width: min(210px, calc(100% - 40px));
+    height: 52px;
+    border-radius: 19px;
+  }
+  .bottom-nav.is-compact:not(:has(a:focus-visible)) > a {
+    gap: 0;
+    border-radius: 13px;
+  }
+  .bottom-nav.is-compact:not(:has(a:focus-visible)) > a > svg {
+    width: 18px;
+    height: 18px;
+  }
+  .bottom-nav.is-compact:not(:has(a:focus-visible)) > a > span {
+    max-height: 0;
+    opacity: 0;
   }
   .collection-toolbar {
     margin-top: 22px;
@@ -3909,10 +3960,16 @@ input[type="radio"] {
     font-size: 10px;
   }
   .toast {
-    bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
     font-size: 11px;
     border-radius: 15px;
     animation: none;
+  }
+  body:has(.bottom-nav) .toast {
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  }
+  body:has(.bottom-nav.is-compact) .toast {
+    bottom: calc(75px + env(safe-area-inset-bottom, 0px));
   }
   .recipient-content {
     width: calc(100% - 44px);
@@ -5351,10 +5408,7 @@ input[type="radio"] {
 }
 .dialog-effects {
   position: absolute;
-  top: var(--dialog-scroll-top, 0px);
-  left: 0;
-  right: 0;
-  height: var(--dialog-effect-height, 100%);
+  inset: 0;
   z-index: 20;
   pointer-events: none;
   overflow: hidden;

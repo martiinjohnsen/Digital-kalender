@@ -59,11 +59,6 @@ export function Dialog({
       ref={ref}
       className={`dialog ${wide ? "dialog-wide" : ""} ${className}`}
       aria-label={title}
-      onScroll={(event) => {
-        event.currentTarget.style.setProperty(
-          "--dialog-scroll-top", `${event.currentTarget.scrollTop}px`,
-        );
-      }}
       onCancel={(event) => {
         event.preventDefault();
         onClose();
@@ -95,7 +90,9 @@ export function Dialog({
           <Icon name="close" />
         </button>
       </div>
-      {children}
+      <div className="dialog-scroll" tabIndex={0}>
+        {children}
+      </div>
       {overlay && <div className="dialog-effects">{overlay}</div>}
     </dialog>
   );

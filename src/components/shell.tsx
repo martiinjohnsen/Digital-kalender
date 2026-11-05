@@ -9,6 +9,7 @@ import { InstallButton } from "./pwa";
 import { Dialog } from "./dialog";
 import { NewCalendar, startNew } from "./new-calendar";
 import { gettingStarted } from "@/lib/getting-started";
+import { navigationScroll, type NavigationScroll } from "@/lib/mobile-navigation";
 const links: { href: string; name: string; mobile: string; icon: IconName }[] =
   [
     {
@@ -37,11 +38,47 @@ export function Shell({ children }: { children: ReactNode }) {
     { status, cloud, requireAccount } = useStore();
   const [newCalendar, setNewCalendar] = useState(false),
     [help, setHelp] = useState(false);
+  const [compactNav, setCompactNav] = useState(false);
   useLayoutEffect(() => {
     const top = () => window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     top();
     const frame = requestAnimationFrame(top);
     return () => cancelAnimationFrame(frame);
+  }, [path]);
+  useEffect(() => {
+    setCompactNav(false);
+    if (path.endsWith("/preview") || path === "/receive") return;
+    const mobile = window.matchMedia("(max-width: 760px)");
+    let scroll: NavigationScroll = {
+      y: Math.max(0, window.scrollY),
+      anchor: Math.max(0, window.scrollY),
+      direction: 0,
+      compact: false,
+    };
+    let frame = 0;
+    const reset = () => {
+      scroll = { y: Math.max(0, window.scrollY), anchor: Math.max(0, window.scrollY), direction: 0, compact: false };
+      setCompactNav(false);
+    };
+    const update = () => {
+      frame = 0;
+      if (!mobile.matches || document.querySelector("dialog[open]")) return;
+      const next = navigationScroll(
+        scroll, window.scrollY, document.documentElement.scrollHeight - window.innerHeight,
+      );
+      if (next.compact !== scroll.compact) setCompactNav(next.compact);
+      scroll = next;
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    mobile.addEventListener("change", reset);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      mobile.removeEventListener("change", reset);
+    };
   }, [path]);
   useEffect(() => {
     const listener = () => {
@@ -172,11 +209,12 @@ export function Shell({ children }: { children: ReactNode }) {
         </main>
       </div>
       {!preview && (
-        <nav className="bottom-nav" aria-label="Mobilmeny">
+        <nav className={`bottom-nav${compactNav ? " is-compact" : ""}`} aria-label="Mobilmeny">
           {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
+              aria-label={link.href === "/settings" && !user ? "Logg inn" : link.name}
               aria-current={active === link.href ? "page" : undefined}
               className={active === link.href ? "active" : ""}
             >

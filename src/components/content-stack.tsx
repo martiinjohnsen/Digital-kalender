@@ -108,14 +108,14 @@ export function ContentStack({
   }, []);
   useEffect(() => {
     if (!drag) return;
-    const dialog = root.current?.closest("dialog");
+    const scroller = root.current?.closest<HTMLElement>(".dialog-scroll");
     let frame: number;
     const scroll = () => {
-      if (dialog) {
-        const box = dialog.getBoundingClientRect(),
+      if (scroller) {
+        const box = scroller.getBoundingClientRect(),
           y = pointerY.current,
           direction = y < box.top + 110 ? -1 : y > box.bottom - 90 ? 1 : 0;
-        if (direction) dialog.scrollTop += direction * 7;
+        if (direction) scroller.scrollTop += direction * 7;
       }
       frame = requestAnimationFrame(scroll);
     };

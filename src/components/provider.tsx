@@ -589,7 +589,7 @@ export function Provider({ children }: { children: ReactNode }) {
       {notice && (
         <div className="toast" role="status">
           <Icon name="check" size={18} />
-          {notice}
+          <span className="toast-message">{notice}</span>
           <button aria-label="Lukk melding" onClick={() => setNotice("")}>
             <Icon name="close" size={16} />
           </button>
