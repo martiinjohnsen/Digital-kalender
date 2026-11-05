@@ -13,14 +13,14 @@ function openDatabase(): Promise<IDBDatabase> {
 }
 // Only this adapter needs replacing when a server-backed account is added.
 export const repository = {
-  async load(): Promise<AppData | null> {
+  async load(key = "data"): Promise<AppData | null> {
     const db = await openDatabase();
     try {
       return await new Promise((resolve, reject) => {
         const request = db
           .transaction(STORE, "readonly")
           .objectStore(STORE)
-          .get("data");
+          .get(key);
         request.onsuccess = () => {
           if (request.result === undefined) resolve(null);
           else {
@@ -37,12 +37,12 @@ export const repository = {
       db.close();
     }
   },
-  async save(data: AppData): Promise<void> {
+  async save(data: AppData, key = "data"): Promise<void> {
     const db = await openDatabase();
     try {
       await new Promise<void>((resolve, reject) => {
         const transaction = db.transaction(STORE, "readwrite");
-        transaction.objectStore(STORE).put(data, "data");
+        transaction.objectStore(STORE).put(data, key);
         transaction.oncomplete = () => resolve();
         transaction.onerror = () => reject(transaction.error);
         transaction.onabort = () => reject(transaction.error);
@@ -52,6 +52,37 @@ export const repository = {
     }
   },
 };
+// Separate keys prevent one account from loading another account's draft.
+// The guest workspace is preserved until its owner explicitly imports it.
+export async function loadRecord<T>(key: string): Promise<T | null> {
+  const db = await openDatabase();
+  try {
+    return await new Promise((resolve, reject) => {
+      const request = db
+        .transaction(STORE, "readonly")
+        .objectStore(STORE)
+        .get(key);
+      request.onsuccess = () => resolve(request.result ?? null);
+      request.onerror = () => reject(request.error);
+    });
+  } finally {
+    db.close();
+  }
+}
+export async function saveRecord(key: string, value: unknown): Promise<void> {
+  const db = await openDatabase();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).put(value, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  } finally {
+    db.close();
+  }
+}
 export function downloadJson(value: unknown, filename: string): void {
   const url = URL.createObjectURL(
     new Blob([JSON.stringify(value, null, 2)], { type: "application/json" }),

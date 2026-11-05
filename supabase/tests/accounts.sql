@@ -1,0 +1,77 @@
+-- Disposable fixtures only. Everything, including auth users, is rolled back.
+begin;
+insert into auth.users(id,email) values ('fa000000-0000-4000-8000-000000000001','owner@luke.example'),('fa000000-0000-4000-8000-000000000002','recipient@luke.example'),('fa000000-0000-4000-8000-000000000003','stranger@luke.example');
+create temporary table luke_test_vars(k text primary key,v text);
+grant select,insert,update on luke_test_vars to authenticated;
+select set_config('request.jwt.claim.sub','fa000000-0000-4000-8000-000000000001',true);
+set local role authenticated;
+select public.save_luke_workspace($fixture$[{"document": {"id": "test-luke-past", "title": "Testkalender", "description": "Test", "recipient": "Mottaker", "sender": "Avsender", "year": 2025, "theme": "advent", "access": "owner", "createdAt": "2025-11-01T00:00:00Z", "updatedAt": "2025-11-01T00:00:00Z", "quizCounts": {"1": 2}, "doors": [{"day": 1, "kind": "message", "title": "", "body": "Hilsen", "giftCard": {"merchant": "Testbutikk", "amount": 100, "currency": "NOK", "code": "PAST-CODE", "url": "", "expiresOn": ""}, "contentOrder": ["giftcard", "quiz"], "questions": [{"title": "Velg to", "type": "choice", "options": ["A", "B", "C"], "answerIndex": 1, "correctAnswers": [1, 2], "explanation": "Serverkommentar"}, {"title": "Skriv ordene", "type": "text", "options": [], "answerIndex": 0, "acceptedAnswers": ["God jul"], "explanation": "Bra svart"}]}, {"day": 2, "kind": "message", "title": "", "body": ""}, {"day": 3, "kind": "message", "title": "", "body": ""}, {"day": 4, "kind": "message", "title": "", "body": ""}, {"day": 5, "kind": "message", "title": "", "body": ""}, {"day": 6, "kind": "message", "title": "", "body": ""}, {"day": 7, "kind": "message", "title": "", "body": ""}, {"day": 8, "kind": "message", "title": "", "body": ""}, {"day": 9, "kind": "message", "title": "", "body": ""}, {"day": 10, "kind": "message", "title": "", "body": ""}, {"day": 11, "kind": "message", "title": "", "body": ""}, {"day": 12, "kind": "message", "title": "", "body": ""}, {"day": 13, "kind": "message", "title": "", "body": ""}, {"day": 14, "kind": "message", "title": "", "body": ""}, {"day": 15, "kind": "message", "title": "", "body": ""}, {"day": 16, "kind": "message", "title": "", "body": ""}, {"day": 17, "kind": "message", "title": "", "body": ""}, {"day": 18, "kind": "message", "title": "", "body": ""}, {"day": 19, "kind": "message", "title": "", "body": ""}, {"day": 20, "kind": "message", "title": "", "body": ""}, {"day": 21, "kind": "message", "title": "", "body": ""}, {"day": 22, "kind": "message", "title": "", "body": ""}, {"day": 23, "kind": "message", "title": "", "body": ""}, {"day": 24, "kind": "message", "title": "", "body": ""}]}, "expectedRevision": null}, {"document": {"id": "test-luke-future", "title": "Testkalender", "description": "Test", "recipient": "Mottaker", "sender": "Avsender", "year": 2100, "theme": "advent", "access": "owner", "createdAt": "2025-11-01T00:00:00Z", "updatedAt": "2025-11-01T00:00:00Z", "quizCounts": {"1": 2}, "doors": [{"day": 1, "kind": "message", "title": "", "body": "FUTURE-SECRET", "giftCard": {"merchant": "Testbutikk", "amount": 100, "currency": "NOK", "code": "FUTURE-CODE", "url": "", "expiresOn": ""}, "contentOrder": ["giftcard", "quiz"], "questions": [{"title": "Velg to", "type": "choice", "options": ["A", "B", "C"], "answerIndex": 1, "correctAnswers": [1, 2], "explanation": "Serverkommentar"}, {"title": "Skriv ordene", "type": "text", "options": [], "answerIndex": 0, "acceptedAnswers": ["God jul"], "explanation": "Bra svart"}]}, {"day": 2, "kind": "message", "title": "", "body": ""}, {"day": 3, "kind": "message", "title": "", "body": ""}, {"day": 4, "kind": "message", "title": "", "body": ""}, {"day": 5, "kind": "message", "title": "", "body": ""}, {"day": 6, "kind": "message", "title": "", "body": ""}, {"day": 7, "kind": "message", "title": "", "body": ""}, {"day": 8, "kind": "message", "title": "", "body": ""}, {"day": 9, "kind": "message", "title": "", "body": ""}, {"day": 10, "kind": "message", "title": "", "body": ""}, {"day": 11, "kind": "message", "title": "", "body": ""}, {"day": 12, "kind": "message", "title": "", "body": ""}, {"day": 13, "kind": "message", "title": "", "body": ""}, {"day": 14, "kind": "message", "title": "", "body": ""}, {"day": 15, "kind": "message", "title": "", "body": ""}, {"day": 16, "kind": "message", "title": "", "body": ""}, {"day": 17, "kind": "message", "title": "", "body": ""}, {"day": 18, "kind": "message", "title": "", "body": ""}, {"day": 19, "kind": "message", "title": "", "body": ""}, {"day": 20, "kind": "message", "title": "", "body": ""}, {"day": 21, "kind": "message", "title": "", "body": ""}, {"day": 22, "kind": "message", "title": "", "body": ""}, {"day": 23, "kind": "message", "title": "", "body": ""}, {"day": 24, "kind": "message", "title": "", "body": ""}]}, "expectedRevision": null}]$fixture$::jsonb,'[]','[]','{"name":"Eier","snow":true}');
+insert into luke_test_vars select 'past-document',document::text from public.luke_calendars where id='test-luke-past';
+insert into luke_test_vars values ('past-token',public.create_luke_invite('test-luke-past')),('future-token',public.create_luke_invite('test-luke-future'));
+do $$ begin
+ assert (select count(*)=2 from public.luke_calendars), 'Owner cannot read own documents';
+ assert (public.get_luke_workspace()::text like '%FUTURE-SECRET%'), 'Owner cannot preview future doors';
+ assert not has_function_privilege('anon','public.get_luke_workspace()','EXECUTE'), 'Anonymous RPC access';
+ assert not has_function_privilege('authenticated','public.luke_public_document(jsonb,text)','EXECUTE'), 'Internal helper exposed';
+ assert not has_table_privilege('anon','public.luke_calendars','SELECT'), 'Anonymous table access';
+ assert not has_table_privilege('authenticated','public.luke_calendars','UPDATE'), 'Direct document writes exposed';
+end $$;
+select set_config('request.jwt.claim.sub','fa000000-0000-4000-8000-000000000002',true);
+select public.accept_luke_invite((select v from luke_test_vars where k='past-token'));
+select public.accept_luke_invite((select v from luke_test_vars where k='future-token'));
+do $$ declare w jsonb; c jsonb; q jsonb; result jsonb; begin
+ w:=public.get_luke_workspace();
+ assert jsonb_array_length(w->'data'->'calendars')=2, 'Recipient missing calendars';
+ assert not w::text like '%FUTURE-SECRET%' and not w::text like '%FUTURE-CODE%', 'Future content leaked';
+ assert not w::text like '%God jul%' and not w::text like '%Serverkommentar%', 'Unanswered quiz solution leaked';
+ assert (select count(*)=0 from public.luke_calendars), 'Recipient can query full documents';
+ select value into c from jsonb_array_elements(w->'data'->'calendars') where value->>'id'='test-luke-future';
+ assert (c->>'serverAvailableDay')::integer=0, 'Server unlock date incorrect';
+ assert (c->'quizCounts'->>'1')::integer=2, 'Hidden quiz count missing';
+ assert (c->'doors'->0->>'body')='', 'Future door body leaked';
+ select value into c from jsonb_array_elements(w->'data'->'calendars') where value->>'id'='test-luke-past';
+ assert c::text like '%PAST-CODE%', 'Available gift card missing';
+ assert c->>'access'='received', 'Recipient marked owner';
+ q:=c->'doors'->0->'questions'->0;
+ assert q->'remote'->>'multiple'='true', 'Multiple-choice mode missing';
+ assert not q ? 'correctAnswers', 'Correct choices leaked';
+ begin perform public.open_luke_door('test-luke-future',1);raise exception 'Future door opened';exception when insufficient_privilege then null;end;
+ begin perform public.submit_luke_answer('test-luke-future',1,0,'{"answers":[1,2]}');raise exception 'Future quiz answered';exception when insufficient_privilege then null;end;
+ begin perform public.save_luke_workspace(jsonb_build_array(jsonb_build_object('document',(select v::jsonb from luke_test_vars where k='past-document'),'expectedRevision',1)),'[]','[]','{"name":"X","snow":true}');raise exception 'Recipient edited owner calendar';exception when insufficient_privilege then null;end;
+ begin perform public.save_luke_workspace('[]','[{"id":"test-luke-past","expectedRevision":1}]','[]','{"name":"X","snow":true}');raise exception 'Recipient deleted owner calendar';exception when insufficient_privilege then null;end;
+ result:=public.submit_luke_answer('test-luke-past',1,0,'{"answers":[0],"result":{"correct":true}}');
+ assert (result->'attempt'->'result'->>'correct')::boolean=false, 'Forged result accepted';
+ result:=public.submit_luke_answer('test-luke-past',1,0,'{"answers":[1,2]}');
+ assert (result->'attempt'->'result'->>'correct')::boolean=false, 'First attempt overwritten';
+ result:=public.submit_luke_answer('test-luke-past',1,1,'{"text":"  GOD    JUL  "}');
+ assert (result->'attempt'->'result'->>'correct')::boolean=true, 'Written-answer normalization incorrect';
+ perform public.open_luke_door('test-luke-past',1);
+ w:=public.get_luke_workspace();
+ assert w->'progress'->'test-luke-past'->'opened' @> '[1]'::jsonb, 'Opened progress not saved';
+ assert (select count(*) from jsonb_object_keys(w->'progress'->'test-luke-past'->'answers'))=2, 'Quiz progress not saved';
+end $$;
+select set_config('request.jwt.claim.sub','fa000000-0000-4000-8000-000000000003',true);
+do $$ begin
+ assert jsonb_array_length(public.get_luke_workspace()->'data'->'calendars')=0, 'Stranger sees private calendar';
+ assert (select count(*)=0 from public.luke_answers), 'Stranger sees another recipient answers';
+ begin perform public.open_luke_door('test-luke-past',1);raise exception 'Stranger opened door';exception when insufficient_privilege then null;end;
+end $$;
+select set_config('request.jwt.claim.sub','fa000000-0000-4000-8000-000000000001',true);
+do $$ declare d jsonb; old jsonb; w jsonb; begin
+ select document into d from public.luke_calendars where id='test-luke-past';old:=d;
+ d:=jsonb_set(d,'{description}','"Oppdatert hos mottaker"');
+ perform public.save_luke_workspace(jsonb_build_array(jsonb_build_object('document',d,'expectedRevision',1)),'[]','[]','{"name":"Eier","snow":true}');
+ begin perform public.save_luke_workspace(jsonb_build_array(jsonb_build_object('document',old,'expectedRevision',1)),'[]','[]','{"name":"Eier","snow":true}');raise exception 'Stale write accepted';exception when serialization_failure then null;end;
+end $$;
+select set_config('request.jwt.claim.sub','fa000000-0000-4000-8000-000000000002',true);
+do $$ begin assert public.get_luke_workspace()::text like '%Oppdatert hos mottaker%', 'Recipient did not receive owner update';end $$;
+select set_config('request.jwt.claim.sub','fa000000-0000-4000-8000-000000000001',true);
+select public.stop_luke_sharing('test-luke-past');
+select set_config('request.jwt.claim.sub','fa000000-0000-4000-8000-000000000002',true);
+do $$ begin
+ assert jsonb_array_length(public.get_luke_workspace()->'data'->'calendars')=1, 'Revoked calendar still visible';
+ begin perform public.open_luke_door('test-luke-past',1);raise exception 'Revoked calendar can be opened';exception when insufficient_privilege then null;end;
+end $$;
+reset role;
+rollback;
+select 'PASS: owner isolation, recipient rights, future locks, server quiz grading, progress, update propagation, conflict protection, sharing revocation. All test data rolled back.' as result;

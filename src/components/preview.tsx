@@ -9,7 +9,8 @@ export function Preview({ id }: { id: string }) {
   if (!calendar)
     return (
       <div className="empty-state">
-        <h1>Kalenderen finnes ikke på denne enheten</h1>
+        <h1>Kalenderen er ikke tilgjengelig</h1>
+        <p>Den kan være fjernet, eller du mangler tilgang til den.</p>
         <Link className="button primary" href="/calendars">
           Til mine kalendere
         </Link>

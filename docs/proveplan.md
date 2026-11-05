@@ -32,7 +32,17 @@
 6. Åpne én luke. Ingen neste/forrige-knapper skal være synlige. Kontroller at 1, 10 og 24 er sentrert under døranimasjonen.
 7. Slå av Åpne alle luker. Før 1. desember skal alle være låst. På 4. desember skal bare 1–4 være tilgjengelige. Datoene beregnes i Europe/Oslo.
 8. Åpne Quizoversikt. Fremtidige dagers spørsmål skal ikke kunne spilles der. Eierens prøvesvar skal være adskilt fra mottakerens.
-9. Lag en prøvelenke uten private opplysninger eller ekte gavekort. Åpne lenken og velg Lagre kalender. Kopien skal vises under Delt med meg. En ny lagring fra samme avsender skal oppdatere den delte kopien og bevare eierens original.
+9. Logg inn på to separate kontoer. Del en kalender fra eieren til mottakeren. Kontroller at mottakeren får lesetilgang under Delt med meg, at eierens nye endringer følger med og at avsluttet deling fjerner tilgangen. Gamle prøvelenker er statiske kopier.
 10. Ta sikkerhetskopi og importer. Ugyldig fil skal avvises uten å endre innholdet. Eldre kalendere og gamle quizspørsmål skal fortsatt kunne åpnes.
 11. Installer den publiserte siden på iPhone og Android. Test hjemskjermikon og frakoblet reservevisning.
 12. Bruk tastatur og VoiceOver: navigasjon, oppretting, quiz, Escape og retur av fokus. Reduser bevegelse skal slå av dørsekvensen, risting og partikler.
+
+## Kontoer, 5. november 2026
+
+- Migrasjonen ble kjørt i Supabase-prosjektet. Site URL og to nøyaktige returadresser ble lagret.
+- Typekontroll, 37 enhetstester, databasekontroll og produksjonsbygg passerte med Next.js 16.4.5. Pakkekontroll etter oppdateringen rapporterte null kjente sårbarheter.
+- Databasekontrollen kjører samme migrasjon i en separat Postgres-instans. Den tester eierisolasjon, forbud mot mottakerredigering, serverstyrte datoer, skjult fasit, første quizforsøk, fritekstnormalisering, fremdrift, oppdateringer, revisjonskonflikt og tilbakekalling. Testdata rulles tilbake.
+- Ekstern, uinnlogget tilgang til kalendertabell, arbeidsområde og oppretting av invitasjon ble avvist med 401/42501 av Supabase.
+- Macen ble låst under arbeidet. Ny visuell kontroll av konto-siden, full e-postflyt og faktisk Realtime mellom to innlogginger er derfor ikke verifisert. E-posttjeneste mangler fortsatt.
+
+Når e-post er koblet til: test registrering, bekreftelse, ny bekreftelse, innlogging, glemt passord, passordbytte, utlogging, kontoavgrensning, eksplisitt flytting av lokale kalendere, to enheter, frakobling og motstridende kalenderendringer. Test fysisk iPhone, også med åpent tastatur.

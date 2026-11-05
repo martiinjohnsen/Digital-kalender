@@ -1,53 +1,51 @@
-# Luke · digital adventskalender
+# Luke
 
-En mobiltilpasset adventskalender bygget med Next.js, React og TypeScript. Dempet lilla, lyse flater og gjennomsiktige glassknapper. GitHub-repo: https://github.com/martiinjohnsen/Digital-kalender. Publisert via Vercel på https://digitalkalender.vercel.app.
+Mobiltilpasset adventskalender med Next.js, React og TypeScript. Kildekode: https://github.com/martiinjohnsen/Luke. Nettside: https://luke-kalender.vercel.app.
 
 ## Start lokalt
-
-Åpne prosjektmappen i VS Code og kjør:
 
 ```bash
 npm ci
 npm run dev
 ```
 
-Åpne http://localhost:3001. Bruk Node.js 24 eller nyere. Kalenderinnhold lagres i nettleseren på enheten, ikke automatisk hos Vercel.
+Åpne http://localhost:3001. Bruk Node.js 24 eller nyere. Hvis npm ikke får skrive til standardbufferen, bruk `npm ci --cache .cache/npm`.
 
-## Funksjoner
+## Konto og lagring
 
-- Mine kalendere er startsiden, med oppretting, søk, sortering og filtrene Alle, Laget av meg og Delt med meg.
-- To steg for å opprette kalender: navn, mottaker, avsender og år, deretter utseende.
-- Ni fargetemaer og seks motiver: hus, hytte, byhus, vinterpark, granskog og juleby. Gjenstander og animasjoner velges separat, med snømann, reinsdyr, grantrær, lys, snøfall, vinterbris og blinkende stjerner. Kan endres under Utseende i kalenderinnstillingene.
-- 24 luker med tekst, komprimerte bilder, YouTube, HTTPS-lenker, opplevelser og manuelt innlagte gavekort.
-- Datoen er lukens overskrift. Redigeringen bruker appens lilla farger, mens forhåndsvisning og mottakerkalender følger kalenderens eget tema.
-- Vedlegg er egne innholdsbokser. De kan fjernes, legges tilbake og dras i rekkefølge på mobil og datamaskin. Boksene krymper til overskrifter under draoperasjonen, og mottakeren ser den lagrede rekkefølgen. Håndtaket støtter også piltaster.
-- Gavekort har butikk, beløp, kode, innløsningslenke og utløpsdato. Ingen kjøps- eller leverandørintegrasjon foreløpig.
-- Valgfrie quizspørsmål inne i hver luke, også sammen med gavekort eller annet innhold. Inntil 12 svaralternativer, ett eller flere riktige svar, eller fritekstsvar med godkjente svarvarianter. Kommentarer vises med avsenders navn etter innsending.
-- Mottakerens quizoversikt viser besvart og riktig per dag. Fremdrift lagres lokalt. Eiers prøvesvar er adskilt fra mottakerens.
-- Døranimasjon med sentrert tall. Snø, stjerner eller konfetti velges i et eget felt nederst i lukeredigeringen, med forhåndsvisning og avspilling på nytt. Redusert bevegelse respekteres.
-- Datoåpning etter norsk tid. Fremtidige luker rister og viser lenke, lås og åpningsdato. En åpen luke har bare retur til kalenderen.
-- Inspirasjon med innholdsideer, uten malvelger. Nye installasjoner starter tomme. Eldre kalendere og spørsmål bevares.
-- Lokal IndexedDB-lagring, sikkerhetskopiering i JSON og validering før import. Inntil 100 kalendere og 15 MB samlet innhold.
-- Små kalendere kan deles som prøvelenker. Mottakeren kan lagre kopien i Delt med meg.
-- Installerbar PWA med appikoner og frakoblet reservevisning.
+- Konto-siden har registrering, innlogging, ny bekreftelsesepost, glemt passord, passordbytte og utlogging. Supabase Auth håndterer passord og innloggingsøkter.
+- Uten innlogging lagres kalendere lokalt i IndexedDB. Etter innlogging lastes kontoens egne kalendere og mottatte kalendere fra Supabase.
+- Lokale kalendere flyttes bare ved et uttrykkelig valg under Konto. De lokale originalene beholdes.
+- Innloggede brukere får en lokal, kontoavgrenset kopi av siste data og eventuelle ulagrede utkast. Nettverksfeil blir synlige. Utkast blir ikke erstattet av et mislykket nettverkskall.
+- Kalenderendringer bruker revisjonskontroll. Ved en konflikt beholdes utkastet. Brukeren kan ta en sikkerhetskopi før skyversjonen hentes.
+- Eiers forhåndsvisning og prøvesvar er adskilt fra mottakerens lagrede fremdrift.
 
-## Deling og lagring
+**E-postutsending må kobles til før ordinær registrering åpnes for alle.** Supabase sin innebygde avsender er begrenset til prosjektets autoriserte teamadresser. Bekreftelse av e-post beholdes. Vi slår ikke av bekreftelsen for å omgå manglende utsending.
 
-Prøvelenken inneholder **hele kalenderkopien**. Datoåpningen i grensesnittet er ikke en sikker sperre mot å lese fremtidig innhold. Ikke bruk prøvelenker til ekte gavekortkoder eller private opplysninger. Vanlig publisering med sikker datolås krever en server som holder tilbake fremtidig innhold. Senere endringer fra avsender følger ikke automatisk med i delte kopier.
+## Deling
 
-Kontoer, synkronisering, sikker publisering, gavekortkjøp og felles poengtavle er neste steg. Gavekortets gyldighet og saldo kontrolleres ikke av Luke. Ta sikkerhetskopi før du bytter enhet eller sletter nettleserdata. YouTube kontaktes først når spilleren trykker på videoen.
+Innlogget eier kan opprette en tilfeldig delingslenke. Mottakeren logger inn og får lesetilgang, med sin egen fremdrift og quizsvar. Delingslenken inneholder en invitasjon i URL-fragmentet, ikke kalenderinnholdet.
 
-## GitHub og Vercel
+Kalenderdokumentet er bare direkte lesbart for eieren. Mottakerdata hentes gjennom databasefunksjoner som holder tilbake fremtidige luker etter norsk tid. Quizfasit og avsenderkommentar følger først med etter at mottakeren har sendt et svar. Første svar på samme spørsmålsversjon beholdes. Endres spørsmålet, får det en ny nøkkel.
 
-Etter en endring i VS Code:
+Realtime-varsler inneholder kalender-ID og revisjon, ikke hele kalenderdokumentet. Appen henter nye, tilgangskontrollerte data ved varsler, når den får fokus/nett igjen, og ved norsk midnatt. Eieren kan avslutte delingen. JSON-eksport er en privat sikkerhetskopi som også inneholder fremtidige luker. Gamle prøvelenker kan fortsatt åpnes som eldre, statiske kopier; de gir ikke en ny konto tilgang til originalen.
 
-```bash
-git add .
-git commit -m "Oppdater kalenderen"
-git push
-```
+## Oppsett av et nytt Supabase-prosjekt
 
-Vercel bygger automatisk fra main. Velg Next.js som rammeverk, roten av repoet som Root Directory, `npm ci` for installasjon og `npm run build` for bygg. Behold standard Output Directory. Kildekoden skal ligge i roten av repoet, uten en ekstra luke-mappe. Ikke last opp node_modules, .next eller miljøfiler.
+1. Kjør `supabase/migrations/202611050001_accounts.sql` én gang i et nytt prosjekt. Migrasjonen oppretter tabeller, RLS-regler, revisjonskontroll, mottakerfunksjoner og Realtime-publication.
+2. Bruk prosjektets URL og **publishable key**. `src/lib/cloud/public-config.ts` inneholder de offentlige identifikatorene for Luke. `.env.example` viser valgfrie overstyringer for en annen installasjon. Ingen administrative nøkler eller service-role-nøkler skal inn i appen.
+3. Sett Site URL til `https://luke-kalender.vercel.app`. Tillat nøyaktig `https://luke-kalender.vercel.app/settings` og `http://localhost:3001/settings` som returadresser. Unngå vide wildcard-regler.
+4. Behold e-postbekreftelse. Koble en egen SMTP-avsender til Supabase, og test bekreftelse og passordlenke med en adresse som ikke er en del av prosjektteamet. Sett først da `NEXT_PUBLIC_AUTH_EMAIL_READY=true` og bygg på nytt.
+
+Prosjektets publishable key er beregnet for klientbruk og gir ingen administrative rettigheter. Tilgang til data håndheves i databasen med brukerens verifiserte Supabase-token. Hemmelige SMTP- og administrasjonsnøkler hører bare hjemme i leverandørens innstillinger eller servermiljøet.
+
+## Kalenderfunksjoner
+
+Mine kalendere har søk, sortering og filtrene Alle, Laget av meg og Delt med meg. Kalenderen har 24 luker med tekst, bilder, YouTube, lenker, opplevelser, manuelt innlagte gavekort og quiz. Innholdsbokser kan dras i rekkefølge. Quiz støtter inntil 12 alternativer, flere riktige svar og fritekst med godkjente svarvarianter.
+
+Ni fargepaletter og seks motiver kan kombineres med gjenstander, snøfall, bris og stjerneblinking. Redigeringen bruker appens lilla stil; mottakerkalenderen følger valgt tema. Datolåsen har lenke og lås, og lukene åpnes med en døranimasjon. Redusert bevegelse respekteres. PWA kan legges på hjemskjermen.
+
+Gavekortkjøp, kontroll av saldo og leverandørintegrasjon er ikke implementert. Bilder komprimeres lokalt og lagres med dokumentet; samlet arbeidsområde er begrenset til 15 MB i klienten. YouTube kontaktes først ved avspilling.
 
 ## Kontroller
 
@@ -55,26 +53,28 @@ Vercel bygger automatisk fra main. Velg Next.js som rammeverk, roten av repoet s
 npm run check
 ```
 
-Dette kjører typekontroll, 29 automatiske tester og produksjonsbygg. Reglene for norsk midnatt, gavekort, spørsmål, bakoverkompatibilitet, delte kopier, quizpoeng, innholdsoversikt, import og trygge lenker er testet.
+Kjører typekontroll, enhetstester, databasekontroller og produksjonsbygg. Databasekontrollen bruker en separat Postgres-instans i minnet med Supabase-lignende roller og JWT-identitet. Den kjører den faktiske migrasjonen og `supabase/tests/accounts.sql`. Testene dekker eierisolasjon, mottakertilgang, fremtidige luker, serverretting av quiz, fremdrift, oppdateringer, revisjonskonflikt og tilbakekalling. Alle testdata rulles tilbake.
 
-Se [prøveplan](docs/proveplan.md) og [videre utvikling](docs/neste-steg.md).
+Denne kontrollen erstatter ikke en ende-til-ende-test av Supabase Auth, e-postlevering og Realtime-transport. Slike kontroller må også gjøres i det tilkoblede prosjektet før ordinær lansering.
 
-## Koden
+## GitHub og Vercel
 
-| Sted                                 | Innhold                              |
-| ------------------------------------ | ------------------------------------ |
-| src/app                              | Sider, metadata, PWA og CSS          |
-| src/components/calendar-library.tsx  | Mine kalendere                       |
-| src/components/calendar-editor.tsx   | Luker og kalenderinnstillinger       |
-| src/components/door-editor.tsx       | Innhold i en luke                    |
-| src/components/recipient-view.tsx    | Datoåpning, gavekort og quizvisning  |
-| src/components/appearance-picker.tsx | Farger, hus og scene                 |
-| src/lib/model.ts                     | Datamodell, validering og datoregler |
-| src/lib/quiz-progress.ts             | Poeng og stabile spørsmålsnøkler     |
-| src/lib/calendar-library.ts          | Filtrering og delte kalenderkopier   |
-| src/lib/storage.ts                   | IndexedDB og bildebehandling         |
-| src/lib/share.ts                     | Prøvelenker                          |
+Vercel bygger automatisk fra `main`. Bruk Next.js, repoets rot som Root Directory, `npm ci` og `npm run build`. Behold standard Output Directory. Ikke last opp `node_modules`, `.next` eller `.env.local`.
 
-## Navnet
+I VS Code kan **Sync Changes** hente nye commits. Egne filendringer må først lagres og committes før de pushes.
 
-Navnesøk ble sjekket 4. november 2026. luke.no var opptatt. Foretaksnavnet luke ble vist som ledig, mens varemerket ble vist som «kan være ledig» med fem treff. Dette er ikke en endelig avklaring av rettighetene til produktnavnet. Se https://navnesok.no/.
+## Viktige filer
+
+| Fil                                 | Innhold                                       |
+| ----------------------------------- | --------------------------------------------- |
+| src/components/account-panel.tsx    | Konto, innlogging og passord                  |
+| src/components/account-provider.tsx | Innlogget bruker og gjenoppretting            |
+| src/components/provider.tsx         | Lokal lagring, konto og synkronisering        |
+| src/lib/cloud/workspace.ts          | Endringssett, revisjoner og utkast            |
+| src/components/share-dialog.tsx     | Delingslenke og tilbakekalling                |
+| src/app/receive/page.tsx            | Mottak av invitasjon og eldre prøvelenker     |
+| src/components/recipient-view.tsx   | Luker, fremdrift og mottakerquiz              |
+| supabase/migrations                 | Versjonert databaseoppsett                    |
+| supabase/tests/accounts.sql         | Databasekontroll med midlertidige testbrukere |
+
+Se [videre utvikling](docs/neste-steg.md) og [prøveplan](docs/proveplan.md).

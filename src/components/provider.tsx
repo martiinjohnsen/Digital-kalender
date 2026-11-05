@@ -8,19 +8,53 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { parseBackup, type AdventCalendar, type AppData } from "@/lib/model";
+import {
+  parseBackup,
+  type AdventCalendar,
+  type AppData,
+  type QuizResponse,
+} from "@/lib/model";
 import { initialData } from "@/lib/templates";
-import { repository } from "@/lib/storage";
+import { repository, loadRecord, saveRecord } from "@/lib/storage";
+import { supabase, authMessage, rpcForUser } from "@/lib/cloud/client";
+import {
+  hasCloudChanges,
+  hasVersionConflict,
+  mergedAfterSave,
+  nextOsloMidnight,
+  ownedDocument,
+  parseCloudSnapshot,
+  rebaseDraft,
+  workspacePatch,
+  type CloudSnapshot,
+  type CloudCache,
+  type CloudProgress,
+} from "@/lib/cloud/workspace";
+import { useAccount } from "./account-provider";
 import { Icon } from "./icons";
 type Store = {
   data: AppData;
   status: "saving" | "saved" | "error";
   saveError: string;
+  cloud: boolean;
+  progress: CloudProgress;
+  conflict: boolean;
   add: (calendar: AdventCalendar) => boolean;
   update: (id: string, change: Partial<AdventCalendar>) => boolean;
   remove: (id: string) => boolean;
   setPreferences: (change: Partial<AppData["preferences"]>) => boolean;
   importData: (data: AppData) => boolean;
+  syncNow: () => Promise<void>;
+  refresh: () => Promise<void>;
+  useCloudVersion: () => Promise<void>;
+  importLocal: () => Promise<number>;
+  openDoor: (id: string, day: number) => Promise<void>;
+  answer: (
+    id: string,
+    day: number,
+    index: number,
+    response: QuizResponse,
+  ) => Promise<void>;
   toast: (message: string) => void;
 };
 const Context = createContext<Store | null>(null);
@@ -29,184 +63,502 @@ export function useStore(): Store {
   if (!store) throw new Error("Luke mangler dataleverandør.");
   return store;
 }
+async function fetchWorkspace(userId: string | null) {
+  const { data, error } = await rpcForUser(userId, "get_luke_workspace");
+  if (error) throw error;
+  return parseCloudSnapshot(data);
+}
 export function Provider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<AppData | null>(null);
-  const [fatal, setFatal] = useState("");
-  const [status, setStatus] = useState<Store["status"]>("saving");
-  const [saveError, setSaveError] = useState("");
-  const [notice, setNotice] = useState("");
-  const queue = useRef(Promise.resolve());
-  const revision = useRef(0);
-  const currentData = useRef<AppData | null>(null);
+  const account = useAccount();
+  const [data, setData] = useState<AppData | null>(null),
+    [fatal, setFatal] = useState("");
+  const [status, setStatus] = useState<Store["status"]>("saving"),
+    [saveError, setSaveError] = useState("");
+  const [notice, setNotice] = useState(""),
+    [progress, setProgress] = useState<CloudProgress>({}),
+    [conflict, setConflict] = useState(false);
+  const current = useRef<AppData | null>(null),
+    base = useRef<CloudSnapshot | null>(null),
+    uid = useRef<string | null>(null);
+  const epoch = useRef(0),
+    dirty = useRef(false),
+    blocked = useRef(false),
+    running = useRef<Promise<void> | null>(null);
+  const refreshNeeded = useRef(false),
+    refreshRunning = useRef(false),
+    localQueue = useRef(Promise.resolve());
+  const pumpRef = useRef<() => Promise<void>>(async () => {}),
+    refreshRef = useRef<() => Promise<void>>(async () => {});
   const toast = useCallback((message: string) => setNotice(message), []);
-  useEffect(() => {
-    let cancelled = false;
-    repository
-      .load()
-      .then((value) => {
-        if (!cancelled) {
-          const loaded = value ?? initialData();
-          currentData.current = loaded;
-          setData(loaded);
+  function show(next: AppData) {
+    current.current = next;
+    setData(next);
+  }
+  const persistCloud = useCallback(async () => {
+    if (uid.current && current.current && base.current)
+      await saveRecord(`account:${uid.current}`, {
+        data: current.current,
+        base: base.current,
+        dirty: dirty.current,
+      } satisfies CloudCache);
+  }, []);
+  const refresh = useCallback(async () => {
+    if (!uid.current || !base.current) return;
+    if (dirty.current || running.current || refreshRunning.current) {
+      refreshNeeded.current = true;
+      return;
+    }
+    const generation = epoch.current;
+    refreshRunning.current = true;
+    try {
+      const result = await fetchWorkspace(uid.current);
+      if (generation !== epoch.current) return;
+      if (dirty.current) {
+        refreshNeeded.current = true;
+        return;
+      }
+      base.current = result;
+      show(result.data);
+      setProgress(result.progress);
+      await persistCloud();
+      setStatus("saved");
+      setSaveError("");
+    } catch (error) {
+      if (generation === epoch.current) {
+        setSaveError(authMessage(error));
+        setStatus("error");
+      }
+    } finally {
+      refreshRunning.current = false;
+    }
+  }, [persistCloud]);
+  refreshRef.current = refresh;
+  const syncNow = useCallback(async () => {
+    if (running.current) return running.current;
+    if (!uid.current || !dirty.current) return;
+    if (blocked.current)
+      throw new Error("Utkastet må avklares før det kan lagres i skyen.");
+    const generation = epoch.current;
+    const task = (async () => {
+      while (
+        dirty.current &&
+        current.current &&
+        base.current &&
+        generation === epoch.current
+      ) {
+        const sent = current.current;
+        setStatus("saving");
+        await persistCloud();
+        if (generation !== epoch.current) return;
+        const { data, error } = await rpcForUser(
+          uid.current,
+          "save_luke_workspace",
+          workspacePatch(base.current!, sent),
+        );
+        if (error) throw error;
+        if (generation !== epoch.current) return;
+        const result = parseCloudSnapshot(data);
+        const next = mergedAfterSave(sent, current.current!, result);
+        base.current = result;
+        dirty.current = hasCloudChanges(result, next);
+        show(next);
+        setProgress(result.progress);
+        await persistCloud();
+      }
+      if (generation === epoch.current) {
+        setStatus("saved");
+        setSaveError("");
+      }
+    })()
+      .catch(async (error) => {
+        if (generation === epoch.current) {
+          const isConflict = error?.code === "40001";
+          blocked.current = isConflict;
+          setConflict(isConflict);
+          setStatus("error");
+          setSaveError(authMessage(error));
+          try {
+            await persistCloud();
+          } catch {
+            setSaveError(
+              "Utkastet kunne ikke lagres på enheten. Last ned en sikkerhetskopi før du lukker siden.",
+            );
+          }
         }
+        throw error;
       })
-      .catch((error) => {
-        if (!cancelled)
-          setFatal(
-            error instanceof Error
-              ? error.message
-              : "Nettleseren kunne ikke åpne den lokale lagringen.",
-          );
+      .finally(() => {
+        if (running.current === task) running.current = null;
+        if (
+          generation === epoch.current &&
+          refreshNeeded.current &&
+          !dirty.current
+        ) {
+          refreshNeeded.current = false;
+          void refreshRef.current();
+        }
       });
+    running.current = task;
+    return task;
+  }, [persistCloud]);
+  pumpRef.current = syncNow;
+  useEffect(() => {
+    if (!account.ready) return;
+    const generation = ++epoch.current;
+    uid.current = account.user?.id ?? null;
+    base.current = null;
+    dirty.current = false;
+    blocked.current = false;
+    running.current = null;
+    refreshNeeded.current = false;
+    current.current = null;
+    setData(null);
+    setFatal("");
+    setConflict(false);
+    setProgress({});
+    setSaveError("");
+    setStatus("saving");
+    let cancelled = false;
+    const valid = () => !cancelled && generation === epoch.current;
+    void (async () => {
+      if (!uid.current) {
+        const loaded = await repository.load();
+        if (!valid()) return;
+        show(loaded ?? initialData());
+        setStatus("saved");
+        return;
+      }
+      const cache = await loadRecord<CloudCache>(`account:${uid.current}`);
+      if (cache) parseBackup(JSON.stringify(cache.data));
+      try {
+        const result = await fetchWorkspace(uid.current);
+        if (!valid()) return;
+        if (cache?.dirty) {
+          const clash = hasVersionConflict(cache, result);
+          base.current = clash ? cache.base : result;
+          dirty.current = true;
+          blocked.current = clash;
+          setConflict(clash);
+          show(clash ? cache.data : rebaseDraft(cache, result));
+          setProgress(result.progress);
+          if (clash) {
+            setStatus("error");
+            setSaveError(
+              "Kalenderen er endret på en annen enhet. Utkastet ditt er beholdt. Last ned en sikkerhetskopi før du henter skyversjonen.",
+            );
+          } else void pumpRef.current().catch(() => {});
+        } else {
+          base.current = result;
+          show(result.data);
+          setProgress(result.progress);
+          setStatus("saved");
+          await persistCloud();
+        }
+      } catch (error) {
+        if (!valid()) return;
+        if (cache) {
+          base.current = cache.base;
+          dirty.current = cache.dirty;
+          show(cache.data);
+          setProgress(cache.base.progress);
+          setStatus("error");
+          setSaveError(authMessage(error));
+        } else throw error;
+      }
+    })().catch((error) => {
+      if (valid()) setFatal(authMessage(error));
+    });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [account.ready, account.user?.id, persistCloud]);
   useEffect(() => {
-    if (!data) return;
-    const current = ++revision.current;
-    setStatus("saving");
-    queue.current = queue.current
-      .catch(() => {})
-      .then(async () => {
-        if (JSON.stringify(data).length > 15000000)
-          throw new Error(
-            "Kalenderne bruker mer enn 15 MB. Ta en sikkerhetskopi og fjern noen store bilder før du fortsetter.",
-          );
-        await repository.save(data);
-      })
-      .then(() => {
-        if (current === revision.current) {
-          setStatus("saved");
-          setSaveError("");
-        }
-      })
-      .catch((error) => {
-        if (current === revision.current) {
-          setStatus("error");
-          setSaveError(
-            error instanceof Error
-              ? error.message
-              : "Endringene kunne ikke lagres. Last ned en sikkerhetskopi før du lukker siden.",
-          );
-        }
-      });
-  }, [data]);
+    if (!account.user) return;
+    let debounce: ReturnType<typeof setTimeout>;
+    const changed = () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => void refreshRef.current(), 180);
+    };
+    const channel = supabase().channel(`workspace:${account.user.id}`);
+    for (const table of [
+      "luke_updates",
+      "luke_members",
+      "luke_profiles",
+      "luke_progress",
+      "luke_answers",
+    ])
+      channel.on(
+        "postgres_changes",
+        { event: "*", schema: "public", table },
+        changed,
+      );
+    channel.subscribe();
+    const resume = () => {
+      if (document.visibilityState !== "visible") return;
+      if (dirty.current && !blocked.current)
+        void pumpRef.current().catch(() => {});
+      else void refreshRef.current();
+    };
+    window.addEventListener("focus", resume);
+    window.addEventListener("online", resume);
+    document.addEventListener("visibilitychange", resume);
+    let midnight: ReturnType<typeof setTimeout>;
+    const schedule = () => {
+      midnight = setTimeout(
+        () => {
+          void refreshRef.current();
+          schedule();
+        },
+        Math.max(1000, nextOsloMidnight() - Date.now() + 500),
+      );
+    };
+    schedule();
+    return () => {
+      clearTimeout(debounce);
+      clearTimeout(midnight);
+      void supabase().removeChannel(channel);
+      window.removeEventListener("focus", resume);
+      window.removeEventListener("online", resume);
+      document.removeEventListener("visibilitychange", resume);
+    };
+  }, [account.user?.id]);
   useEffect(() => {
     if (!notice) return;
-    const timeout = setTimeout(() => setNotice(""), 4200);
-    return () => clearTimeout(timeout);
+    const timer = setTimeout(() => setNotice(""), 4200);
+    return () => clearTimeout(timer);
   }, [notice]);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
-      if (status !== "saved") {
-        event.preventDefault();
-      }
+      if (status !== "saved") event.preventDefault();
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [status]);
+  function commit(change: (previous: AppData) => AppData): boolean {
+    if (!current.current) return false;
+    if (blocked.current) {
+      toast("Ta vare på utkastet og avklar skyversjonen under Konto først.");
+      return false;
+    }
+    const next = change(current.current);
+    try {
+      parseBackup(JSON.stringify(next));
+    } catch (error) {
+      toast(authMessage(error));
+      return false;
+    }
+    show(next);
+    setStatus("saving");
+    if (uid.current) {
+      dirty.current = true;
+      void pumpRef.current().catch(() => {});
+    } else {
+      const generation = epoch.current,
+        snapshot = next;
+      localQueue.current = localQueue.current
+        .catch(() => {})
+        .then(() => repository.save(snapshot))
+        .then(() => {
+          if (generation === epoch.current && current.current === snapshot) {
+            setStatus("saved");
+            setSaveError("");
+          }
+        })
+        .catch((error) => {
+          if (generation === epoch.current) {
+            setStatus("error");
+            setSaveError(authMessage(error));
+          }
+        });
+    }
+    return true;
+  }
+  const loading = (
+    <main className="loading-screen">
+      <span className="loading-star">
+        <Icon name="cloud" size={28} />
+      </span>
+      <p>{account.user ? "Henter kalenderne dine …" : "Åpner Luke …"}</p>
+    </main>
+  );
   if (fatal)
     return (
       <main className="recovery">
         <Icon name="cloud" size={40} />
-        <h1>Vi får ikke åpnet lagringen</h1>
-        <p>
-          Innholdet ditt er ikke erstattet. Prøv å åpne siden igjen, eller bruk
-          en vanlig nettleserfane.
-        </p>
+        <h1>Vi får ikke åpnet kalenderne</h1>
         <p className="form-error">{fatal}</p>
+        <p>Lagrede utkast er beholdt på enheten.</p>
         <button className="button primary" onClick={() => location.reload()}>
           Prøv igjen
         </button>
+        {account.user && (
+          <button
+            className="button secondary"
+            onClick={() => void supabase().auth.signOut({ scope: "local" })}
+          >
+            Logg ut
+          </button>
+        )}
       </main>
     );
-  if (!data)
-    return (
-      <main className="loading-screen">
-        <span className="loading-star">
-          <Icon name="sparkles" size={28} />
-        </span>
-        <p>Vi finner frem litt adventsglede …</p>
-      </main>
-    );
-  function commit(change: (previous: AppData) => AppData): boolean {
-    const previous = currentData.current ?? data;
-    if (!previous) return false;
-    const next = change(previous);
-    try {
-      if (next.calendars.length > 100)
-        throw new Error("Du kan ha opptil 100 kalendere på denne enheten.");
-      const serialized = JSON.stringify(next);
-      if (new TextEncoder().encode(serialized).length > 15000000)
-        throw new Error(
-          "Endringen blir for stor for den lokale grensen på 15 MB. Fjern et bilde eller en kalender først. Innholdet ditt er beholdt.",
-        );
-      parseBackup(serialized);
-    } catch (error) {
-      toast(
-        error instanceof Error
-          ? error.message
-          : "Endringen kunne ikke brukes. Innholdet ditt er beholdt.",
-      );
-      return false;
-    }
-    currentData.current = next;
-    setData(next);
-    return true;
-  }
+  if (!data || !account.ready || (account.user?.id ?? null) !== uid.current)
+    return loading;
   const value: Store = {
     data,
     status,
     saveError,
+    cloud: !!account.user,
+    progress,
+    conflict,
     toast,
-    add: (calendar) =>
-      commit((previous) => ({
-        ...previous,
-        calendars: [calendar, ...previous.calendars],
-      })),
-    update: (id, change) =>
-      commit((previous) => ({
-        ...previous,
-        calendars: previous.calendars.map((calendar) =>
-          calendar.id === id
+    syncNow,
+    refresh,
+    add: (calendar) => {
+      if (account.user && calendar.access === "received") {
+        toast(
+          "Åpne den nye delingslenken for å legge til kalenderen på kontoen.",
+        );
+        return false;
+      }
+      return commit((p) => ({ ...p, calendars: [calendar, ...p.calendars] }));
+    },
+    update: (id, change) => {
+      if (
+        current.current?.calendars.find((c) => c.id === id)?.access ===
+        "received"
+      ) {
+        toast("Bare avsenderen kan redigere denne kalenderen.");
+        return false;
+      }
+      return commit((p) => ({
+        ...p,
+        calendars: p.calendars.map((c) =>
+          c.id === id
             ? {
-                ...calendar,
+                ...c,
                 ...change,
-                id: calendar.id,
+                id: c.id,
+                access: c.access,
                 updatedAt: new Date().toISOString(),
               }
-            : calendar,
+            : c,
         ),
-      })),
+      }));
+    },
     remove: (id) =>
-      commit((previous) => ({
-        ...previous,
-        calendars: previous.calendars.filter((calendar) => calendar.id !== id),
+      commit((p) => ({
+        ...p,
+        calendars: p.calendars.filter((c) => c.id !== id),
       })),
     setPreferences: (change) =>
-      commit((previous) => ({
-        ...previous,
-        preferences: { ...previous.preferences, ...change },
-      })),
-    importData: (incoming) =>
-      commit((previous) => ({
-        ...previous,
-        calendars: [
-          ...incoming.calendars,
-          ...previous.calendars.filter(
-            (calendar) =>
-              !incoming.calendars.some((item) => item.id === calendar.id),
+      commit((p) => ({ ...p, preferences: { ...p.preferences, ...change } })),
+    importData: (incoming) => {
+      const calendars = incoming.calendars.filter(
+        (c) => !account.user || c.access !== "received",
+      );
+      if (
+        calendars.some((c) =>
+          current.current?.calendars.some(
+            (old) => old.id === c.id && old.access === "received",
           ),
+        )
+      ) {
+        toast(
+          "En mottatt kalender kan ikke erstattes med en redigerbar kalenderfil.",
+        );
+        return false;
+      }
+      return commit((p) => ({
+        ...p,
+        calendars: [
+          ...calendars,
+          ...p.calendars.filter((c) => !calendars.some((n) => n.id === c.id)),
         ],
-      })),
+      }));
+    },
+    importLocal: async () => {
+      const generation = epoch.current;
+      const guest = await repository.load();
+      if (!guest || generation !== epoch.current) return 0;
+      const incoming = guest.calendars
+        .filter(
+          (c) =>
+            c.access !== "received" &&
+            !current.current?.calendars.some((n) => n.id === c.id),
+        )
+        .map(ownedDocument);
+      if (!incoming.length) return 0;
+      if (!commit((p) => ({ ...p, calendars: [...incoming, ...p.calendars] })))
+        throw new Error("Kalenderne kunne ikke flyttes.");
+      await pumpRef.current();
+      return incoming.length;
+    },
+    useCloudVersion: async () => {
+      if (running.current) await running.current.catch(() => {});
+      const generation = epoch.current;
+      const server = await fetchWorkspace(uid.current);
+      if (generation !== epoch.current) return;
+      base.current = server;
+      dirty.current = false;
+      blocked.current = false;
+      setConflict(false);
+      show(server.data);
+      setProgress(server.progress);
+      await persistCloud();
+      setSaveError("");
+      setStatus("saved");
+    },
+    openDoor: async (id, day) => {
+      const generation = epoch.current;
+      const { data, error } = await rpcForUser(uid.current, "open_luke_door", {
+        p_calendar_id: id,
+        p_day: day,
+      });
+      if (error) throw error;
+      if (generation !== epoch.current) return;
+      setProgress((p) => ({
+        ...p,
+        [id]: { opened: data, answers: p[id]?.answers ?? {} },
+      }));
+    },
+    answer: async (id, day, index, response) => {
+      const generation = epoch.current;
+      const { data, error } = await rpcForUser(
+        uid.current,
+        "submit_luke_answer",
+        {
+          p_calendar_id: id,
+          p_day: day,
+          p_index: index,
+          p_response: response,
+        },
+      );
+      if (error) throw error;
+      if (generation !== epoch.current) return;
+      setProgress((p) => ({
+        ...p,
+        [id]: {
+          opened: p[id]?.opened ?? [],
+          answers: { ...p[id]?.answers, [data.key]: data.attempt },
+        },
+      }));
+    },
   };
   return (
     <Context.Provider value={value}>
       {status === "error" && (
         <div role="alert" className="storage-warning">
-          {saveError ||
-            "Lagringen feilet. Ta en sikkerhetskopi i Innstillinger før du lukker siden."}
+          <span>{saveError}</span>
+          {!conflict && (
+            <button
+              className="button secondary small-button"
+              onClick={() =>
+                void (dirty.current ? syncNow() : refresh()).catch(() => {})
+              }
+            >
+              Prøv igjen
+            </button>
+          )}
         </div>
       )}
       {children}

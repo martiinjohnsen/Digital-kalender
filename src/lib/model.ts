@@ -49,6 +49,7 @@ export interface GiftCard {
   expiresOn: string;
 }
 export interface QuizQuestion {
+  remote?: { key: string; multiple: boolean };
   type?: "choice" | "text";
   correctAnswers?: number[];
   acceptedAnswers?: string[];
@@ -82,6 +83,12 @@ export const blockNames: Record<DoorBlockKind, string> = {
   effect: "Åpningseffekt",
 };
 export interface QuizResponse {
+  result?: {
+    correct: boolean;
+    correctAnswers?: number[];
+    acceptedAnswer?: string;
+    explanation?: string;
+  };
   answer?: number;
   answers?: number[];
   text?: string;
@@ -104,6 +111,10 @@ export interface Door {
   activity?: { title: string; body: string };
 }
 export interface AdventCalendar {
+  remote?: boolean;
+  serverAvailableDay?: number;
+  serverQuizCounts?: Record<string, number>;
+  quizCounts?: Record<string, number>;
   id: string;
   title: string;
   description: string;
@@ -370,6 +381,7 @@ export function normalizeAnswer(value: string): string {
 }
 export function isQuestionComplete(question: QuizQuestion): boolean {
   if (!question.title.trim()) return false;
+  if (question.remote) return true;
   if (question.type === "text")
     return Boolean(
       question.acceptedAnswers?.length &&
@@ -418,6 +430,7 @@ export function isQuizResponseCorrect(
   response: QuizResponse,
 ): boolean {
   if (!validQuizResponse(question, response)) return false;
+  if (question.remote) return response.result?.correct === true;
   if (question.type === "text")
     return Boolean(
       question.acceptedAnswers?.some(
@@ -437,6 +450,14 @@ function isQuestion(value: unknown): value is QuizQuestion {
     !Array.isArray(value.options) ||
     !value.options.every((option) => string(option, 180)) ||
     !Number.isInteger(value.answerIndex)
+  )
+    return false;
+  if (
+    value.remote !== undefined &&
+    (!record(value.remote) ||
+      !string(value.remote.key, 100) ||
+      !/^\d{1,2}-\d{1,2}-[a-z0-9]+$/.test(value.remote.key) ||
+      typeof value.remote.multiple !== "boolean")
   )
     return false;
   if (
@@ -626,6 +647,30 @@ export function isCalendar(value: unknown): value is AdventCalendar {
     !Number.isFinite(Date.parse(value.updatedAt))
   )
     return false;
+  if (value.remote !== undefined && typeof value.remote !== "boolean")
+    return false;
+  if (
+    value.serverAvailableDay !== undefined &&
+    (!Number.isInteger(value.serverAvailableDay) ||
+      Number(value.serverAvailableDay) < 0 ||
+      Number(value.serverAvailableDay) > 24)
+  )
+    return false;
+  for (const key of ["quizCounts", "serverQuizCounts"]) {
+    const counts = value[key];
+    if (
+      counts !== undefined &&
+      (!record(counts) ||
+        Object.entries(counts).some(
+          ([day, count]) =>
+            !/^([1-9]|1[0-9]|2[0-4])$/.test(day) ||
+            !Number.isInteger(count) ||
+            Number(count) < 0 ||
+            Number(count) > 32,
+        ))
+    )
+      return false;
+  }
   if (value.demo !== undefined && typeof value.demo !== "boolean") return false;
   if (value.scene !== undefined && !isScene(value.scene)) return false;
   if (

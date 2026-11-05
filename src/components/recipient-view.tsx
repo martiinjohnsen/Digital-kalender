@@ -25,6 +25,8 @@ import {
 import { Artwork } from "./artwork";
 import { BrandMark, Icon } from "./icons";
 import { useStore } from "./provider";
+import { useAccount } from "./account-provider";
+import { authMessage } from "@/lib/cloud/client";
 import { Dialog } from "./dialog";
 import { DoorQuizPlayer } from "./door-quiz-player";
 import { QuizOverview } from "./quiz-overview";
@@ -44,7 +46,10 @@ export function RecipientView({
   onSaveShared?: () => void;
   saved?: boolean;
 }) {
-  const { data, toast } = useStore();
+  const store = useStore();
+  const { data, toast } = store;
+  const account = useAccount();
+  const remote = !!calendar.remote && !owner;
   const [testMode, setTestMode] = useState(owner),
     [day, setDay] = useState<number | null>(null),
     [now, setNow] = useState(() => new Date()),
@@ -55,13 +60,14 @@ export function RecipientView({
       day: number;
       nonce: number;
     } | null>(null);
-  const storageKey = `luke:progress:${calendar.receivedSourceId ?? calendar.id}:${calendar.year}:${owner ? (testMode ? "test" : "owner-date") : "recipient"}`;
+  const storageKey = `luke:progress:${account.user ? account.user.id + ":" : ""}${calendar.receivedSourceId ?? calendar.id}:${calendar.year}:${owner ? (testMode ? "test" : "owner-date") : "recipient"}`;
   const [state, setState] = useState<{
     key: string;
     opened: number[];
     answers: QuizProgress;
   }>({ key: "", opened: [], answers: {} });
   useEffect(() => {
+    if (remote) return;
     let opened: number[] = [];
     let answers: QuizProgress = {};
     try {
@@ -77,8 +83,9 @@ export function RecipientView({
       /* Continue in memory when browser storage is unavailable. */
     }
     setState({ key: storageKey, opened, answers });
-  }, [storageKey]);
+  }, [storageKey, remote]);
   useEffect(() => {
+    if (remote) return;
     if (state.key !== storageKey) return;
     try {
       localStorage.setItem(`${storageKey}:doors`, JSON.stringify(state.opened));
@@ -88,7 +95,7 @@ export function RecipientView({
         "Fremdriften kunne ikke lagres på enheten. Den beholdes mens siden er åpen.",
       );
     }
-  }, [state, storageKey, toast]);
+  }, [state, storageKey, toast, remote]);
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 15000);
     return () => clearInterval(timer);
@@ -102,12 +109,29 @@ export function RecipientView({
     setDay(transitionDay);
     setTransitionDay(null);
   }, [transitionDay]);
-  const limit = owner && testMode ? 24 : availableDay(calendar.year, now);
-  const opened = state.key === storageKey ? state.opened : [];
-  const answers = state.key === storageKey ? state.answers : {};
+  const limit =
+    owner && testMode
+      ? 24
+      : remote
+        ? (calendar.serverAvailableDay ?? 0)
+        : availableDay(calendar.year, now);
+  const opened = remote
+    ? (store.progress[calendar.id]?.opened ?? [])
+    : state.key === storageKey
+      ? state.opened
+      : [];
+  const answers = remote
+    ? (store.progress[calendar.id]?.answers ?? {})
+    : state.key === storageKey
+      ? state.answers
+      : {};
   const summary = quizSummary(calendar, answers, limit);
   function open(door: Door, element?: HTMLElement) {
-    if (transitionDay !== null || day !== null || state.key !== storageKey)
+    if (
+      transitionDay !== null ||
+      day !== null ||
+      (!remote && state.key !== storageKey)
+    )
       return;
     if (door.day > limit) {
       setLockedAttempt({ day: door.day, nonce: Date.now() });
@@ -129,7 +153,11 @@ export function RecipientView({
       );
       setTransitionDay(door.day);
     } else setDay(door.day);
-    if (isDoorComplete(door))
+    if (remote)
+      void store
+        .openDoor(calendar.id, door.day)
+        .catch((error) => toast(authMessage(error)));
+    else if (isDoorComplete(door))
       setState((previous) => ({
         ...previous,
         opened: previous.opened.includes(door.day)
@@ -137,13 +165,17 @@ export function RecipientView({
           : [...previous.opened, door.day],
       }));
   }
-  function answerQuestion(
+  async function answerQuestion(
     index: number,
     question: QuizQuestion,
     response: QuizResponse,
   ) {
     if (day === null || day > limit || !validQuizResponse(question, response))
       return;
+    if (remote) {
+      await store.answer(calendar.id, day, index, response);
+      return;
+    }
     const key = questionKey(day, index, question);
     setState((previous) =>
       previous.answers[key]
@@ -308,6 +340,7 @@ export function RecipientView({
         <QuizOverview
           summary={summary}
           testMode={owner && testMode}
+          cloud={remote}
           onClose={() => setQuizOpen(false)}
         />
       )}
@@ -407,7 +440,7 @@ function DoorViewer({
     index: number,
     question: QuizQuestion,
     response: QuizResponse,
-  ) => void;
+  ) => void | Promise<void>;
   onClose: () => void;
 }) {
   return (

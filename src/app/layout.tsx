@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Provider } from "@/components/provider";
 import { PwaProvider } from "@/components/pwa";
 import { Shell } from "@/components/shell";
+import { AccountProvider } from "@/components/account-provider";
 import "./globals.css";
 export const metadata: Metadata = {
   title: {
@@ -30,9 +31,11 @@ export default function RootLayout({
     <html lang="nb">
       <body>
         <PwaProvider>
-          <Provider>
-            <Shell>{children}</Shell>
-          </Provider>
+          <AccountProvider>
+            <Provider>
+              <Shell>{children}</Shell>
+            </Provider>
+          </AccountProvider>
         </PwaProvider>
       </body>
     </html>

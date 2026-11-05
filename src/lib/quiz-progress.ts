@@ -15,6 +15,7 @@ export function questionKey(
   index: number,
   question: QuizQuestion,
 ): string {
+  if (question.remote) return question.remote.key;
   // Keep the original key for unchanged, single-answer questions in existing calendars.
   const definition: unknown[] = [
     day,
@@ -104,6 +105,13 @@ export function quizSummary(
       );
       let dayAnswered = 0,
         dayCorrect = 0;
+      const hiddenCount =
+        calendar.remote && door.day > available
+          ? ((calendar.serverQuizCounts ?? calendar.quizCounts)?.[
+              String(door.day)
+            ] ?? 0)
+          : 0;
+      total += hiddenCount;
       questions.forEach((question, index) => {
         total++;
         if (door.day > available) return;
@@ -119,7 +127,7 @@ export function quizSummary(
       });
       return {
         day: door.day,
-        total: questions.length,
+        total: questions.length + hiddenCount,
         answered: dayAnswered,
         correct: dayCorrect,
         locked: door.day > available,

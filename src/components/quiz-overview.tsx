@@ -4,10 +4,12 @@ import { Icon } from "./icons";
 export function QuizOverview({
   summary,
   testMode,
+  cloud = false,
   onClose,
 }: {
   summary: ReturnType<typeof quizSummary>;
   testMode: boolean;
+  cloud?: boolean;
   onClose: () => void;
 }) {
   const percent = summary.total
@@ -66,8 +68,10 @@ export function QuizOverview({
           ))}
         </div>
         <p className="quiz-storage-note">
-          {testMode ? "Dette er dine prøvesvar. " : ""}Svar og poeng lagres på
-          denne enheten.
+          {testMode ? "Dette er dine prøvesvar. " : ""}
+          {cloud
+            ? "Svar og poeng lagres på kontoen din."
+            : "Svar og poeng lagres på denne enheten."}
         </p>
       </div>
     </Dialog>

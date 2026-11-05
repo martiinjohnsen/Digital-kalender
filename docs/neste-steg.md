@@ -1,35 +1,27 @@
-# Neste steg
+# Videre utvikling
 
-## 1. Prøv basen
+## Før registrering åpnes for alle
 
-Test først oppretting, redigering, temaer, quiz og mottakervisning på en faktisk mobil. Bestem endelig produktnavn før domene, kontoavsender og grafisk profil låses.
+Koble en e-posttjeneste til Supabase Auth. Velg avsender, bekreft eventuelt domene hos leverandøren og legg SMTP-innstillingene i Supabase. Behold e-postbekreftelse. Se https://supabase.com/docs/guides/auth/auth-smtp.
 
-## 2. Konto og synkronisering
+Test hele kjeden med to separate testkontoer: registrering, bekreftelse, innlogging, glemt passord, endring av passord og utlogging. Test e-postlevering til en adresse utenfor Supabase-prosjektteamet. Sett deretter `NEXT_PUBLIC_AUTH_EMAIL_READY=true` og bygg appen på nytt.
 
-Legg til en innloggingstjeneste og database. `repository` i `src/lib/storage.ts` er dagens grense mellom grensesnitt og lagring. Gjør dataleverandøren kontoavhengig og håndhev kalenderrettigheter på serveren. Hemmelige nøkler skal ikke ligge i klientkode eller i variabler som starter med `NEXT_PUBLIC_`.
+Kontroller også deling mellom to faktiske innlogginger: eier redigerer en kalender, mottaker ser oppdateringen, kan ikke redigere, kan ikke hente fremtidige luker og mister tilgang når delingen avsluttes. Test samme konto på to enheter, samt utkast ved frakobling og samtidige kalenderendringer.
 
-Forslag til data som må modelleres: brukere, kalendere, eier-/samarbeidsroller, luker, mediefiler, mottakertilgang, quizspørsmål og innsendte svar. Bruk egne migrasjoner og stabile versjoner av lagringsformatet. Import av dagens lokale kalendere bør være en eksplisitt, gjennomgåbar handling etter innlogging.
+## Det som allerede er implementert
 
-## 3. Ordinær publisering
+Konto-grensesnitt, Supabase Auth-klient, kontoavgrenset lagring, eksplisitt import fra lokal lagring, database-RLS, lesetilgang for mottakere, tilbakekallbare invitasjoner, serverstyrt datoåpning, serverretting av quiz, personlig fremdrift, revisjonskontroll og Realtime-abonnementer.
 
-Opprett et offentlig kalender-ID med serverstyrt tilgang. Fremtidige lukers innhold skal ikke sendes til mottakeren før de åpner. Dato og tillatelser må vurderes på serveren, ikke bare i JavaScript. Gi deling mulighet for tilbakekalling. Det er dette som erstatter prøvelenkene.
+Migrasjonen ble opprettet i det tilkoblede Supabase-prosjektet. Site URL og returadressene for kontosiden ble satt opp. Databasekontrollene er kjørt lokalt med den samme migrasjonen; ekstern tilgang uten innlogging er kontrollert mot Supabase. SMTP, full e-postflyt og faktisk Realtime mellom to brukere gjenstår å verifisere.
 
-## 4. Medier
+## Bilder og video
 
-Flytt bilder til en objektlagring med størrelsesgrenser, rettighetskontroll og bildebehandling. Bruk signerte opplastinger. Behold synlig opplastingsstatus og alternativ bildetekst.
-
-## 5. Julequiz med felles poeng
-
-Lagre forsøk og poeng serverbasert. Riktige svar skal ikke følge med i klientens spørsmålsdata før innsending dersom poengene skal brukes i en konkurranse. Bestem om man kan prøve flere ganger, hvordan navn vises og når resultater publiseres.
-
-## 6. App
-
-PWA er første steg og er allerede lagt til. Test hjemskjermikon, skjermstørrelser og frakoblet oppførsel. Ekte pushvarsler krever samtykke, abonnementer og en server som sender varsler. En eventuell appbutikkpakke kommer etter at kontoer og synkronisering fungerer.
-
-## Teknisk vedlikehold
-
-Basen bruker de installerte, lokalt tilgjengelige versjonene av Next.js og React. Før ordinær produksjonsbruk: oppdater til gjeldende støttede versjoner, oppdater låsefilen og kjør alle kontrollene på nytt. Ikke endre versjoner uten å gjøre et nytt bygg. Service workerens cache-navn bør endres ved større endringer i appskallet.
+Bilder ligger foreløpig komprimert i kalenderdokumentet. Neste steg er en privat objektlagring med filgrenser og tilgangskontroll, slik at større bildebibliotek ikke lastes hver gang. Ekte videoopplasting er et eget arbeid; nå brukes YouTube-lenker.
 
 ## Gavekort
 
-Lukene har nå et eget giftCard-objekt og en manuell visning. Før leverandørintegrasjon må kjøp, utstedelse, betalingsbekreftelse, levering, saldo og refusjon modelleres. Hold ekte gavekortkoder serverbasert, med tilgang bare for mottakeren etter riktig dato. Ikke legg leverandørnøkler eller aktive gavekort i klientkode eller prøvelenker.
+Manuelle gavekort støttes. Leverandørkjøp krever blant annet betaling, utstedelse, levering og refusjon. Leverandørnøkler skal aldri inn i nettleseren. Mottakerens tilgang til gavekortkoder må fortsatt følge kalenderens serverstyrte datolås.
+
+## Profil og app
+
+Endelig logo og grafisk profil er utsatt etter ønske. PWA er lagt til. Pushvarsler, kontosletting med gjennomgåbar konsekvens, eventuell appbutikkpakke og felles quizpoengtavle er separate neste steg.

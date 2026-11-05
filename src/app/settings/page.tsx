@@ -6,8 +6,16 @@ import { InstallButton } from "@/components/pwa";
 import { Dialog } from "@/components/dialog";
 import { downloadJson } from "@/lib/storage";
 import { parseBackup, type AppData } from "@/lib/model";
+import { AccountPanel } from "@/components/account-panel";
+import { useAccount } from "@/components/account-provider";
+import { authMessage } from "@/lib/cloud/client";
 export default function SettingsPage() {
-  const { data, status, setPreferences, importData, toast } = useStore();
+  const store = useStore();
+  const { data, status, setPreferences, importData, toast, cloud, conflict } =
+    store;
+  const account = useAccount();
+  const [migrationBusy, setMigrationBusy] = useState(false),
+    [discard, setDiscard] = useState(false);
   const [name, setName] = useState(data.preferences.name);
   const [incoming, setIncoming] = useState<AppData | null>(null);
   const [error, setError] = useState("");
@@ -32,21 +40,19 @@ export default function SettingsPage() {
     <div className="page-enter settings-page">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">HELT PÅ DIN MÅTE</p>
-          <h1>En liten plass til deg.</h1>
-          <p>Gjør Luke til din, og ta vare på det du har laget.</p>
+          <h1>Konto og innstillinger</h1>
         </div>
       </div>
       <div className="settings-layout">
         <div className="settings-primary">
+          <AccountPanel />
           <section className="settings-card">
             <div className="settings-card-heading">
               <span className="soft-icon">
-                <Icon name="leaf" />
+                <Icon name="user" />
               </span>
               <div>
-                <h2>Hei, hva heter du?</h2>
-                <p>Et navn gjør verkstedet litt mer personlig.</p>
+                <h2>Profil og visning</h2>
               </div>
             </div>
             <form
@@ -102,15 +108,17 @@ export default function SettingsPage() {
               <div>
                 <strong>
                   {status === "saved"
-                    ? "Lagret på denne enheten"
+                    ? cloud
+                      ? "Lagret på kontoen din"
+                      : "Lagret på denne enheten"
                     : status === "saving"
                       ? "Lagrer endringer …"
                       : "Endringene er ikke trygt lagret"}
                 </strong>
                 <p>
-                  Kalenderne ligger i nettleseren din. De følger ikke automatisk
-                  med til en annen enhet og kan forsvinne hvis du sletter
-                  nettleserdata.
+                  {cloud
+                    ? "Endringer lagres på kontoen din. En sikkerhetskopi gir deg også en egen fil med innholdet."
+                    : "Kalenderne ligger foreløpig i denne nettleseren. Logg inn for å lagre dem på en konto og bruke dem på flere enheter."}
                 </p>
               </div>
             </div>
@@ -169,11 +177,18 @@ export default function SettingsPage() {
             <span className="account-mark">
               <Icon name="cloud" size={28} />
             </span>
-            <span className="pill">NESTE KAPITTEL</span>
-            <h2>Et hjem for kalenderne dine.</h2>
+            <span className="pill">
+              {cloud ? "KOBLET TIL KONTO" : "LOKAL VISNING"}
+            </span>
+            <h2>
+              {cloud
+                ? "Kalenderne følger deg."
+                : "Et hjem for kalenderne dine."}
+            </h2>
             <p>
-              Senere får Luke kontoer, så du kan fortsette på en annen enhet,
-              lage kalender sammen og dele med mottakere.
+              {cloud
+                ? "Fortsett på mobil eller PC. De du deler med, får oppdateringene dine og beholder sin egen fremdrift."
+                : "Med en konto kan du fortsette på flere enheter og dele en kalender som oppdateres hos mottakeren."}
             </p>
             <div className="upcoming-list">
               <span>
@@ -186,20 +201,110 @@ export default function SettingsPage() {
               </span>
               <span>
                 <Icon name="heart" size={16} />
-                Lag og del med andre
+                Del med mottakere
               </span>
             </div>
             <div className="account-note">
-              Du trenger ingen konto for å prøve denne versjonen.
+              {cloud ? (
+                <>
+                  <p>
+                    Har du kalendere fra før innlogging? Flytt dem til kontoen
+                    her. De lokale originalene beholdes.
+                  </p>
+                  <button
+                    className="button primary full"
+                    disabled={migrationBusy}
+                    onClick={async () => {
+                      setMigrationBusy(true);
+                      try {
+                        const count = await store.importLocal();
+                        toast(
+                          count
+                            ? `${count} kalendere er lagt til kontoen.`
+                            : "Ingen nye lokale kalendere å flytte.",
+                        );
+                      } catch (error) {
+                        toast(authMessage(error));
+                      } finally {
+                        setMigrationBusy(false);
+                      }
+                    }}
+                  >
+                    {migrationBusy ? "Flytter …" : "Legg til lokale kalendere"}
+                    <Icon name="upload" size={17} />
+                  </button>
+                </>
+              ) : (
+                "Du kan fortsatt lage lokale kalendere uten å logge inn."
+              )}
             </div>
+            {cloud && (
+              <button
+                className="button secondary full"
+                onClick={() => void store.refresh()}
+              >
+                Hent siste oppdateringer
+                <Icon name="cloud" size={17} />
+              </button>
+            )}
+            {conflict && (
+              <div className="account-conflict">
+                <p>
+                  Utkastet ditt og skyversjonen er forskjellige. Last ned en
+                  sikkerhetskopi med knappen til venstre før du velger å hente
+                  skyversjonen.
+                </p>
+                <button
+                  className="button secondary full"
+                  onClick={() => setDiscard(true)}
+                >
+                  Velg skyversjonen
+                </button>
+              </div>
+            )}
           </div>
           <p className="privacy-note">
-            <Icon name="leaf" size={16} />
-            Innholdet ditt sendes ikke til en kontotjeneste. Bilder behandles
-            lokalt. YouTube lastes bare når du velger å spille av en video.
+            <Icon name="lock" size={16} />
+            {cloud
+              ? "Innlogget som " +
+                account.user?.email +
+                ". Kalenderne lagres i Supabase med tilgang for deg og mottakerne dine."
+              : "Lokale kalendere blir på enheten til du velger å flytte dem til kontoen."}
           </p>
         </aside>
       </div>
+      {discard && (
+        <Dialog title="Hente skyversjonen?" onClose={() => setDiscard(false)}>
+          <div className="dialog-content">
+            <p>
+              Det lokale utkastet blir erstattet av versjonen på kontoen. Last
+              ned en sikkerhetskopi først hvis du vil beholde utkastet.
+            </p>
+            <div className="dialog-actions">
+              <button
+                className="button secondary"
+                onClick={() => setDiscard(false)}
+              >
+                Behold utkastet
+              </button>
+              <button
+                className="button primary"
+                onClick={async () => {
+                  try {
+                    await store.useCloudVersion();
+                    setDiscard(false);
+                    toast("Skyversjonen er hentet.");
+                  } catch (error) {
+                    toast(authMessage(error));
+                  }
+                }}
+              >
+                Hent skyversjonen
+              </button>
+            </div>
+          </div>
+        </Dialog>
+      )}
       {incoming && (
         <Dialog title="Importere kalenderne?" onClose={() => setIncoming(null)}>
           <div className="dialog-content">

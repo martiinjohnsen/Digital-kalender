@@ -8572,3 +8572,185 @@ input[type="radio"] {
     z-index: 1;
   }
 }
+
+/* Account forms use the same glass controls as the calendar workspace. */
+.account-tabs,
+.account-action-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.account-tabs {
+  margin: 0 0 26px;
+}
+.account-tabs .button {
+  flex: 1;
+  min-width: 120px;
+}
+.account-tabs .selected {
+  background: #e4d8ee;
+  border-color: #b59ac9;
+  color: #51385f;
+  box-shadow:
+    inset 0 1px 0 #ffffffc0,
+    0 4px 15px #65507812;
+}
+.account-form {
+  display: grid;
+  gap: 18px;
+  max-width: 520px;
+}
+.account-form > label {
+  margin: 0;
+  min-width: 0;
+}
+.account-form input {
+  width: 100%;
+  min-width: 0;
+}
+.account-panel .settings-card-heading > div {
+  min-width: 0;
+}
+.account-panel .settings-card-heading p {
+  overflow-wrap: anywhere;
+}
+.account-email-note,
+.account-success {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 16px;
+  margin-top: 22px;
+  background: #eee7f360;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.account-email-note > svg,
+.account-success > svg {
+  flex: 0 0 18px;
+  margin-top: 3px;
+}
+.account-email-note p,
+.account-success p {
+  margin: 0;
+}
+.account-success {
+  color: #365b47;
+  background: #eaf2eb;
+  border-color: #c7ddce;
+}
+.account-signed-in {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.account-signed-in .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.password-form {
+  margin-top: 25px;
+  padding-top: 25px;
+  border-top: 1px solid var(--line);
+}
+.account-note > p {
+  margin: 0 0 18px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.account-card > .button {
+  margin-top: 15px;
+}
+.account-conflict {
+  padding: 18px;
+  margin-top: 20px;
+  background: #fff8;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  font-size: 14px;
+}
+.receive-invitation {
+  min-height: 80dvh;
+  display: grid;
+  place-items: center;
+  padding: 30px 20px;
+}
+.invitation-card {
+  width: min(100%, 510px);
+  text-align: center;
+  padding: 35px;
+}
+.invitation-card .soft-icon {
+  margin: 0 auto 20px;
+}
+.invitation-card h1 {
+  font-size: clamp(30px, 5vw, 42px);
+  margin: 0 0 15px;
+}
+.invitation-card p {
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 25px;
+}
+.invitation-card > .button {
+  margin-top: 12px;
+}
+.legacy-share-note {
+  padding: 12px 20px;
+  background: #eee6f3;
+  text-align: center;
+  color: #655078;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.storage-warning {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.topbar .avatar {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #ffffffd0, #e5ddec80);
+  border: 1px solid #d8cbe5;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 4px 15px #49335c09;
+}
+@media (max-width: 760px) {
+  .account-form {
+    max-width: none;
+    gap: 16px;
+  }
+  .account-tabs .button {
+    padding: 12px 10px;
+    min-width: 0;
+  }
+  .account-action-row > .button {
+    flex: 1;
+  }
+  .account-email-note,
+  .account-success {
+    font-size: 12px;
+    padding: 14px;
+  }
+  .invitation-card {
+    padding: 25px;
+  }
+  .settings-card.account-panel {
+    padding: 23px 20px;
+  }
+  .account-panel .settings-card-heading h2 {
+    font-size: 26px;
+  }
+}

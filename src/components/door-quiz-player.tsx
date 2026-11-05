@@ -12,6 +12,7 @@ import {
 } from "@/lib/model";
 import { questionKey, type QuizProgress } from "@/lib/quiz-progress";
 import { Icon } from "./icons";
+import { authMessage } from "@/lib/cloud/client";
 export function DoorQuizPlayer({
   door,
   calendar,
@@ -25,7 +26,7 @@ export function DoorQuizPlayer({
     index: number,
     question: QuizQuestion,
     response: QuizResponse,
-  ) => void;
+  ) => void | Promise<void>;
 }) {
   const questions = questionsForDoor(door, calendar).filter(isQuestionComplete);
   if (!questions.length) return null;
@@ -53,14 +54,21 @@ function QuestionPlayer({
   question: QuizQuestion;
   attempt?: QuizResponse;
   sender: string;
-  onAnswer: (response: QuizResponse) => void;
+  onAnswer: (response: QuizResponse) => void | Promise<void>;
 }) {
   const [selected, setSelected] = useState<number[]>([]),
     [text, setText] = useState("");
   const name = useId();
+  const [sending, setSending] = useState(false),
+    [error, setError] = useState("");
   const textQuestion = question.type === "text",
-    correct = correctChoices(question),
-    multiple = correct.length > 1;
+    correct = question.remote
+      ? (attempt?.result?.correctAnswers ?? [])
+      : correctChoices(question),
+    multiple = question.remote ? question.remote.multiple : correct.length > 1;
+  const explanation = question.remote
+    ? attempt?.result?.explanation
+    : question.explanation;
   const choices =
     attempt?.answers ??
     (attempt?.answer !== undefined ? [attempt.answer] : selected);
@@ -68,12 +76,21 @@ function QuestionPlayer({
   return (
     <form
       className="quiz-play-question"
-      onSubmit={(event) => {
+      onSubmit={async (event) => {
         event.preventDefault();
-        if (attempt) return;
-        if (textQuestion) {
-          if (text.trim()) onAnswer({ text: text.trim() });
-        } else if (selected.length) onAnswer({ answers: [...selected] });
+        if (attempt || sending) return;
+        setSending(true);
+        setError("");
+        try {
+          if (textQuestion && text.trim())
+            await onAnswer({ text: text.trim() });
+          else if (!textQuestion && selected.length)
+            await onAnswer({ answers: [...selected] });
+        } catch (error) {
+          setError(authMessage(error));
+        } finally {
+          setSending(false);
+        }
       }}
     >
       <h4>{question.title}</h4>
@@ -108,7 +125,7 @@ function QuestionPlayer({
                   type={multiple ? "checkbox" : "radio"}
                   name={name}
                   checked={choices.includes(index)}
-                  disabled={!!attempt}
+                  disabled={!!attempt || sending}
                   onChange={(event) =>
                     setSelected((previous) =>
                       multiple
@@ -135,11 +152,16 @@ function QuestionPlayer({
         <button
           className="button primary quiz-submit"
           type="submit"
-          disabled={textQuestion ? !text.trim() : !selected.length}
+          disabled={sending || (textQuestion ? !text.trim() : !selected.length)}
         >
-          Send svar
+          {sending ? "Sjekker svaret …" : "Send svar"}
           <Icon name="arrow" size={15} />
         </button>
+      )}
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
       )}
       {attempt && (
         <div
@@ -151,13 +173,18 @@ function QuestionPlayer({
           </p>
           {textQuestion && !right && (
             <p className="quiz-correct-text">
-              Et godkjent svar: <strong>{question.acceptedAnswers?.[0]}</strong>
+              Et godkjent svar:{" "}
+              <strong>
+                {question.remote
+                  ? attempt.result?.acceptedAnswer
+                  : question.acceptedAnswers?.[0]}
+              </strong>
             </p>
           )}
-          {question.explanation && (
+          {explanation && (
             <div className="quiz-author-comment">
               <strong>Kommentar fra {sender || "avsender"}</strong>
-              <p>{question.explanation}</p>
+              <p>{explanation}</p>
             </div>
           )}
         </div>

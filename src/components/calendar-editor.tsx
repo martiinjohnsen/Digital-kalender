@@ -53,15 +53,17 @@ export function CalendarEditor({ id }: { id: string }) {
         <Link href={`/calendar/${id}/preview`} className="button primary">
           Åpne kalender
         </Link>
-        <button
-          className="button secondary"
-          onClick={() => {
-            const copy = ownerCopy(calendar);
-            if (store.add(copy)) router.push(`/calendar/${copy.id}`);
-          }}
-        >
-          Lag en redigerbar kopi
-        </button>
+        {!calendar.remote && (
+          <button
+            className="button secondary"
+            onClick={() => {
+              const copy = ownerCopy(calendar);
+              if (store.add(copy)) router.push(`/calendar/${copy.id}`);
+            }}
+          >
+            Lag en redigerbar kopi
+          </button>
+        )}
       </div>
     );
   const count = completedCount(calendar);

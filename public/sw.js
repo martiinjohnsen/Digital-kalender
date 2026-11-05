@@ -1,5 +1,5 @@
 /* Cache only this app's public shell. Calendar contents stay in IndexedDB. */
-const CACHE = "luke-shell-2026-11-05-v6";
+const CACHE = "luke-shell-2026-11-05-accounts-v7";
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {

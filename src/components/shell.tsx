@@ -23,14 +23,14 @@ const links: { href: string; name: string; mobile: string; icon: IconName }[] =
     },
     {
       href: "/settings",
-      name: "Innstillinger",
-      mobile: "Min side",
-      icon: "settings",
+      name: "Konto",
+      mobile: "Konto",
+      icon: "user",
     },
   ];
 export function Shell({ children }: { children: ReactNode }) {
   const path = usePathname(),
-    { data, status } = useStore();
+    { status, cloud } = useStore();
   const [newCalendar, setNewCalendar] = useState(false),
     [help, setHelp] = useState(false);
   useLayoutEffect(() => {
@@ -97,8 +97,8 @@ export function Shell({ children }: { children: ReactNode }) {
                 active === "/settings" ? "nav-item active" : "nav-item"
               }
             >
-              <Icon name="settings" />
-              Innstillinger
+              <Icon name="user" />
+              Konto
             </Link>
             <button className="nav-item" onClick={() => setHelp(true)}>
               <Icon name="help" />
@@ -120,11 +120,17 @@ export function Shell({ children }: { children: ReactNode }) {
             <div className="topbar-right">
               <span
                 className={`save-status ${status}`}
-                title="Kalenderne lagres i nettleseren på denne enheten"
+                title={
+                  cloud
+                    ? "Kalenderne lagres på kontoen din"
+                    : "Kalenderne lagres i nettleseren på denne enheten"
+                }
               >
                 <span className="status-dot" />
                 {status === "saved"
-                  ? "Lagret på enheten"
+                  ? cloud
+                    ? "Lagret på kontoen"
+                    : "Lagret på enheten"
                   : status === "saving"
                     ? "Lagrer …"
                     : "Lagring feilet"}
@@ -139,13 +145,9 @@ export function Shell({ children }: { children: ReactNode }) {
               <Link
                 href="/settings"
                 className="avatar"
-                aria-label="Åpne min side"
+                aria-label="Åpne konto og innstillinger"
               >
-                {data.preferences.name ? (
-                  data.preferences.name.slice(0, 1).toUpperCase()
-                ) : (
-                  <Icon name="leaf" size={18} />
-                )}
+                <Icon name="user" size={21} />
               </Link>
             </div>
           </header>

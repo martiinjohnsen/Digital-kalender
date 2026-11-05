@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { decodeCalendar } from "@/lib/share";
 import type { AdventCalendar } from "@/lib/model";
@@ -7,7 +8,100 @@ import { receivedCopy, isReceived } from "@/lib/calendar-library";
 import { RecipientView } from "@/components/recipient-view";
 import { Icon } from "@/components/icons";
 import { useStore } from "@/components/provider";
+import { useAccount } from "@/components/account-provider";
+import { inviteToken } from "@/lib/cloud/workspace";
+import { rpcForUser, authMessage } from "@/lib/cloud/client";
 export default function ReceivePage() {
+  const [hash, setHash] = useState<string | null>(null);
+  useEffect(() => {
+    const read = () => setHash(location.hash);
+    read();
+    window.addEventListener("hashchange", read);
+    return () => window.removeEventListener("hashchange", read);
+  }, []);
+  if (hash === null)
+    return (
+      <main className="loading-screen">
+        <p>Åpner lenken …</p>
+      </main>
+    );
+  const token = inviteToken(hash);
+  return token ? <LinkedReceive token={token} /> : <LegacyReceive />;
+}
+function LinkedReceive({ token }: { token: string }) {
+  const account = useAccount(),
+    store = useStore(),
+    router = useRouter();
+  const [error, setError] = useState("");
+  useEffect(() => {
+    try {
+      localStorage.setItem("luke:pending-invite", token);
+    } catch {}
+  }, [token]);
+  useEffect(() => {
+    if (!account.user) return;
+    let active = true;
+    void (async () => {
+      await store.syncNow();
+      const { data, error } = await rpcForUser(
+        account.user?.id ?? null,
+        "accept_luke_invite",
+        {
+          p_token: token,
+        },
+      );
+      if (error) throw error;
+      if (!active) return;
+      try {
+        localStorage.removeItem("luke:pending-invite");
+      } catch {}
+      await store.refresh();
+      if (active) router.replace(`/calendar/${data}/preview`);
+    })().catch((error) => {
+      if (active) {
+        setError(authMessage(error));
+        try {
+          localStorage.removeItem("luke:pending-invite");
+        } catch {}
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [account.user?.id, token, router, store.refresh, store.syncNow]);
+  return (
+    <main className="receive-invitation">
+      <div className="settings-card invitation-card">
+        <span className="soft-icon">
+          <Icon name="gift" size={30} />
+        </span>
+        <h1>
+          {error
+            ? "Kalenderen kunne ikke åpnes"
+            : account.user
+              ? "Henter kalenderen …"
+              : "En kalender venter på deg"}
+        </h1>
+        <p>
+          {error ||
+            (account.user
+              ? "Vi legger den til under Delt med meg."
+              : "Logg inn eller opprett en konto for å åpne kalenderen. Nye endringer fra avsender følger med automatisk.")}
+        </p>
+        {!account.user && !error && (
+          <Link href="/settings" className="button primary full">
+            Logg inn eller opprett konto
+            <Icon name="user" size={18} />
+          </Link>
+        )}
+        <Link href="/calendars" className="button secondary full">
+          Til Mine kalendere
+        </Link>
+      </div>
+    </main>
+  );
+}
+function LegacyReceive() {
   const store = useStore();
   const [calendar, setCalendar] = useState<AdventCalendar | null>(null),
     [error, setError] = useState("");
@@ -54,18 +148,30 @@ export default function ReceivePage() {
       item.receivedSourceId === (calendar.receivedSourceId ?? calendar.id),
   );
   return (
-    <RecipientView
-      key={calendar.id + calendar.updatedAt}
-      calendar={calendar}
-      saved={!!existing}
-      onSaveShared={() => {
-        const copy = receivedCopy(calendar, existing);
-        const ok = existing ? store.update(existing.id, copy) : store.add(copy);
-        if (ok)
-          store.toast(
-            "Kalenderen ligger nå under Delt med meg i Mine kalendere.",
-          );
-      }}
-    />
+    <>
+      <div className="legacy-share-note" role="note">
+        Dette er en eldre prøvelenke med en kopi av kalenderen. Be avsenderen om
+        en ny delingslenke for automatiske oppdateringer.
+      </div>
+      <RecipientView
+        key={calendar.id + calendar.updatedAt}
+        calendar={calendar}
+        saved={!!existing}
+        onSaveShared={
+          store.cloud
+            ? undefined
+            : () => {
+                const copy = receivedCopy(calendar, existing);
+                const ok = existing
+                  ? store.update(existing.id, copy)
+                  : store.add(copy);
+                if (ok)
+                  store.toast(
+                    "Kalenderen ligger nå under Delt med meg i Mine kalendere.",
+                  );
+              }
+        }
+      />
+    </>
   );
 }
