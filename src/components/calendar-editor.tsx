@@ -31,6 +31,17 @@ export function CalendarEditor({ id }: { id: string }) {
     [filter, setFilter] = useState("all"),
     [editing, setEditing] = useState<number | null>(null),
     [share, setShare] = useState(false);
+  if (!store.cloud)
+    return (
+      <div className="empty-state">
+        <Icon name="user" size={32} />
+        <h1>Logg inn for å redigere</h1>
+        <p>Kalenderne dine er knyttet til kontoen din.</p>
+        <Link href="/settings" className="button primary">
+          Logg inn eller opprett konto
+        </Link>
+      </div>
+    );
   if (!calendar)
     return (
       <div className="empty-state">

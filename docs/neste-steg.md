@@ -2,7 +2,9 @@
 
 ## Før registrering åpnes for alle
 
-Koble en e-posttjeneste til Supabase Auth. Velg avsender, bekreft eventuelt domene hos leverandøren og legg SMTP-innstillingene i Supabase. Behold e-postbekreftelse. Se https://supabase.com/docs/guides/auth/auth-smtp.
+Resend-kontoen er opprettet og tilgjengelig. Domains-siden viste ingen domener 5. november. Et domene brukeren eier må først legges til og verifiseres med DNS. Vercels delte `vercel.app`-domene kan ikke brukes som eget avsenderdomene.
+
+Deretter kobles Resend til Supabase Auth med SMTP: vert `smtp.resend.com`, port `465`, brukernavn `resend`, avsendernavn `Luke` og en avsenderadresse på det verifiserte domenet. SMTP-passordet er en Resend-nøkkel med bare sendetilgang, lagret hos Supabase, aldri i appen eller Git. Behold e-postbekreftelse. Ingen SMTP-nøkkel er opprettet eller aktivert mens domene mangler. Se https://resend.com/docs/send-with-supabase-smtp og https://supabase.com/docs/guides/auth/auth-smtp.
 
 Test hele kjeden med to separate testkontoer: registrering, bekreftelse, innlogging, glemt passord, endring av passord og utlogging. Test e-postlevering til en adresse utenfor Supabase-prosjektteamet. Sett deretter `NEXT_PUBLIC_AUTH_EMAIL_READY=true` og bygg appen på nytt.
 

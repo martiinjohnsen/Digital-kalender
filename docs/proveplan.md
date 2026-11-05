@@ -33,7 +33,7 @@
 7. Slå av Åpne alle luker. Før 1. desember skal alle være låst. På 4. desember skal bare 1–4 være tilgjengelige. Datoene beregnes i Europe/Oslo.
 8. Åpne Quizoversikt. Fremtidige dagers spørsmål skal ikke kunne spilles der. Eierens prøvesvar skal være adskilt fra mottakerens.
 9. Logg inn på to separate kontoer. Del en kalender fra eieren til mottakeren. Kontroller at mottakeren får lesetilgang under Delt med meg, at eierens nye endringer følger med og at avsluttet deling fjerner tilgangen. Gamle prøvelenker er statiske kopier.
-10. Ta sikkerhetskopi og importer. Ugyldig fil skal avvises uten å endre innholdet. Eldre kalendere og gamle quizspørsmål skal fortsatt kunne åpnes.
+10. Ved revisjonskonflikt: last ned utkast før skyversjonen hentes. Flytt eldre, lokale kalendere uttrykkelig etter innlogging. Gamle quizspørsmål skal fortsatt kunne åpnes.
 11. Installer den publiserte siden på iPhone og Android. Test hjemskjermikon og frakoblet reservevisning.
 12. Bruk tastatur og VoiceOver: navigasjon, oppretting, quiz, Escape og retur av fokus. Reduser bevegelse skal slå av dørsekvensen, risting og partikler.
 
@@ -46,3 +46,11 @@
 - Macen ble låst under arbeidet. Ny visuell kontroll av konto-siden, full e-postflyt og faktisk Realtime mellom to innlogginger er derfor ikke verifisert. E-posttjeneste mangler fortsatt.
 
 Når e-post er koblet til: test registrering, bekreftelse, ny bekreftelse, innlogging, glemt passord, passordbytte, utlogging, kontoavgrensning, eksplisitt flytting av lokale kalendere, to enheter, frakobling og motstridende kalenderendringer. Test fysisk iPhone, også med åpent tastatur.
+
+## Samlet kontoside og gjestetilgang, 5. november
+
+- Fjernet de separate seksjonene Profil og visning og Ta vare på de små gledene. Navn og visningsvalg ligger i kontopanelet etter innlogging; registreringsskjemaet krever navn.
+- Gjestekontroll gjelder oppretting, kopiering, redigering, fjerning og import. Innloggingskravet ved anonyme databasekall er også testet.
+- Lokal Chrome med produksjonsbygg: gjestesiden viser forside og inspirasjon uten private kalenderkort, søk eller tomme filtre. Opprett kalender sendte til `/settings?next=create` med forklaringen om innlogging, uten å åpne opprettingsdialogen.
+- Resend Domains viste ingen domener. SMTP og e-postlevering er ikke aktivert. Registreringsknappen, ny bekreftelse og passordlenker er derfor sperret med en synlig forklaring til avsenderen er klar.
+- Etter innlogging skal Opprett kalender fortsette automatisk. Hele innloggingsforløpet og mobilvisningen må fortsatt kontrolleres med faktiske kontoer når e-posttjenesten er koblet til.

@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { BrandMark, Icon, type IconName } from "./icons";
 import { useStore } from "./provider";
@@ -29,8 +29,9 @@ const links: { href: string; name: string; mobile: string; icon: IconName }[] =
     },
   ];
 export function Shell({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const path = usePathname(),
-    { status, cloud } = useStore();
+    { status, cloud, requireAccount } = useStore();
   const [newCalendar, setNewCalendar] = useState(false),
     [help, setHelp] = useState(false);
   useLayoutEffect(() => {
@@ -40,10 +41,25 @@ export function Shell({ children }: { children: ReactNode }) {
     return () => cancelAnimationFrame(frame);
   }, [path]);
   useEffect(() => {
-    const listener = () => setNewCalendar(true);
+    const listener = () => {
+      if (requireAccount(true)) setNewCalendar(true);
+    };
     window.addEventListener("luke:new", listener);
     return () => window.removeEventListener("luke:new", listener);
-  }, []);
+  }, [requireAccount]);
+  useEffect(() => {
+    if (!cloud) {
+      setNewCalendar(false);
+      return;
+    }
+    if (
+      path === "/calendars" &&
+      new URLSearchParams(location.search).get("create") === "1"
+    ) {
+      setNewCalendar(true);
+      router.replace("/calendars", { scroll: false });
+    }
+  }, [cloud, path, router]);
   const preview = path.endsWith("/preview") || path === "/receive";
   const active =
     path.startsWith("/calendar/") || path === "/" ? "/calendars" : path;
@@ -118,23 +134,23 @@ export function Shell({ children }: { children: ReactNode }) {
               <strong>{pageName}</strong>
             </span>
             <div className="topbar-right">
-              <span
-                className={`save-status ${status}`}
-                title={
-                  cloud
-                    ? "Kalenderne lagres på kontoen din"
-                    : "Kalenderne lagres i nettleseren på denne enheten"
-                }
-              >
-                <span className="status-dot" />
-                {status === "saved"
-                  ? cloud
+              {cloud ? (
+                <span
+                  className={`save-status ${status}`}
+                  title="Kalenderne lagres på kontoen din"
+                >
+                  <span className="status-dot" />
+                  {status === "saved"
                     ? "Lagret på kontoen"
-                    : "Lagret på enheten"
-                  : status === "saving"
-                    ? "Lagrer …"
-                    : "Lagring feilet"}
-              </span>
+                    : status === "saving"
+                      ? "Lagrer …"
+                      : "Lagring feilet"}
+                </span>
+              ) : (
+                <Link className="topbar-login" href="/settings">
+                  Logg inn
+                </Link>
+              )}
               <button
                 className="icon-button help-button"
                 aria-label="Hjelp"
@@ -171,7 +187,9 @@ export function Shell({ children }: { children: ReactNode }) {
           ))}
         </nav>
       )}
-      {newCalendar && <NewCalendar onClose={() => setNewCalendar(false)} />}{" "}
+      {newCalendar && cloud && (
+        <NewCalendar onClose={() => setNewCalendar(false)} />
+      )}{" "}
       {help && (
         <Dialog title="Slik bruker du Luke" onClose={() => setHelp(false)}>
           <div className="help-content">
@@ -179,7 +197,7 @@ export function Shell({ children }: { children: ReactNode }) {
               [
                 "calendar",
                 "1. Opprett en kalender",
-                "Velg navn, mottaker og hvordan kalenderen skal se ut.",
+                "Logg inn eller opprett en konto. Velg navn, mottaker og utseende på kalenderen.",
               ],
               [
                 "gift",
@@ -203,11 +221,10 @@ export function Shell({ children }: { children: ReactNode }) {
               </div>
             ))}
             <div className="info-box">
-              <strong>Innholdet lagres på denne enheten</strong>
+              <strong>Kalenderne følger kontoen din</strong>
               <p>
-                Ta en sikkerhetskopi i Innstillinger. Prøvelenker inneholder
-                hele kalenderkopien. Bruk dem til å prøve, og unngå private
-                opplysninger og gavekort med verdi.
+                Endringene lagres på kontoen. Mottakere bruker sin egen konto og
+                ser oppdateringene dine, men kan ikke redigere kalenderen.
               </p>
             </div>
             <button

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { useStore } from "./provider";
 import { CalendarCard } from "./calendar-card";
 import { startNew } from "./new-calendar";
@@ -11,7 +12,7 @@ import {
   type LibraryFilter,
 } from "@/lib/calendar-library";
 export function CalendarLibrary() {
-  const { data } = useStore();
+  const { data, cloud } = useStore();
   const [filter, setFilter] = useState<LibraryFilter>("all"),
     [search, setSearch] = useState(""),
     [sort, setSort] = useState("newest");
@@ -31,7 +32,7 @@ export function CalendarLibrary() {
   return (
     <div className="library-page page-enter">
       <div className="page-heading">
-        <h1>Mine kalendere</h1>
+        <h1>{cloud ? "Mine kalendere" : "Velkommen til Luke"}</h1>
       </div>
       <section className="hero library-hero" aria-label="Opprett kalender">
         <div className="hero-copy">
@@ -64,79 +65,101 @@ export function CalendarLibrary() {
           />
         </div>
       </section>
-      <div className="library-controls">
-        <div className="filter-tabs library-filters" aria-label="Vis kalendere">
-          {tabs.map((tab) => (
-            <button
-              key={tab.value}
-              className={filter === tab.value ? "active" : ""}
-              aria-pressed={filter === tab.value}
-              onClick={() => setFilter(tab.value)}
+      {cloud ? (
+        <>
+          <div className="library-controls">
+            <div
+              className="filter-tabs library-filters"
+              aria-label="Vis kalendere"
             >
-              {tab.label}
-              <span>{tab.count}</span>
-            </button>
-          ))}
-        </div>
-        <div className="collection-toolbar">
-          <div className="search-field">
-            <Icon name="search" size={17} />
-            <input
-              aria-label="Søk i kalendere"
-              placeholder="Søk i kalendere"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-            {search && (
-              <button
-                className="icon-button"
-                aria-label="Tøm søk"
-                onClick={() => setSearch("")}
-              >
-                <Icon name="close" size={15} />
-              </button>
-            )}
+              {tabs.map((tab) => (
+                <button
+                  key={tab.value}
+                  className={filter === tab.value ? "active" : ""}
+                  aria-pressed={filter === tab.value}
+                  onClick={() => setFilter(tab.value)}
+                >
+                  {tab.label}
+                  <span>{tab.count}</span>
+                </button>
+              ))}
+            </div>
+            <div className="collection-toolbar">
+              <div className="search-field">
+                <Icon name="search" size={17} />
+                <input
+                  aria-label="Søk i kalendere"
+                  placeholder="Søk i kalendere"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+                {search && (
+                  <button
+                    className="icon-button"
+                    aria-label="Tøm søk"
+                    onClick={() => setSearch("")}
+                  >
+                    <Icon name="close" size={15} />
+                  </button>
+                )}
+              </div>
+              <div className="sort-control">
+                <select
+                  aria-label="Sorter kalendere"
+                  value={sort}
+                  onChange={(event) => setSort(event.target.value)}
+                >
+                  <option value="newest">Sist endret</option>
+                  <option value="name">Navn A–Å</option>
+                </select>
+                <Icon name="chevron" size={16} />
+              </div>
+            </div>
           </div>
-          <div className="sort-control">
-            <select
-              aria-label="Sorter kalendere"
-              value={sort}
-              onChange={(event) => setSort(event.target.value)}
-            >
-              <option value="newest">Sist endret</option>
-              <option value="name">Navn A–Å</option>
-            </select>
-            <Icon name="chevron" size={16} />
+          <div className="calendar-grid">
+            {calendars.map((calendar) => (
+              <CalendarCard key={calendar.id} calendar={calendar} />
+            ))}
           </div>
-        </div>
-      </div>
-      <div className="calendar-grid">
-        {calendars.map((calendar) => (
-          <CalendarCard key={calendar.id} calendar={calendar} />
-        ))}
-      </div>
-      {!calendars.length && (
-        <div className="empty-state library-empty">
-          <Icon
-            name={
-              filter === "received" ? "share" : search ? "search" : "calendar"
-            }
-            size={29}
-          />
-          <h2>
-            {search
-              ? "Ingen treff"
-              : filter === "received"
-                ? "Ingen delte kalendere ennå"
-                : "Her kommer kalenderne dine"}
-          </h2>
+          {!calendars.length && (
+            <div className="empty-state library-empty">
+              <Icon
+                name={
+                  filter === "received"
+                    ? "share"
+                    : search
+                      ? "search"
+                      : "calendar"
+                }
+                size={29}
+              />
+              <h2>
+                {search
+                  ? "Ingen treff"
+                  : filter === "received"
+                    ? "Ingen delte kalendere ennå"
+                    : "Her kommer kalenderne dine"}
+              </h2>
+              <p>
+                {search
+                  ? "Prøv et annet søk."
+                  : filter === "received"
+                    ? "Kalendere du lagrer fra en delingslenke, vises her."
+                    : "Opprett en kalender for å begynne."}
+              </p>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="guest-welcome">
           <p>
-            {search
-              ? "Prøv et annet søk."
-              : filter === "received"
-                ? "Kalendere du lagrer fra en delingslenke, vises her."
-                : "Opprett en kalender for å begynne."}
+            Se hva du kan legge bak lukene, eller opprett en konto for å lage
+            din egen kalender.
           </p>
+          <Link href="/inspiration" className="button secondary">
+            <Icon name="sparkles" size={18} />
+            Se inspirasjon
+          </Link>
         </div>
       )}
     </div>

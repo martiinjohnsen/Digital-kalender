@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { decodeCalendar } from "@/lib/share";
 import type { AdventCalendar } from "@/lib/model";
-import { receivedCopy, isReceived } from "@/lib/calendar-library";
+import { isReceived } from "@/lib/calendar-library";
 import { RecipientView } from "@/components/recipient-view";
 import { Icon } from "@/components/icons";
 import { useStore } from "@/components/provider";
@@ -157,20 +157,6 @@ function LegacyReceive() {
         key={calendar.id + calendar.updatedAt}
         calendar={calendar}
         saved={!!existing}
-        onSaveShared={
-          store.cloud
-            ? undefined
-            : () => {
-                const copy = receivedCopy(calendar, existing);
-                const ok = existing
-                  ? store.update(existing.id, copy)
-                  : store.add(copy);
-                if (ok)
-                  store.toast(
-                    "Kalenderen ligger nå under Delt med meg i Mine kalendere.",
-                  );
-              }
-        }
       />
     </>
   );

@@ -1,5 +1,14 @@
 -- Disposable fixtures only. Everything, including auth users, is rolled back.
 begin;
+-- A guest must not be able to bypass the account screen by calling the RPC.
+set local role anon;
+do $$ begin
+  begin
+    perform public.save_luke_workspace('[]','[]','[]','{"name":"Guest","snow":true}');
+    raise exception 'Anonymous workspace write accepted';
+  exception when insufficient_privilege then null; end;
+end $$;
+reset role;
 insert into auth.users(id,email) values ('fa000000-0000-4000-8000-000000000001','owner@luke.example'),('fa000000-0000-4000-8000-000000000002','recipient@luke.example'),('fa000000-0000-4000-8000-000000000003','stranger@luke.example');
 create temporary table luke_test_vars(k text primary key,v text);
 grant select,insert,update on luke_test_vars to authenticated;
@@ -12,6 +21,7 @@ do $$ begin
  assert (select count(*)=2 from public.luke_calendars), 'Owner cannot read own documents';
  assert (public.get_luke_workspace()::text like '%FUTURE-SECRET%'), 'Owner cannot preview future doors';
  assert not has_function_privilege('anon','public.get_luke_workspace()','EXECUTE'), 'Anonymous RPC access';
+ assert not has_function_privilege('anon','public.save_luke_workspace(jsonb,jsonb,jsonb,jsonb)','EXECUTE'), 'Anonymous workspace writes exposed';
  assert not has_function_privilege('authenticated','public.luke_public_document(jsonb,text)','EXECUTE'), 'Internal helper exposed';
  assert not has_table_privilege('anon','public.luke_calendars','SELECT'), 'Anonymous table access';
  assert not has_table_privilege('authenticated','public.luke_calendars','UPDATE'), 'Direct document writes exposed';

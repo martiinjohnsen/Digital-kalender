@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAccount } from "./account-provider";
 import { useStore } from "./provider";
 import { authMessage, emailReady, supabase } from "@/lib/cloud/client";
@@ -10,17 +9,23 @@ export function AccountPanel() {
   const account = useAccount(),
     store = useStore();
   const router = useRouter();
+  const search = useSearchParams();
+  const createAfterLogin = search.get("next") === "create";
   useEffect(() => {
     if (!account.user || account.recovery) return;
+    let hasInvite = false;
     try {
       const token = localStorage.getItem("luke:pending-invite");
-      if (token && /^[a-f0-9]{64}$/.test(token))
+      if (token && /^[a-f0-9]{64}$/.test(token)) {
+        hasInvite = true;
         router.replace(`/receive#invite=${token}`);
+      }
     } catch {}
-  }, [account.user?.id, account.recovery, router]);
+    if (!hasInvite && createAfterLogin) router.replace("/calendars?create=1");
+  }, [account.user?.id, account.recovery, createAfterLogin, router]);
   const [mode, setMode] = useState<"login" | "signup" | "reset">("login");
   const [email, setEmail] = useState(""),
-    [name, setName] = useState("");
+    [name, setName] = useState(store.data.preferences.name);
   const [password, setPassword] = useState(""),
     [repeat, setRepeat] = useState(""),
     [currentPassword, setCurrentPassword] = useState("");
@@ -28,6 +33,9 @@ export function AccountPanel() {
     [error, setError] = useState(""),
     [message, setMessage] = useState(""),
     [changePassword, setChangePassword] = useState(false);
+  useEffect(() => {
+    setName(store.data.preferences.name);
+  }, [store.data.preferences.name]);
   useEffect(() => {
     if (account.recovery) setChangePassword(true);
   }, [account.recovery]);
@@ -53,8 +61,13 @@ export function AccountPanel() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     await action(async () => {
+      if (mode !== "login" && !emailReady)
+        throw new Error(
+          "E-postutsendingen er under oppsett. Registrering og passordlenker åpnes når den er klar.",
+        );
       const address = email.trim();
       if (mode === "signup") {
+        if (!name.trim()) throw new Error("Skriv inn navnet ditt.");
         if (password.length < 10)
           throw new Error("Passordet må ha minst 10 tegn.");
         if (password !== repeat) throw new Error("Passordene er ikke like.");
@@ -107,7 +120,9 @@ export function AccountPanel() {
           <p>
             {account.user
               ? account.user.email
-              : "Logg inn og ta kalenderne dine med deg."}
+              : createAfterLogin
+                ? "Logg inn eller opprett en konto for å lage kalenderen din."
+                : "Én konto for kalenderne dine på mobil og PC."}
           </p>
         </div>
       </div>
@@ -143,8 +158,8 @@ export function AccountPanel() {
           </div>
           {!account.configured && (
             <p className="form-error" role="alert">
-              Kontotjenesten er ikke koblet til denne versjonen ennå. Du kan
-              fortsatt bruke Luke lokalt.
+              Kontotjenesten er ikke tilgjengelig akkurat nå. Du kan fortsatt
+              utforske inspirasjonssiden.
             </p>
           )}
           <form onSubmit={submit} className="account-form">
@@ -214,7 +229,9 @@ export function AccountPanel() {
             )}
             <button
               className="button primary full"
-              disabled={busy || !account.configured}
+              disabled={
+                busy || !account.configured || (mode !== "login" && !emailReady)
+              }
               type="submit"
             >
               {busy
@@ -241,7 +258,7 @@ export function AccountPanel() {
               <button
                 className="button secondary full"
                 type="button"
-                disabled={busy || !account.configured}
+                disabled={busy || !account.configured || !emailReady}
                 onClick={() =>
                   void action(async () => {
                     const { error } = await supabase().auth.resend({
@@ -272,8 +289,8 @@ export function AccountPanel() {
             </div>
           )}
           <p className="field-help">
-            Vil du prøve først?{" "}
-            <Link href="/calendars">Fortsett med lokale kalendere</Link>.
+            Du kan utforske Luke uten konto. For å lage og dele kalendere må du
+            være innlogget.
           </p>
         </>
       ) : (
@@ -287,6 +304,35 @@ export function AccountPanel() {
               Kalenderne er knyttet til denne kontoen.
             </span>
           </div>
+          <form
+            className="account-form account-profile-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!name.trim()) return;
+              if (store.setPreferences({ name: name.trim() }))
+                store.toast("Navnet ditt er oppdatert.");
+            }}
+          >
+            <label>
+              Navn
+              <input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                maxLength={60}
+                autoComplete="name"
+                required
+              />
+            </label>
+            <button
+              className="button secondary"
+              type="submit"
+              disabled={
+                !name.trim() || name.trim() === store.data.preferences.name
+              }
+            >
+              Lagre navn <Icon name="check" size={17} />
+            </button>
+          </form>
           <div className="account-action-row">
             <button
               className="button secondary"
@@ -390,6 +436,23 @@ export function AccountPanel() {
               </button>
             </form>
           )}
+          <div className="setting-toggle">
+            <div>
+              <strong>Vinterstemning</strong>
+              <p>Vis små stjerner rundt kalenderen du åpner.</p>
+            </div>
+            <label className="switch-label">
+              <input
+                type="checkbox"
+                aria-label="Vis vinterdekorasjoner"
+                checked={store.data.preferences.snow}
+                onChange={(event) =>
+                  store.setPreferences({ snow: event.target.checked })
+                }
+              />
+              <span className="switch" />
+            </label>
+          </div>
         </>
       )}
       {(error || account.error) && (

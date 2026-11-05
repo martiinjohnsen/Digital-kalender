@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
 import {
   parseBackup,
   type AdventCalendar,
@@ -39,6 +40,7 @@ type Store = {
   cloud: boolean;
   progress: CloudProgress;
   conflict: boolean;
+  requireAccount: (create?: boolean) => boolean;
   add: (calendar: AdventCalendar) => boolean;
   update: (id: string, change: Partial<AdventCalendar>) => boolean;
   remove: (id: string) => boolean;
@@ -70,6 +72,7 @@ async function fetchWorkspace(userId: string | null) {
 }
 export function Provider({ children }: { children: ReactNode }) {
   const account = useAccount();
+  const router = useRouter();
   const [data, setData] = useState<AppData | null>(null),
     [fatal, setFatal] = useState("");
   const [status, setStatus] = useState<Store["status"]>("saving"),
@@ -90,6 +93,14 @@ export function Provider({ children }: { children: ReactNode }) {
   const pumpRef = useRef<() => Promise<void>>(async () => {}),
     refreshRef = useRef<() => Promise<void>>(async () => {});
   const toast = useCallback((message: string) => setNotice(message), []);
+  const requireAccount = useCallback(
+    (create = false) => {
+      if (account.user && uid.current === account.user.id) return true;
+      router.push(create ? "/settings?next=create" : "/settings");
+      return false;
+    },
+    [account.user, router],
+  );
   function show(next: AppData) {
     current.current = next;
     setData(next);
@@ -410,10 +421,12 @@ export function Provider({ children }: { children: ReactNode }) {
     cloud: !!account.user,
     progress,
     conflict,
+    requireAccount,
     toast,
     syncNow,
     refresh,
     add: (calendar) => {
+      if (!requireAccount(true)) return false;
       if (account.user && calendar.access === "received") {
         toast(
           "Åpne den nye delingslenken for å legge til kalenderen på kontoen.",
@@ -423,6 +436,7 @@ export function Provider({ children }: { children: ReactNode }) {
       return commit((p) => ({ ...p, calendars: [calendar, ...p.calendars] }));
     },
     update: (id, change) => {
+      if (!requireAccount()) return false;
       if (
         current.current?.calendars.find((c) => c.id === id)?.access ===
         "received"
@@ -445,14 +459,22 @@ export function Provider({ children }: { children: ReactNode }) {
         ),
       }));
     },
-    remove: (id) =>
-      commit((p) => ({
+    remove: (id) => {
+      if (!requireAccount()) return false;
+      return commit((p) => ({
         ...p,
         calendars: p.calendars.filter((c) => c.id !== id),
-      })),
-    setPreferences: (change) =>
-      commit((p) => ({ ...p, preferences: { ...p.preferences, ...change } })),
+      }));
+    },
+    setPreferences: (change) => {
+      if (!requireAccount()) return false;
+      return commit((p) => ({
+        ...p,
+        preferences: { ...p.preferences, ...change },
+      }));
+    },
     importData: (incoming) => {
+      if (!requireAccount()) return false;
       const calendars = incoming.calendars.filter(
         (c) => !account.user || c.access !== "received",
       );
@@ -477,6 +499,8 @@ export function Provider({ children }: { children: ReactNode }) {
       }));
     },
     importLocal: async () => {
+      if (!requireAccount())
+        throw new Error("Logg inn før du legger til kalendere.");
       const generation = epoch.current;
       const guest = await repository.load();
       if (!guest || generation !== epoch.current) return 0;

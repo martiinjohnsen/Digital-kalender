@@ -13,11 +13,12 @@ npm run dev
 
 ## Konto og lagring
 
-- Konto-siden har registrering, innlogging, ny bekreftelsesepost, glemt passord, passordbytte og utlogging. Supabase Auth håndterer passord og innloggingsøkter.
-- Uten innlogging lagres kalendere lokalt i IndexedDB. Etter innlogging lastes kontoens egne kalendere og mottatte kalendere fra Supabase.
-- Lokale kalendere flyttes bare ved et uttrykkelig valg under Konto. De lokale originalene beholdes.
+- Konto-siden samler navn, registrering, innlogging, ny bekreftelsesepost, glemt passord, passordbytte, profil og utlogging. Supabase Auth håndterer passord og innloggingsøkter.
+- Besøkende kan utforske forsiden og inspirasjonen. Oppretting, kopiering, redigering, sletting og import krever innlogging, både i grensesnittet og ved endring av data. Databasen avviser også anonyme forespørsler.
+- Opprett kalender sender en gjest til `/settings?next=create`. Etter innlogging fortsetter brukeren til kalenderoppretting. En ventende kalenderinvitasjon har prioritet; gjenoppretting av passord fullføres først.
+- Eventuelle lokale kalendere fra den tidligere versjonen beholdes. De kan flyttes uttrykkelig under Konto etter innlogging. Gjestesiden viser dem ikke i Mine kalendere.
 - Innloggede brukere får en lokal, kontoavgrenset kopi av siste data og eventuelle ulagrede utkast. Nettverksfeil blir synlige. Utkast blir ikke erstattet av et mislykket nettverkskall.
-- Kalenderendringer bruker revisjonskontroll. Ved en konflikt beholdes utkastet. Brukeren kan ta en sikkerhetskopi før skyversjonen hentes.
+- Kalenderendringer bruker revisjonskontroll. Ved en konflikt beholdes utkastet. Kontosiden viser da en egen handling for å laste ned utkastet før skyversjonen hentes. Den tidligere, store sikkerhetskopiseksjonen er fjernet.
 - Eiers forhåndsvisning og prøvesvar er adskilt fra mottakerens lagrede fremdrift.
 
 **E-postutsending må kobles til før ordinær registrering åpnes for alle.** Supabase sin innebygde avsender er begrenset til prosjektets autoriserte teamadresser. Bekreftelse av e-post beholdes. Vi slår ikke av bekreftelsen for å omgå manglende utsending.
