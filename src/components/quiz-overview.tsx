@@ -2,14 +2,8 @@ import { quizSummary } from "@/lib/quiz-progress";
 import { Icon } from "./icons";
 export function QuizOverview({
   summary,
-  testMode,
-  cloud = false,
-  rememberProgress = true,
 }: {
   summary: ReturnType<typeof quizSummary>;
-  testMode: boolean;
-  cloud?: boolean;
-  rememberProgress?: boolean;
 }) {
   const percent = summary.total
     ? Math.round((summary.answered / summary.total) * 100)
@@ -65,14 +59,6 @@ export function QuizOverview({
           </div>
         ))}
       </div>
-      <p className="quiz-storage-note">
-        {testMode ? "Dette er dine prøvesvar. " : ""}
-        {!rememberProgress
-          ? "Prøvesvarene brukes bare i denne forhåndsvisningen."
-          : cloud
-            ? "Svar og poeng lagres på kontoen din."
-            : "Svar og poeng lagres på denne enheten."}
-      </p>
     </div>
   );
 }

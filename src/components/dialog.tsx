@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, type ReactNode } from "react";
 import { Icon } from "./icons";
+import { fieldScrollOffset } from "@/lib/dialog-layout";
 export function Dialog({
   title,
   onClose,
@@ -18,6 +19,20 @@ export function Dialog({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
+  const focusFrame = useRef(0);
+  const focusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function revealFocusedField() {
+    cancelAnimationFrame(focusFrame.current);
+    focusFrame.current = requestAnimationFrame(() => {
+      const dialog = ref.current;
+      const active = document.activeElement;
+      const scroller = dialog?.querySelector<HTMLElement>(".dialog-scroll");
+      if (!scroller || !(active instanceof HTMLElement) || !scroller.contains(active) ||
+        !active.matches("input,textarea,select,[contenteditable='true']")) return;
+      const offset = fieldScrollOffset(scroller.getBoundingClientRect(), active.getBoundingClientRect());
+      if (offset) scroller.scrollTop += offset;
+    });
+  }
   useEffect(() => {
     returnFocus.current = document.activeElement as HTMLElement;
     const dialog = ref.current;
@@ -34,11 +49,14 @@ export function Dialog({
       dialog?.style.setProperty(
         "--dialog-effect-height", `${dialog.clientHeight}px`,
       );
+      revealFocusedField();
     };
     dialog?.showModal();
     resize();
     const observer = new ResizeObserver(resize);
     if (dialog) observer.observe(dialog);
+    const content = dialog?.querySelector(".dialog-scroll")?.firstElementChild;
+    if (content) observer.observe(content);
     viewport?.addEventListener("resize", resize);
     viewport?.addEventListener("scroll", resize);
     window.addEventListener("resize", resize);
@@ -46,6 +64,8 @@ export function Dialog({
     document.body.style.overflow = "hidden";
     return () => {
       dialog?.close();
+      cancelAnimationFrame(focusFrame.current);
+      if (focusTimer.current) clearTimeout(focusTimer.current);
       observer.disconnect();
       viewport?.removeEventListener("resize", resize);
       viewport?.removeEventListener("scroll", resize);
@@ -59,6 +79,12 @@ export function Dialog({
       ref={ref}
       className={`dialog ${wide ? "dialog-wide" : ""} ${className}`}
       aria-label={title}
+      onFocusCapture={() => {
+        revealFocusedField();
+        if (focusTimer.current) clearTimeout(focusTimer.current);
+        // iOS changes the visible viewport throughout the keyboard animation.
+        focusTimer.current = setTimeout(revealFocusedField, 300);
+      }}
       onCancel={(event) => {
         event.preventDefault();
         onClose();

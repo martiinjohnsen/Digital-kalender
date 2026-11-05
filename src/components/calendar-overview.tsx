@@ -4,44 +4,42 @@ import type { AdventCalendar } from "@/lib/model";
 import {
   calendarCollection,
   type CollectedItem,
-  type CollectedKind,
 } from "@/lib/calendar-collection";
 import type { quizSummary } from "@/lib/quiz-progress";
 import { Dialog } from "./dialog";
-import { GiftCardView, VideoBlock } from "./door-content";
-import { Icon, type IconName } from "./icons";
+import { GiftCardView } from "./door-content";
+import { Icon } from "./icons";
 import { QuizOverview } from "./quiz-overview";
 
-const contentLabels: Record<CollectedKind, { label: string; icon: IconName }> = {
-  message: { label: "Hilsener", icon: "message" },
+type Keepsake = Exclude<CollectedItem, { kind: "message" | "activity" }>;
+type KeepsakeFilter = "all" | "giftcard" | "image" | "link";
+const contentLabels = {
   giftcard: { label: "Gavekort", icon: "gift" },
   image: { label: "Bilder", icon: "image" },
-  video: { label: "Video", icon: "video" },
   link: { label: "Lenker", icon: "external" },
-  activity: { label: "Opplevelser", icon: "heart" },
-};
+} as const;
+const category = (item: Keepsake) => item.kind === "video" ? "link" : item.kind;
 
 export function CalendarOverview({
-  calendar, opened, available, summary, testMode, cloud, rememberProgress, onClose, onOpenDoor,
+  calendar, opened, available, summary, onClose, onOpenDoor,
 }: {
   calendar: AdventCalendar;
   opened: readonly number[];
   available: number;
   summary: ReturnType<typeof quizSummary>;
-  testMode: boolean;
-  cloud: boolean;
-  rememberProgress: boolean;
   onClose: () => void;
   onOpenDoor: (day: number) => void;
 }) {
   const [section, setSection] = useState<"content" | "quiz">("content");
-  const [filter, setFilter] = useState<"all" | CollectedKind>("all");
-  const items = calendarCollection(calendar, opened, available);
-  const kinds = Object.keys(contentLabels) as CollectedKind[];
+  const [filter, setFilter] = useState<KeepsakeFilter>("all");
+  const items = calendarCollection(calendar, opened, available).filter(
+    (item): item is Keepsake => item.kind !== "message" && item.kind !== "activity",
+  );
+  const kinds = Object.keys(contentLabels) as Exclude<KeepsakeFilter, "all">[];
   return (
     <Dialog title="Kalenderoversikt" onClose={onClose} wide>
       <div className="calendar-overview">
-        <p className="overview-intro">Her finner du alt du har fått fra de åpnede lukene dine, samlet på ett sted.</p>
+        <p className="overview-intro">Gavekort, bilder og lenker fra lukene du har åpnet, samlet på ett sted.</p>
         <div className="overview-sections" role="group" aria-label="Velg oversikt">
           <button type="button" aria-pressed={section === "content"} onClick={() => setSection("content")}>
             <Icon name="gift" size={17} />Innhold <span>{items.length}</span>
@@ -53,7 +51,7 @@ export function CalendarOverview({
         {section === "quiz" ? (
           <section aria-label="Quizoversikt">
             {summary.total > 0 ? (
-              <QuizOverview summary={summary} testMode={testMode} cloud={cloud} rememberProgress={rememberProgress} />
+              <QuizOverview summary={summary} />
             ) : (
               <div className="overview-empty"><Icon name="quiz" size={28} /><h3>Ingen quiz i denne kalenderen ennå</h3><p>Hvis avsender legger til spørsmål, finner du framdrift og resultater her.</p></div>
             )}
@@ -64,15 +62,15 @@ export function CalendarOverview({
               <>
                 <div className="collection-filters" role="group" aria-label="Vis innholdstype">
                   <button type="button" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>Alt</button>
-                  {kinds.filter((kind) => items.some((item) => item.kind === kind)).map((kind) => (
+                  {kinds.filter((kind) => items.some((item) => category(item) === kind)).map((kind) => (
                     <button key={kind} type="button" aria-pressed={filter === kind} onClick={() => setFilter(kind)}>{contentLabels[kind].label}</button>
                   ))}
                 </div>
                 <div className="collection-grid">
-                  {items.filter((item) => filter === "all" || item.kind === filter).map((item) => (
+                  {items.filter((item) => filter === "all" || category(item) === filter).map((item) => (
                     <article className={`collection-item collection-${item.kind}`} key={item.id}>
                       <header>
-                        <span><Icon name={contentLabels[item.kind].icon} size={15} />{contentLabels[item.kind].label}</span>
+                        <span title={contentLabels[category(item)].label}><Icon name={contentLabels[category(item)].icon} size={15} /></span>
                         <button type="button" onClick={() => onOpenDoor(item.day)} aria-label={`Åpne luka fra ${item.day}. desember`}>{item.day}. desember<Icon name="arrow" size={13} /></button>
                       </header>
                       <CollectedContent item={item} />
@@ -81,7 +79,7 @@ export function CalendarOverview({
                 </div>
               </>
             ) : (
-              <div className="overview-empty"><Icon name="gift" size={30} /><h3>Overraskelsene dine samles her</h3><p>Når du åpner luker med hilsener, gavekort, bilder eller annet innhold, finner du dem igjen her.</p></div>
+              <div className="overview-empty"><Icon name="gift" size={30} /><h3>Overraskelsene dine samles her</h3><p>Når du åpner luker med gavekort, bilder eller lenker, finner du dem igjen her.</p></div>
             )}
           </section>
         )}
@@ -90,19 +88,15 @@ export function CalendarOverview({
   );
 }
 
-function CollectedContent({ item }: { item: CollectedItem }) {
+function CollectedContent({ item }: { item: Keepsake }) {
   switch (item.kind) {
-    case "message":
-      return <p className="collection-message">{item.body}</p>;
     case "giftcard":
-      return <GiftCardView gift={item.gift} />;
+      return <GiftCardView gift={item.gift} compact />;
     case "video":
-      return <VideoBlock url={item.url} title={item.title} />;
+      return <a className="button secondary collection-link" href={item.url} target="_blank" rel="noopener noreferrer"><Icon name="video" size={18} />{item.title || "Se video"}<Icon name="external" size={15} /></a>;
     case "image":
       return <img className="collection-image" src={item.src} alt={item.alt} loading="lazy" />;
     case "link":
       return <a className="button secondary collection-link" href={item.url} target="_blank" rel="noopener noreferrer">{item.label}<Icon name="external" size={17} /></a>;
-    case "activity":
-      return <div className="collection-activity"><h3>{item.title || "En opplevelse"}</h3><p>{item.body}</p></div>;
   }
 }

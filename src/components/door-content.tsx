@@ -25,16 +25,15 @@ export function VideoBlock({ url, title }: { url: string; title: string }) {
     </button>
   );
 }
-export function GiftCardView({ gift }: { gift: GiftCard }) {
+export function GiftCardView({ gift, compact = false }: { gift: GiftCard; compact?: boolean }) {
   const [revealed, setRevealed] = useState(false);
   const { toast } = useStore();
   const expiry = gift.expiresOn
     ? new Date(`${gift.expiresOn}T12:00:00Z`).toLocaleDateString("nb-NO")
     : "";
   return (
-    <section className="gift-card-reveal">
-      <Icon name="gift" size={30} />
-      <span>Gavekort</span>
+    <section className={`gift-card-reveal${compact ? " compact-gift-card" : ""}`}>
+      {!compact && <><Icon name="gift" size={30} /><span>Gavekort</span></>}
       <h3>{gift.merchant || "En liten gave"}</h3>
       <strong className="gift-amount">
         {gift.amount.toLocaleString("nb-NO")} kr

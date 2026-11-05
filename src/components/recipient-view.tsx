@@ -364,9 +364,6 @@ export function RecipientView({
           opened={opened}
           available={limit}
           summary={summary}
-          testMode={owner && testMode}
-          cloud={remote}
-          rememberProgress={rememberProgress}
           onClose={() => setOverviewOpen(false)}
           onOpenDoor={(value) => {
             setOverviewOpen(false);
@@ -491,12 +488,14 @@ function DoorViewer({
             switch (block) {
               case "image":
                 return door.image ? (
-                  <img
-                    key={block}
-                    className="reveal-image"
-                    src={door.image}
-                    alt={door.imageAlt || door.title || "Et bilde i kalenderen"}
-                  />
+                  <figure className="reveal-figure" key={block}>
+                    <img
+                      className="reveal-image"
+                      src={door.image}
+                      alt={door.imageAlt || door.title || "Et bilde i kalenderen"}
+                    />
+                    {door.imageAlt && <figcaption>{door.imageAlt}</figcaption>}
+                  </figure>
                 ) : null;
               case "giftcard":
                 return door.giftCard ? (

@@ -129,15 +129,6 @@ export function AccountPanel() {
         </>
       ) : (
         <>
-          <div className="account-signed-in">
-            <span className="pill">
-              <Icon name="check" size={14} />
-              Innlogget
-            </span>
-            <span className="muted">
-              Kalenderne er knyttet til denne kontoen.
-            </span>
-          </div>
           <form
             className="account-form account-profile-form"
             onSubmit={(event) => {

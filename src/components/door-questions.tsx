@@ -1,32 +1,36 @@
 "use client";
 import { correctChoices, type QuizQuestion } from "@/lib/model";
+import type { DoorIssues } from "@/lib/door-validation";
+import { FieldError, validationAttributes } from "./field-validation";
 import { Icon } from "./icons";
 export function blankQuestion(
   type: "choice" | "text" = "choice",
 ): QuizQuestion {
   return type === "text"
     ? {
-        type,
-        title: "",
-        options: [],
-        answerIndex: 0,
-        acceptedAnswers: [""],
-        explanation: "",
-      }
+      type,
+      title: "",
+      options: [],
+      answerIndex: 0,
+      acceptedAnswers: [""],
+      explanation: "",
+    }
     : {
-        type,
-        title: "",
-        options: ["", "", ""],
-        answerIndex: 0,
-        correctAnswers: [0],
-        explanation: "",
-      };
+      type,
+      title: "",
+      options: ["", "", ""],
+      answerIndex: 0,
+      correctAnswers: [],
+      explanation: "",
+    };
 }
 export function DoorQuestionsEditor({
   value,
   onChange,
+  issues = {},
 }: {
   value: QuizQuestion[];
+  issues?: DoorIssues;
   onChange: (value: QuizQuestion[]) => void;
 }) {
   function change(index: number, patch: Partial<QuizQuestion>) {
@@ -114,10 +118,10 @@ export function DoorQuestionsEditor({
                       value.map((q, i) =>
                         i === index
                           ? {
-                              ...next,
-                              title: q.title,
-                              explanation: q.explanation,
-                            }
+                            ...next,
+                            title: q.title,
+                            explanation: q.explanation,
+                          }
                           : q,
                       ),
                     );
@@ -130,6 +134,7 @@ export function DoorQuestionsEditor({
             <label>
               Spørsmål
               <input
+                {...validationAttributes(issues, `quiz-${index}-title`)}
                 maxLength={200}
                 placeholder="Hva vil du spørre om?"
                 value={question.title}
@@ -137,12 +142,14 @@ export function DoorQuestionsEditor({
                   change(index, { title: event.target.value })
                 }
               />
+              <FieldError issues={issues} field={`quiz-${index}-title`} />
             </label>
             {text ? (
               <>
                 <label>
                   Godkjente svar
                   <textarea
+                    {...validationAttributes(issues, `quiz-${index}-answers`)}
                     rows={3}
                     maxLength={6020}
                     placeholder={"For eksempel:\nJulenissen\nNissen"}
@@ -156,6 +163,7 @@ export function DoorQuestionsEditor({
                       })
                     }
                   />
+                  <FieldError issues={issues} field={`quiz-${index}-answers`} />
                 </label>
                 <p className="field-help">
                   Ett svar eller en svarvariant per linje. Store og små
@@ -168,7 +176,7 @@ export function DoorQuestionsEditor({
                   Merk alle riktige svar. Du kan legge til opptil 12
                   alternativer.
                 </p>
-                <div className="answer-options-editor">
+                <div className="answer-options-editor" {...validationAttributes(issues, `quiz-${index}-correct`)}>
                   {question.options.map((option, i) => (
                     <div key={i} className="answer-option-row">
                       <input
@@ -186,6 +194,7 @@ export function DoorQuestionsEditor({
                         }}
                       />
                       <input
+                        {...validationAttributes(issues, `quiz-${index}-option-${i}`)}
                         aria-label={`Spørsmål ${index + 1}, svaralternativ ${i + 1}`}
                         maxLength={180}
                         placeholder={`Svaralternativ ${i + 1}`}
@@ -198,6 +207,7 @@ export function DoorQuestionsEditor({
                           })
                         }
                       />
+
                       <button
                         type="button"
                         className="icon-button"
@@ -220,9 +230,11 @@ export function DoorQuestionsEditor({
                       >
                         <Icon name="close" size={15} />
                       </button>
+                      <FieldError issues={issues} field={`quiz-${index}-option-${i}`} />
                     </div>
                   ))}
                 </div>
+                <FieldError issues={issues} field={`quiz-${index}-correct`} />
                 {question.options.length < 12 && (
                   <button
                     type="button"

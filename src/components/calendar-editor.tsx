@@ -266,7 +266,7 @@ export function CalendarEditor({ id }: { id: string }) {
           </section>
           <aside className="editor-summary">
             <div className="summary-preview">
-              <Artwork theme={calendar.theme} scene={calendar.scene} />
+              <Artwork theme={calendar.theme} scene={calendar.scene} fit="cover" />
             </div>
             <div className="summary-content">
               <h3>{count} av 24 luker klare</h3>
@@ -282,17 +282,12 @@ export function CalendarEditor({ id }: { id: string }) {
                 {contentLabels.map(({ kind, icon, one, many }) => {
                   const amount = content.counts[kind] ?? 0;
                   return amount ? (
-                    <span key={kind}>
+                    <div className="summary-stat" key={kind}>
                       <Icon name={icon} size={16} />
-                      <span>
-                        <strong>
-                          {amount} {amount === 1 ? one : many}
-                        </strong>
-                        {kind === "quiz" && (
-                          <small>{content.questionCount} spørsmål</small>
-                        )}
-                      </span>
-                    </span>
+                      <strong>{kind === "quiz"
+                        ? `${content.questionCount} spørsmål`
+                        : `${amount} ${amount === 1 ? one : many}`}</strong>
+                    </div>
                   ) : null;
                 })}
               </div>

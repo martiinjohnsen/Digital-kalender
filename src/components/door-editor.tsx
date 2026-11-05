@@ -5,8 +5,6 @@ import {
   blockNames,
   doorBlockOrder,
   removeDoorBlock,
-  youtubeId,
-  safeLink,
   isDoorComplete,
   questionsForDoor,
   type Door,
@@ -15,6 +13,8 @@ import {
   type GiftCard,
   type DoorEffect,
 } from "@/lib/model";
+import { validateDoor } from "@/lib/door-validation";
+import { FieldError, validationAttributes } from "./field-validation";
 import { compressImage } from "@/lib/storage";
 import { Icon, type IconName } from "./icons";
 import { Dialog } from "./dialog";
@@ -25,7 +25,7 @@ import { Celebration } from "./door-transition";
 const contentBlocks = DOOR_BLOCKS.filter((block) => block !== "effect");
 const emptyGift = (): GiftCard => ({
   merchant: "",
-  amount: 100,
+  amount: 0,
   currency: "NOK",
   code: "",
   url: "",
@@ -63,6 +63,9 @@ export function DoorEditor({
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState(() => editorDraft(door, calendar));
+  const [validationAttempted, setValidationAttempted] = useState(false);
+  const issues = validationAttempted ? validateDoor(draft) : {};
+  const formRef = useRef<HTMLFormElement>(null);
   const [effectPreview, setEffectPreview] = useState<{
     effect: DoorEffect;
     replay: number;
@@ -99,9 +102,26 @@ export function DoorEditor({
       replay: (previous?.replay ?? 0) + 1,
     }));
   }
+  function validate() {
+    const next = validateDoor(draft);
+    setValidationAttempted(true);
+    if (!Object.keys(next).length) return true;
+    requestAnimationFrame(() => {
+      const field = formRef.current?.querySelector<HTMLElement>('[data-validation-field][aria-invalid="true"]');
+      if (!field) return;
+      field.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+      const control = field.matches("input:not([type=file]),textarea,select,button")
+        ? field : field.querySelector<HTMLElement>("input:not([type=file]),textarea,select,button") ?? field;
+      if (control === field && !field.matches("input,textarea,select,button")) field.tabIndex = -1;
+      control.focus({ preventScroll: true });
+    });
+    return false;
+  }
   function close() {
-    if (JSON.stringify(draft) !== baseline.current) setDiscard(true);
-    else onClose();
+    if (JSON.stringify(draft) === baseline.current && !uploading) { onClose(); return; }
+    setDiscard(true);
+    if (validate())
+      requestAnimationFrame(() => formRef.current?.closest(".dialog-scroll")?.scrollTo({ top: 0, behavior: "smooth" }));
   }
   function add(block: DoorBlockKind) {
     const patch: Partial<Door> = { contentOrder: [...order, block] };
@@ -159,18 +179,7 @@ export function DoorEditor({
     change({ giftCard: { ...(draft.giftCard ?? emptyGift()), ...patch } });
   }
   function save() {
-    if (draft.videoUrl?.trim() && !youtubeId(draft.videoUrl.trim())) {
-      setError("Bruk en gyldig HTTPS-lenke til en YouTube-video.");
-      return;
-    }
-    if (draft.link?.url.trim() && !safeLink(draft.link.url)) {
-      setError("Bruk en gyldig nettadresse som begynner med https://.");
-      return;
-    }
-    if (draft.giftCard?.url.trim() && !safeLink(draft.giftCard.url)) {
-      setError("Innløsningslenken må være en gyldig HTTPS-adresse.");
-      return;
-    }
+    if (!validate() || uploading) return;
     onSave({ ...draft, contentOrder: order, videoUrl: draft.videoUrl?.trim() });
   }
   function renderBlock(block: DoorBlockKind): ReactNode {
@@ -186,62 +195,72 @@ export function DoorEditor({
               <label>
                 Butikk eller tjeneste
                 <input
+                  {...validationAttributes(issues, "gift-merchant")}
                   maxLength={100}
                   placeholder="For eksempel Foodora"
                   value={value.merchant}
                   onChange={(event) => gift({ merchant: event.target.value })}
                 />
+                <FieldError issues={issues} field="gift-merchant" />
               </label>
               <label>
                 Beløp i kroner
                 <input
+                  {...validationAttributes(issues, "gift-amount")}
                   type="number"
                   min="0"
                   max="1000000"
                   step="0.01"
                   inputMode="decimal"
-                  value={value.amount}
+                  value={value.amount || ""}
                   onChange={(event) =>
                     gift({ amount: Number(event.target.value) })
                   }
                 />
+                <FieldError issues={issues} field="gift-amount" />
               </label>
             </div>
             <label>
               Gavekortkode
               <input
+                {...validationAttributes(issues, "gift-code")}
                 maxLength={500}
                 autoComplete="off"
                 spellCheck={false}
                 value={value.code}
                 onChange={(event) => gift({ code: event.target.value })}
               />
+              <FieldError issues={issues} field="gift-code" />
             </label>
             <label>
               Innløsningslenke
               <span className="optional">Kode eller lenke må fylles ut</span>
               <input
+                {...validationAttributes(issues, "gift-url")}
                 type="url"
                 maxLength={2000}
                 placeholder="https://…"
                 value={value.url}
                 onChange={(event) => gift({ url: event.target.value })}
               />
+              <FieldError issues={issues} field="gift-url" />
             </label>
             <label>
               Gyldig til<span className="optional">Valgfritt</span>
               <input
+                {...validationAttributes(issues, "gift-expiry")}
                 type="date"
                 value={value.expiresOn}
                 onChange={(event) => gift({ expiresOn: event.target.value })}
               />
+              <FieldError issues={issues} field="gift-expiry" />
             </label>
           </>
         );
       }
       case "image":
         return (
-          <div className="image-upload">
+          <div className="image-upload" {...validationAttributes({ ...issues, ...(error ? { image: error } : {}) }, "image")}>
             {draft.image ? (
               <>
                 <img src={draft.image} alt={draft.imageAlt || "Valgt bilde"} />
@@ -258,8 +277,8 @@ export function DoorEditor({
                   />
                 </label>
                 <label>
-                  Bildebeskrivelse
-                  <span className="optional">For skjermlesere</span>
+                  Kommentar til bildet
+                  <span className="optional">Valgfritt · vises under bildet</span>
                   <input
                     maxLength={300}
                     value={draft.imageAlt ?? ""}
@@ -287,6 +306,7 @@ export function DoorEditor({
                 />
               </label>
             )}
+            <FieldError issues={{ ...issues, ...(error ? { image: error } : {}) }} field="image" />
           </div>
         );
       case "video":
@@ -294,12 +314,14 @@ export function DoorEditor({
           <label>
             YouTube-lenke
             <input
+              {...validationAttributes(issues, "video")}
               type="url"
               maxLength={500}
               placeholder="https://www.youtube.com/watch?v=…"
               value={draft.videoUrl ?? ""}
               onChange={(event) => change({ videoUrl: event.target.value })}
             />
+            <FieldError issues={issues} field="video" />
           </label>
         );
       case "link":
@@ -323,6 +345,7 @@ export function DoorEditor({
             <label>
               Nettadresse
               <input
+                {...validationAttributes(issues, "link-url")}
                 type="url"
                 maxLength={2000}
                 placeholder="https://…"
@@ -336,15 +359,20 @@ export function DoorEditor({
                   })
                 }
               />
+              <FieldError issues={issues} field="link-url" />
             </label>
           </>
         );
       case "quiz":
         return (
-          <DoorQuestionsEditor
-            value={draft.questions ?? []}
-            onChange={(questions) => change({ questions })}
-          />
+          <div {...validationAttributes(issues, "quiz")}>
+            <FieldError issues={issues} field="quiz" />
+            <DoorQuestionsEditor
+              issues={issues}
+              value={draft.questions ?? []}
+              onChange={(questions) => change({ questions })}
+            />
+          </div>
         );
       case "activity":
         return (
@@ -352,6 +380,7 @@ export function DoorEditor({
             <label>
               Navn på opplevelsen
               <input
+                {...validationAttributes(issues, "activity-title")}
                 maxLength={120}
                 placeholder="For eksempel: Kakao og en vintertur"
                 value={draft.activity?.title ?? ""}
@@ -364,10 +393,12 @@ export function DoorEditor({
                   })
                 }
               />
+              <FieldError issues={issues} field="activity-title" />
             </label>
             <label>
               Beskrivelse
               <textarea
+                {...validationAttributes(issues, "activity-body")}
                 rows={3}
                 maxLength={3000}
                 placeholder="Hva skal dere gjøre?"
@@ -381,6 +412,7 @@ export function DoorEditor({
                   })
                 }
               />
+              <FieldError issues={issues} field="activity-body" />
             </label>
           </>
         );
@@ -398,7 +430,25 @@ export function DoorEditor({
       )}
     >
       <div className="door-editor block-door-editor">
-        <form
+        {discard && (
+          <div className="discard-notice" role="alert">
+            <strong>{Object.keys(issues).length
+              ? "Fullfør de markerte feltene, eller forkast endringene."
+              : "Du har endringer som ikke er lagret."}</strong>
+            <div>
+              <button
+                className="button secondary small-button"
+                onClick={() => setDiscard(false)}
+              >
+                Fortsett å redigere
+              </button>
+              <button className="button danger small-button" onClick={onClose}>
+                Forkast endringer
+              </button>
+            </div>
+          </div>
+        )}
+        <form ref={formRef} noValidate
           onSubmit={(event) => {
             event.preventDefault();
             save();
@@ -408,6 +458,7 @@ export function DoorEditor({
             <label>
               Tekst<span className="optional">Valgfritt</span>
               <textarea
+                {...validationAttributes(issues, "body")}
                 autoFocus
                 rows={4}
                 maxLength={6000}
@@ -415,6 +466,7 @@ export function DoorEditor({
                 value={draft.body}
                 onChange={(event) => change({ body: event.target.value })}
               />
+              <FieldError issues={issues} field="body" />
             </label>
           </div>
           <div ref={stackAnchor}>
@@ -454,11 +506,6 @@ export function DoorEditor({
             }}
             onPreview={() => previewEffect(draft.effect ?? "none")}
           />
-          {error && (
-            <p role="alert" className="form-error">
-              {error}
-            </p>
-          )}
           <div className="dialog-actions sticky-actions">
             <button type="button" className="button secondary" onClick={close}>
               Avbryt
@@ -476,22 +523,6 @@ export function DoorEditor({
             </button>
           </div>
         </form>
-        {discard && (
-          <div className="discard-notice" role="alert">
-            <strong>Du har endringer som ikke er lagret.</strong>
-            <div>
-              <button
-                className="button secondary small-button"
-                onClick={() => setDiscard(false)}
-              >
-                Fortsett å redigere
-              </button>
-              <button className="button danger small-button" onClick={onClose}>
-                Forkast endringer
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </Dialog>
   );
