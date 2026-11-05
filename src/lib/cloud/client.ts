@@ -7,7 +7,6 @@ const publishableKey =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
   publicCloudConfig.publishableKey;
 export const cloudConfigured = Boolean(url && publishableKey);
-export const emailReady = process.env.NEXT_PUBLIC_AUTH_EMAIL_READY === "true";
 export function supabase(): SupabaseClient {
   if (!cloudConfigured)
     throw new Error("Kontotjenesten er ikke koblet til ennå.");
@@ -42,23 +41,16 @@ export function authMessage(error: unknown): string {
     error && typeof error === "object" && "message" in error
       ? String(error.message)
       : String(error);
-  if (/invalid login credentials/i.test(raw))
-    return "E-post eller passord er feil.";
-  if (/new password.*different/i.test(raw))
-    return "Velg et annet passord enn det du allerede bruker.";
+  if (/invalid login credentials|email not confirmed|email.*invalid/i.test(raw))
+    return "Logg inn med Google for å bruke kontoen din.";
   if (/signup.*disabled|signups.*disabled/i.test(raw))
     return "Registrering av nye kontoer er ikke åpnet ennå.";
-  if (/email.*invalid/i.test(raw)) return "Skriv en gyldig e-postadresse.";
-  if (/email not confirmed/i.test(raw))
-    return "Bekreft e-postadressen før du logger inn. Du kan sende en ny bekreftelse nedenfor.";
   if (/otp.*expired|token.*expired|invalid.*token|link.*expired/i.test(raw))
-    return "Lenken er utløpt eller allerede brukt. Be om en ny bekreftelse eller passordlenke.";
+    return "Innloggingen eller lenken er utløpt. Logg inn på nytt, eller be avsenderen om en ny invitasjon.";
   if (/email.*not authorized|smtp|error sending/i.test(raw))
-    return "E-postutsendingen er ikke ferdig tilkoblet. Bekreftelse og passordeposter til nye brukere er derfor ikke tilgjengelig ennå.";
+    return "Bruk Fortsett med Google for å logge inn. Du trenger ikke en bekreftelsesepost fra Luke.";
   if (/rate limit|too many|security purposes/i.test(raw))
     return "Litt mange forsøk på kort tid. Vent noen minutter og prøv igjen.";
-  if (/password.*(weak|least|short)/i.test(raw))
-    return "Velg et sterkere passord med minst 10 tegn.";
   if (/fetch|network|offline|timeout/i.test(raw))
     return "Vi får ikke kontakt akkurat nå. Sjekk nettforbindelsen og prøv igjen.";
   if (/40001|annen enhet|Utkastet/i.test(raw))
