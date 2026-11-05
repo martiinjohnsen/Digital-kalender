@@ -13,6 +13,7 @@ import {
   safeLink,
   youtubeId,
   DEFAULT_SCENE,
+  DOOR_EFFECTS,
   THEMES,
   correctChoices,
   normalizeAnswer,
@@ -45,6 +46,20 @@ const make = () =>
     year: 2026,
     theme: "advent",
   });
+
+test("all opening effects survive sharing and backup import; unknown effects are rejected", () => {
+  for (const effect of DOOR_EFFECTS) {
+    const calendar = make();
+    calendar.doors[0].effect = effect;
+    assert.equal(isCalendar(calendar), true, effect);
+    assert.equal(decodeCalendar(encodeCalendar(calendar)).doors[0].effect, effect);
+    const data = { ...initialData(), calendars: [calendar] };
+    assert.equal(parseBackup(JSON.stringify(data)).calendars[0].doors[0].effect, effect);
+  }
+  const invalid = make();
+  Object.assign(invalid.doors[0], { effect: "unsupported" });
+  assert.equal(isCalendar(invalid), false);
+});
 
 test("new calendars contain exactly one door for every December day", () => {
   const calendar = make();

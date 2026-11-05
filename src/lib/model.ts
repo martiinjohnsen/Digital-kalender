@@ -17,7 +17,16 @@ export type DoorKind =
   | "video"
   | "activity"
   | "giftcard";
-export type DoorEffect = "none" | "snow" | "sparkles" | "confetti";
+export const DOOR_EFFECTS = [
+  "none",
+  "snow",
+  "sparkles",
+  "confetti",
+  "hearts",
+  "fireworks",
+  "glow",
+] as const;
+export type DoorEffect = (typeof DOOR_EFFECTS)[number];
 export interface SceneSettings {
   house: "classic" | "cabin" | "townhouse" | "park" | "forest" | "village";
   sky: "stars" | "moon" | "clear";
@@ -779,7 +788,7 @@ export function isCalendar(value: unknown): value is AdventCalendar {
       return false;
     if (
       door.effect !== undefined &&
-      !["none", "snow", "sparkles", "confetti"].includes(String(door.effect))
+      !DOOR_EFFECTS.includes(door.effect as DoorEffect)
     )
       return false;
     if (

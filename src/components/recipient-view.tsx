@@ -450,9 +450,9 @@ function DoorViewer({
       title={`${door.day}. desember`}
       onClose={onClose}
       className="recipient-door-dialog"
+      overlay={<Celebration key={door.day} effect={door.effect} />}
     >
       <div className="door-reveal ordered-door-reveal">
-        <Celebration effect={door.effect} />
         <h2 className="reveal-date">{door.day}. desember</h2>
         {!isDoorComplete(door) && (
           <p className="empty-door-message">Her kommer det mer innhold.</p>

@@ -23,7 +23,7 @@ export function CalendarCard({ calendar }: { calendar: AdventCalendar }) {
         className={`calendar-cover theme-${calendar.theme}`}
         aria-label={`Åpne ${calendar.title}`}
       >
-        <Artwork theme={calendar.theme} scene={calendar.scene} />
+        <Artwork theme={calendar.theme} scene={calendar.scene} fit="cover" />
         <span className="cover-stamp">DESEMBER {calendar.year}</span>
 
         <span className="card-state">

@@ -13,6 +13,7 @@ import {
   type DoorBlockKind,
   type AdventCalendar,
   type GiftCard,
+  type DoorEffect,
 } from "@/lib/model";
 import { compressImage } from "@/lib/storage";
 import { Icon, type IconName } from "./icons";
@@ -20,6 +21,7 @@ import { Dialog } from "./dialog";
 import { DoorQuestionsEditor, blankQuestion } from "./door-questions";
 import { ContentStack } from "./content-stack";
 import { OpeningEffectPicker } from "./opening-effect-picker";
+import { Celebration } from "./door-transition";
 const contentBlocks = DOOR_BLOCKS.filter((block) => block !== "effect");
 const emptyGift = (): GiftCard => ({
   merchant: "",
@@ -61,6 +63,10 @@ export function DoorEditor({
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState(() => editorDraft(door, calendar));
+  const [effectPreview, setEffectPreview] = useState<{
+    effect: DoorEffect;
+    replay: number;
+  } | null>(null);
   const baseline = useRef(JSON.stringify(editorDraft(door, calendar))),
     alive = useRef(true),
     uploadToken = useRef(0),
@@ -86,6 +92,12 @@ export function DoorEditor({
   function change(patch: Partial<Door>) {
     setError("");
     setDraft((previous) => ({ ...previous, ...patch }));
+  }
+  function previewEffect(effect: DoorEffect) {
+    setEffectPreview((previous) => ({
+      effect,
+      replay: (previous?.replay ?? 0) + 1,
+    }));
   }
   function close() {
     if (JSON.stringify(draft) !== baseline.current) setDiscard(true);
@@ -381,6 +393,9 @@ export function DoorEditor({
       title={`Luke ${door.day} · ${door.day}. desember`}
       onClose={close}
       wide
+      overlay={effectPreview && (
+        <Celebration key={effectPreview.replay} effect={effectPreview.effect} />
+      )}
     >
       <div className="door-editor block-door-editor">
         <form
@@ -433,8 +448,11 @@ export function DoorEditor({
           </div>
           <OpeningEffectPicker
             value={draft.effect ?? "none"}
-            day={door.day}
-            onChange={(effect) => change({ effect })}
+            onChange={(effect) => {
+              change({ effect });
+              previewEffect(effect);
+            }}
+            onPreview={() => previewEffect(draft.effect ?? "none")}
           />
           {error && (
             <p role="alert" className="form-error">

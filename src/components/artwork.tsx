@@ -47,10 +47,12 @@ export function Artwork({
   theme = "advent",
   scene,
   className = "",
+  fit = "contain",
 }: {
   theme?: Theme;
   scene?: SceneSettings;
   className?: string;
+  fit?: "contain" | "cover";
 }) {
   const settings = { ...DEFAULT_SCENE, ...scene };
   const id = useId().replace(/:/g, "");
@@ -60,6 +62,7 @@ export function Artwork({
     <svg
       className={`artwork theme-${theme} ${settings.wind ? "has-wind" : ""} ${className}`}
       viewBox="0 0 600 380"
+      preserveAspectRatio={fit === "cover" ? "xMidYMax slice" : "xMidYMid meet"}
       fill="none"
       aria-hidden="true"
     >

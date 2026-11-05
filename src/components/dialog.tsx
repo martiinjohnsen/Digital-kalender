@@ -7,12 +7,14 @@ export function Dialog({
   children,
   wide = false,
   className = "",
+  overlay,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   wide?: boolean;
   className?: string;
+  overlay?: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
@@ -29,9 +31,14 @@ export function Dialog({
         "--dialog-viewport-top",
         `${viewport?.offsetTop ?? 0}px`,
       );
+      dialog?.style.setProperty(
+        "--dialog-effect-height", `${dialog.clientHeight}px`,
+      );
     };
-    resize();
     dialog?.showModal();
+    resize();
+    const observer = new ResizeObserver(resize);
+    if (dialog) observer.observe(dialog);
     viewport?.addEventListener("resize", resize);
     viewport?.addEventListener("scroll", resize);
     window.addEventListener("resize", resize);
@@ -39,6 +46,7 @@ export function Dialog({
     document.body.style.overflow = "hidden";
     return () => {
       dialog?.close();
+      observer.disconnect();
       viewport?.removeEventListener("resize", resize);
       viewport?.removeEventListener("scroll", resize);
       window.removeEventListener("resize", resize);
@@ -51,6 +59,11 @@ export function Dialog({
       ref={ref}
       className={`dialog ${wide ? "dialog-wide" : ""} ${className}`}
       aria-label={title}
+      onScroll={(event) => {
+        event.currentTarget.style.setProperty(
+          "--dialog-scroll-top", `${event.currentTarget.scrollTop}px`,
+        );
+      }}
       onCancel={(event) => {
         event.preventDefault();
         onClose();
@@ -83,6 +96,7 @@ export function Dialog({
         </button>
       </div>
       {children}
+      {overlay && <div className="dialog-effects">{overlay}</div>}
     </dialog>
   );
 }
