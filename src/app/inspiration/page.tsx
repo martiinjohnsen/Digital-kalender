@@ -10,15 +10,14 @@ export default function InspirationPage() {
     <div className="page-enter inspiration-page">
       <section className="inspiration-walkthrough" aria-labelledby="walkthrough-title">
         <div className="walkthrough-heading">
-          <span className="eyebrow">Fra idé til desemberglede</span>
-          <h1 id="walkthrough-title">Slik blir kalenderen din til</h1>
-          <p>Velg et uttrykk, fyll lukene og del med noen du er glad i.</p>
+          <h1 id="walkthrough-title">Slik bruker du Luke</h1>
+          <p>Velg utseende, fyll lukene og del kalenderen.</p>
         </div>
         <div className="walkthrough-grid">
           {[
             ["Velg utseendet", "Gi kalenderen et navn, og finn fargene og vintermotivet som passer deg."],
             ["Fyll lukene", "Legg inn en hilsen, et bilde, en quiz eller en liten overraskelse. Du bestemmer innholdet."],
-            ["Del desembergleden", "Send en invitasjon. Mottakeren logger inn og åpner kalenderen sin, med oppdateringene dine underveis."],
+            ["Del kalenderen", "Send en invitasjon. Mottakeren logger inn og åpner kalenderen sin, med oppdateringene dine underveis."],
           ].map(([title, body], index) => (
             <article className="walkthrough-card" key={title}>
               <div className="walkthrough-screen" role="img" aria-label={`Eksempel: ${title}`}>
