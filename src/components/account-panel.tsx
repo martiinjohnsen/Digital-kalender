@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAccount } from "./account-provider";
 import { useStore } from "./provider";
-import { authMessage, emailReady, supabase } from "@/lib/cloud/client";
+import { authMessage, supabase } from "@/lib/cloud/client";
 import { Icon } from "./icons";
 export function AccountPanel() {
   const account = useAccount(),
@@ -12,7 +13,7 @@ export function AccountPanel() {
   const search = useSearchParams();
   const createAfterLogin = search.get("next") === "create";
   useEffect(() => {
-    if (!account.user || account.recovery) return;
+    if (!account.user || !store.cloud) return;
     let hasInvite = false;
     try {
       const token = localStorage.getItem("luke:pending-invite");
@@ -21,35 +22,32 @@ export function AccountPanel() {
         router.replace(`/receive#invite=${token}`);
       }
     } catch {}
-    if (!hasInvite && createAfterLogin) router.replace("/calendars?create=1");
-  }, [account.user?.id, account.recovery, createAfterLogin, router]);
-  const [mode, setMode] = useState<"login" | "signup" | "reset">("login");
-  const [email, setEmail] = useState(""),
-    [name, setName] = useState(store.data.preferences.name);
-  const [password, setPassword] = useState(""),
-    [repeat, setRepeat] = useState(""),
-    [currentPassword, setCurrentPassword] = useState("");
-  const [busy, setBusy] = useState(false),
-    [error, setError] = useState(""),
-    [message, setMessage] = useState(""),
-    [changePassword, setChangePassword] = useState(false);
+    let pendingCreate = createAfterLogin;
+    try {
+      pendingCreate ||= sessionStorage.getItem("luke:after-login") === "create";
+      if (pendingCreate || hasInvite) sessionStorage.removeItem("luke:after-login");
+    } catch {}
+    if (!hasInvite && pendingCreate) {
+      router.replace("/calendars?create=1");
+    }
+  }, [account.user?.id, store.cloud, createAfterLogin, router]);
+  const [name, setName] = useState(store.data.preferences.name);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   useEffect(() => {
     setName(store.data.preferences.name);
   }, [store.data.preferences.name]);
   useEffect(() => {
-    if (account.recovery) setChangePassword(true);
-  }, [account.recovery]);
-  const resetFields = () => {
-    setError("");
-    setMessage("");
-    setPassword("");
-    setRepeat("");
-    setCurrentPassword("");
-  };
+    const params = new URLSearchParams(location.hash.slice(1));
+    const failure = params.get("error_description") || search.get("error_description");
+    if (failure) {
+      setError("Google-innloggingen ble avbrutt eller feilet. Prøv igjen.");
+      history.replaceState(null, "", location.pathname + location.search);
+    }
+  }, [search]);
   async function action(fn: () => Promise<void>) {
     setBusy(true);
     setError("");
-    setMessage("");
     try {
       await fn();
     } catch (error) {
@@ -58,50 +56,24 @@ export function AccountPanel() {
       setBusy(false);
     }
   }
-  async function submit(event: FormEvent) {
-    event.preventDefault();
+  async function googleLogin() {
     await action(async () => {
-      if (mode !== "login" && !emailReady)
-        throw new Error(
-          "E-postutsendingen er under oppsett. Registrering og passordlenker åpnes når den er klar.",
-        );
-      const address = email.trim();
-      if (mode === "signup") {
-        if (!name.trim()) throw new Error("Skriv inn navnet ditt.");
-        if (password.length < 10)
-          throw new Error("Passordet må ha minst 10 tegn.");
-        if (password !== repeat) throw new Error("Passordene er ikke like.");
-        const { data, error } = await supabase().auth.signUp({
-          email: address,
-          password,
-          options: {
-            data: { name: name.trim() },
-            emailRedirectTo: `${location.origin}/settings`,
-          },
-        });
-        if (error) throw error;
-        setPassword("");
-        setRepeat("");
-        if (!data.session)
-          setMessage(
-            "Se etter en bekreftelse i e-posten din. Bekreft adressen før du logger inn. Har du allerede en konto, kan du logge inn eller velge Glemt passord.",
-          );
-      } else if (mode === "login") {
-        const { error } = await supabase().auth.signInWithPassword({
-          email: address,
-          password,
-        });
-        if (error) throw error;
-        setPassword("");
-      } else {
-        const { error } = await supabase().auth.resetPasswordForEmail(address, {
+      // OAuth returns to the exact allowlisted URL; preserve only our own action.
+      try {
+        if (createAfterLogin) sessionStorage.setItem("luke:after-login", "create");
+        else sessionStorage.removeItem("luke:after-login");
+      } catch {}
+      const { data, error } = await supabase().auth.signInWithOAuth({
+        provider: "google",
+        options: {
           redirectTo: `${location.origin}/settings`,
-        });
-        if (error) throw error;
-        setMessage(
-          "Hvis det finnes en konto med denne adressen, sender vi en lenke for å velge nytt passord.",
-        );
-      }
+          skipBrowserRedirect: true,
+          queryParams: { prompt: "select_account" },
+        },
+      });
+      if (error) throw error;
+      if (!data.url) throw new Error("Kunne ikke åpne Google. Prøv igjen.");
+      location.assign(data.url);
     });
   }
   return (
@@ -122,172 +94,34 @@ export function AccountPanel() {
               ? account.user.email
               : createAfterLogin
                 ? "Logg inn eller opprett en konto for å lage kalenderen din."
-                : "Én konto for kalenderne dine på mobil og PC."}
+                : "Logg inn med Google for å komme i gang."}
           </p>
         </div>
       </div>
       {!account.user ? (
         <>
-          <div
-            className="account-tabs"
-            role="group"
-            aria-label="Velg kontohandling"
-          >
-            <button
-              type="button"
-              className={`button secondary ${mode === "login" ? "selected" : ""}`}
-              aria-pressed={mode === "login"}
-              onClick={() => {
-                setMode("login");
-                resetFields();
-              }}
-            >
-              Logg inn
-            </button>
-            <button
-              type="button"
-              className={`button secondary ${mode === "signup" ? "selected" : ""}`}
-              aria-pressed={mode === "signup"}
-              onClick={() => {
-                setMode("signup");
-                resetFields();
-              }}
-            >
-              Opprett konto
-            </button>
-          </div>
           {!account.configured && (
             <p className="form-error" role="alert">
-              Kontotjenesten er ikke tilgjengelig akkurat nå. Du kan fortsatt
-              utforske inspirasjonssiden.
+              Innlogging er ikke tilgjengelig akkurat nå. Prøv igjen senere.
             </p>
           )}
-          <form onSubmit={submit} className="account-form">
-            {mode === "reset" && (
-              <div>
-                <h3>Glemt passord?</h3>
-                <p>Vi sender deg en lenke for å velge et nytt.</p>
-              </div>
-            )}
-            {mode === "signup" && (
-              <label>
-                Navn
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  maxLength={60}
-                  autoComplete="name"
-                  placeholder="Hva heter du?"
-                  required
-                />
-              </label>
-            )}
-            <label>
-              E-post
-              <input
-                type="email"
-                autoComplete="email"
-                inputMode="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="deg@eksempel.no"
-                maxLength={254}
-                required
-              />
-            </label>
-            {mode !== "reset" && (
-              <label>
-                Passord
-                <input
-                  type="password"
-                  autoComplete={
-                    mode === "signup" ? "new-password" : "current-password"
-                  }
-                  minLength={mode === "signup" ? 10 : 1}
-                  maxLength={128}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={
-                    mode === "signup" ? "Minst 10 tegn" : "Ditt passord"
-                  }
-                  required
-                />
-              </label>
-            )}
-            {mode === "signup" && (
-              <label>
-                Gjenta passord
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  value={repeat}
-                  onChange={(e) => setRepeat(e.target.value)}
-                  maxLength={128}
-                  required
-                />
-              </label>
-            )}
-            <button
-              className="button primary full"
-              disabled={
-                busy || !account.configured || (mode !== "login" && !emailReady)
-              }
-              type="submit"
-            >
-              {busy
-                ? "Et øyeblikk …"
-                : mode === "login"
-                  ? "Logg inn"
-                  : mode === "signup"
-                    ? "Opprett konto"
-                    : "Send passordlenke"}
-              <Icon name="arrow" size={17} />
-            </button>
-            <button
-              className="button secondary full"
-              type="button"
-              disabled={busy}
-              onClick={() => {
-                setMode(mode === "reset" ? "login" : "reset");
-                resetFields();
-              }}
-            >
-              {mode === "reset" ? "Tilbake til innlogging" : "Glemt passord?"}
-            </button>
-            {mode === "login" && email && (
-              <button
-                className="button secondary full"
-                type="button"
-                disabled={busy || !account.configured || !emailReady}
-                onClick={() =>
-                  void action(async () => {
-                    const { error } = await supabase().auth.resend({
-                      type: "signup",
-                      email: email.trim(),
-                      options: {
-                        emailRedirectTo: `${location.origin}/settings`,
-                      },
-                    });
-                    if (error) throw error;
-                    setMessage(
-                      "Hvis kontoen venter på bekreftelse, sender vi en ny e-post.",
-                    );
-                  })
-                }
-              >
-                Send bekreftelsen på nytt
-              </button>
-            )}
-          </form>
-          {!emailReady && (
-            <div className="account-email-note">
-              <Icon name="message" size={18} />
-              <p>
-                E-postutsending er under oppsett. Registrering og passordeposter
-                til nye brukere blir tilgjengelig når den er koblet til.
-              </p>
-            </div>
-          )}
+          <button
+            className="button secondary google-login"
+            disabled={busy || !account.configured || !account.ready}
+            onClick={() => void googleLogin()}
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22">
+              <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.9-1.75 2.98-4.33 2.98-7.36Z" />
+              <path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.62-2.41l-3.24-2.51c-.9.6-2.05.97-3.38.97-2.6 0-4.8-1.76-5.59-4.12H3.07v2.59A10 10 0 0 0 12 22Z" />
+              <path fill="#FBBC05" d="M6.41 13.93a6 6 0 0 1 0-3.86V7.48H3.07a10 10 0 0 0 0 9.04l3.34-2.59Z" />
+              <path fill="#EA4335" d="M12 5.95c1.47 0 2.79.5 3.82 1.49l2.87-2.87A9.6 9.6 0 0 0 12 2a10 10 0 0 0-8.93 5.48l3.34 2.59C7.2 7.71 9.4 5.95 12 5.95Z" />
+            </svg>
+            {busy ? "Åpner Google …" : "Fortsett med Google"}
+          </button>
+          <p className="google-login-note">
+            Ny her? Kontoen din opprettes første gang du logger inn.
+          </p>
+          <p className="field-help"><Link href="/privacy">Personvern</Link></p>
           <p className="field-help">
             Du kan utforske Luke uten konto. For å lage og dele kalendere må du
             være innlogget.
@@ -336,17 +170,6 @@ export function AccountPanel() {
           <div className="account-action-row">
             <button
               className="button secondary"
-              onClick={() => {
-                setChangePassword((v) => !v);
-                resetFields();
-              }}
-              disabled={busy}
-            >
-              <Icon name="lock" size={17} />
-              {changePassword ? "Lukk passordfelt" : "Endre passord"}
-            </button>
-            <button
-              className="button secondary"
               disabled={busy}
               onClick={() =>
                 void action(async () => {
@@ -362,80 +185,6 @@ export function AccountPanel() {
               Logg ut
             </button>
           </div>
-          {changePassword && (
-            <form
-              className="account-form password-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void action(async () => {
-                  if (password.length < 10)
-                    throw new Error("Passordet må ha minst 10 tegn.");
-                  if (password !== repeat)
-                    throw new Error("Passordene er ikke like.");
-                  if (!account.recovery) {
-                    const { error } = await supabase().auth.signInWithPassword({
-                      email: account.user!.email!,
-                      password: currentPassword,
-                    });
-                    if (error) throw error;
-                  }
-                  const { error } = await supabase().auth.updateUser({
-                    password,
-                  });
-                  if (error) throw error;
-                  setPassword("");
-                  setRepeat("");
-                  setCurrentPassword("");
-                  setChangePassword(false);
-                  account.finishRecovery();
-                  setMessage("Passordet er endret.");
-                });
-              }}
-            >
-              <h3>
-                {account.recovery ? "Velg nytt passord" : "Endre passord"}
-              </h3>
-              {!account.recovery && (
-                <label>
-                  Nåværende passord
-                  <input
-                    type="password"
-                    autoComplete="current-password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    required
-                  />
-                </label>
-              )}
-              <label>
-                Nytt passord
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  minLength={10}
-                  maxLength={128}
-                  required
-                />
-              </label>
-              <label>
-                Gjenta nytt passord
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  value={repeat}
-                  onChange={(e) => setRepeat(e.target.value)}
-                  maxLength={128}
-                  required
-                />
-              </label>
-              <button className="button primary" disabled={busy} type="submit">
-                {busy ? "Lagrer …" : "Lagre nytt passord"}
-                <Icon name="check" size={17} />
-              </button>
-            </form>
-          )}
           <div className="setting-toggle">
             <div>
               <strong>Vinterstemning</strong>
@@ -459,12 +208,6 @@ export function AccountPanel() {
         <p className="form-error" role="alert">
           {error || account.error}
         </p>
-      )}
-      {message && (
-        <div className="account-success" role="status">
-          <Icon name="check" size={18} />
-          <p>{message}</p>
-        </div>
       )}
     </section>
   );
