@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { BrandMark, Icon, type IconName } from "./icons";
+import { useAccount } from "./account-provider";
 import { useStore } from "./provider";
 import { InstallButton } from "./pwa";
 import { Dialog } from "./dialog";
@@ -30,6 +31,7 @@ const links: { href: string; name: string; mobile: string; icon: IconName }[] =
   ];
 export function Shell({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const { user } = useAccount();
   const path = usePathname(),
     { status, cloud, requireAccount } = useStore();
   const [newCalendar, setNewCalendar] = useState(false),
@@ -65,7 +67,7 @@ export function Shell({ children }: { children: ReactNode }) {
     path.startsWith("/calendar/") || path === "/" ? "/calendars" : path;
   const pageName = path.startsWith("/calendar/")
     ? "Kalender"
-    : (links.find((link) => link.href === active)?.name ?? "Luke");
+    : (active === "/settings" && !user ? "Logg inn" : links.find((link) => link.href === active)?.name ?? "Luke");
   return (
     <>
       <a className="skip-link" href="#main">
@@ -114,7 +116,7 @@ export function Shell({ children }: { children: ReactNode }) {
               }
             >
               <Icon name="user" />
-              Konto
+              {user ? "Konto" : "Logg inn"}
             </Link>
             <button className="nav-item" onClick={() => setHelp(true)}>
               <Icon name="help" />
@@ -134,7 +136,7 @@ export function Shell({ children }: { children: ReactNode }) {
               <strong>{pageName}</strong>
             </span>
             <div className="topbar-right">
-              {cloud ? (
+              {cloud && (
                 <span
                   className={`save-status ${status}`}
                   title="Kalenderne lagres på kontoen din"
@@ -146,10 +148,6 @@ export function Shell({ children }: { children: ReactNode }) {
                       ? "Lagrer …"
                       : "Lagring feilet"}
                 </span>
-              ) : (
-                <Link className="topbar-login" href="/settings">
-                  Logg inn
-                </Link>
               )}
               <button
                 className="icon-button help-button"
@@ -160,10 +158,10 @@ export function Shell({ children }: { children: ReactNode }) {
               </button>
               <Link
                 href="/settings"
-                className="avatar"
-                aria-label="Åpne konto og innstillinger"
+                className={user ? "avatar" : "button secondary topbar-login"}
+                aria-label={user ? "Åpne konto og innstillinger" : "Logg inn"}
               >
-                <Icon name="user" size={21} />
+                {user ? <Icon name="user" size={21} /> : "Logg inn"}
               </Link>
             </div>
           </header>
@@ -182,7 +180,7 @@ export function Shell({ children }: { children: ReactNode }) {
               className={active === link.href ? "active" : ""}
             >
               <Icon name={link.icon} size={21} />
-              <span>{link.mobile}</span>
+              <span>{link.href === "/settings" && !user ? "Logg inn" : link.mobile}</span>
             </Link>
           ))}
         </nav>

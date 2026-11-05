@@ -43,7 +43,7 @@ export default function SettingsPage() {
   return (
     <div className="page-enter settings-page">
       <div className="page-heading">
-        <h1>Konto</h1>
+        <h1>{account.user ? "Konto" : "Logg inn"}</h1>
       </div>
       <div className="settings-layout account-layout">
         <div className="settings-primary">
@@ -114,25 +114,6 @@ export default function SettingsPage() {
           )}
         </div>
         <aside className="settings-aside account-aside">
-          <section className="settings-card account-benefits">
-            <span className="soft-icon">
-              <Icon name="cloud" size={25} />
-            </span>
-            <h2>Kalenderne følger deg</h2>
-            <p>
-              Lag kalenderen på PC, og fortsett på mobilen. De du deler med får
-              endringene dine automatisk.
-            </p>
-            <ul>
-              <li>
-                <Icon name="lock" size={17} /> Bare du kan redigere
-              </li>
-              <li>
-                <Icon name="heart" size={17} /> Mottakeren har sin egen
-                fremdrift
-              </li>
-            </ul>
-          </section>
           <section className="settings-card account-install-card">
             <h2>Luke på hjemskjermen</h2>
             <p>Åpne kalenderne dine som en app.</p>
