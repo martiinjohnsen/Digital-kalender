@@ -86,11 +86,11 @@ function LinkedReceive({ token }: { token: string }) {
           {error ||
             (account.user
               ? "Vi legger den til under Delt med meg."
-              : "Logg inn eller opprett en konto for å åpne kalenderen. Nye endringer fra avsender følger med automatisk.")}
+              : "Logg inn med Google for å åpne kalenderen. Nye endringer fra avsender følger med automatisk.")}
         </p>
         {!account.user && !error && (
           <Link href="/settings" className="button primary full">
-            Logg inn eller opprett konto
+            Fortsett med Google
             <Icon name="user" size={18} />
           </Link>
         )}

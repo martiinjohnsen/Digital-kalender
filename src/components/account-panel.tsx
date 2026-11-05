@@ -93,7 +93,7 @@ export function AccountPanel() {
             {account.user
               ? account.user.email
               : createAfterLogin
-                ? "Logg inn eller opprett en konto for å lage kalenderen din."
+                ? "Logg inn med Google for å lage kalenderen din."
                 : "Logg inn med Google for å komme i gang."}
           </p>
         </div>
@@ -184,23 +184,6 @@ export function AccountPanel() {
               <Icon name="external" size={17} />
               Logg ut
             </button>
-          </div>
-          <div className="setting-toggle">
-            <div>
-              <strong>Vinterstemning</strong>
-              <p>Vis små stjerner rundt kalenderen du åpner.</p>
-            </div>
-            <label className="switch-label">
-              <input
-                type="checkbox"
-                aria-label="Vis vinterdekorasjoner"
-                checked={store.data.preferences.snow}
-                onChange={(event) =>
-                  store.setPreferences({ snow: event.target.checked })
-                }
-              />
-              <span className="switch" />
-            </label>
           </div>
         </>
       )}

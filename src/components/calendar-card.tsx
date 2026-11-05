@@ -87,7 +87,7 @@ export function CalendarCard({ calendar }: { calendar: AdventCalendar }) {
         <progress
           max={24}
           value={count}
-          aria-label={`${count} av 24 luker fylt`}
+          aria-label={`${count} av 24 luker ${received && calendar.remote ? "åpnet" : "fylt"}`}
         />
         <div className="card-bottom">
           <span>

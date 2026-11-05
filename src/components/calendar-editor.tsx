@@ -38,7 +38,7 @@ export function CalendarEditor({ id }: { id: string }) {
         <h1>Logg inn for å redigere</h1>
         <p>Kalenderne dine er knyttet til kontoen din.</p>
         <Link href="/settings" className="button primary">
-          Logg inn eller opprett konto
+          Fortsett med Google
         </Link>
       </div>
     );
@@ -47,8 +47,8 @@ export function CalendarEditor({ id }: { id: string }) {
       <div className="empty-state">
         <h1>Kalenderen finnes ikke her</h1>
         <p>
-          Åpne kalenderen på enheten der den ble laget, eller bruk en
-          delingslenke.
+          Sjekk at du er logget inn med riktig Google-konto, eller åpne
+          invitasjonen fra avsenderen.
         </p>
         <Link href="/calendars" className="button primary">
           Mine kalendere
@@ -438,6 +438,7 @@ function CalendarSettings({
           </div>
           <label>
             År
+            <span className="year-select">
             <select
               value={draft.year}
               onChange={(event) =>
@@ -458,6 +459,8 @@ function CalendarSettings({
                   <option key={year}>{year}</option>
                 ))}
             </select>
+              <Icon name="chevron" size={17} />
+            </span>
           </label>
           <p className="field-help">
             Lukene åpnes fra 1. til 24. desember etter norsk tid.

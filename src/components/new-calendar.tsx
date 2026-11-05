@@ -93,6 +93,7 @@ export function NewCalendar({ onClose }: { onClose: () => void }) {
                 </label>
                 <label>
                   År
+                  <span className="year-select">
                   <select
                     value={year}
                     onChange={(event) => setYear(Number(event.target.value))}
@@ -103,6 +104,8 @@ export function NewCalendar({ onClose }: { onClose: () => void }) {
                       ),
                     )}
                   </select>
+                    <Icon name="chevron" size={17} />
+                  </span>
                 </label>
               </div>
             </>
