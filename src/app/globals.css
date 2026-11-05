@@ -8909,14 +8909,14 @@ input[type="radio"] {
 .walkthrough-heading > p { color: var(--muted); line-height: 1.7; font-size: 14px; }
 .walkthrough-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
 .walkthrough-card { min-width: 0; }
-.walkthrough-screen { padding: 14px; border: 1px solid #e2d8e9; border-radius: 20px; background: linear-gradient(145deg,#e9dff0,#f2edf5); aspect-ratio: 1.08; overflow: hidden; }
+.walkthrough-screen { padding: 14px; border: 1px solid #e2d8e9; border-radius: 20px; background: linear-gradient(145deg,#e9dff0,#f2edf5); aspect-ratio: .95; overflow: hidden; }
 .example-screen { height: 100%; overflow: hidden; border: 1px solid #d8cce2; border-radius: 10px; background: #fbf9fc; box-shadow: 0 9px 22px #49315b12; color: #514357; font-family: inherit; }
 .example-toolbar { display: flex; align-items: center; gap: 4px; padding: 7px 10px; border-bottom: 1px solid #e9e1ee; background: #ffffffd9; }
 .example-toolbar > span { font-weight: 700; font-size: 12px; letter-spacing: -.04em; margin-right: auto; }
 .example-toolbar i { width: 4px; height: 4px; border-radius: 50%; background: #c5b7d0; }
 .example-page-title { font-family: var(--serif); font-size: clamp(12px,1.35vw,20px); line-height: 1.2; }
 .example-appearance, .example-editor { padding: 12px; }
-.example-scene { position: relative; overflow: hidden; border-radius: 8px; background: linear-gradient(#82708e,#574366); }
+.example-scene { position: relative; overflow: hidden; border-radius: 8px; background: var(--scene-bg, #82708e); }
 .example-appearance .example-scene { height: 95px; margin-top: 10px; }
 .example-scene > svg { width: 100%; height: 100%; display: block; }
 .example-swatches { display: flex; gap: 7px; margin: 12px 0; }
@@ -8952,7 +8952,7 @@ input[type="radio"] {
 }
 @media (max-width: 760px) {
   .walkthrough-grid { grid-template-columns: 1fr; gap: 30px; }
-  .walkthrough-screen { max-height: 350px; aspect-ratio: 1.08; padding: 14px; }
+  .walkthrough-screen { max-height: 350px; aspect-ratio: .95; padding: 14px; }
   .example-page-title { font-size: 20px; }
   .example-appearance .example-scene { height: 95px; }
   .example-recipient .example-scene { height: 70px; }
