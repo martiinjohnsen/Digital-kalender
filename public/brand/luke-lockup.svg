@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 266 106" fill="none">
+  <title>Luke</title>
+  <defs>
+    <linearGradient id="tile-one" x1="2" y1="6" x2="44" y2="48" gradientUnits="userSpaceOnUse"><stop stop-color="#b79bc9"/><stop offset="1" stop-color="#a988bc"/></linearGradient>
+    <linearGradient id="tile-two" x1="51" y1="6" x2="93" y2="48" gradientUnits="userSpaceOnUse"><stop stop-color="#e1ccea"/><stop offset="1" stop-color="#d1b3dd"/></linearGradient>
+    <linearGradient id="tile-three" x1="2" y1="54" x2="44" y2="96" gradientUnits="userSpaceOnUse"><stop stop-color="#ccb4db"/><stop offset="1" stop-color="#b89acb"/></linearGradient>
+    <linearGradient id="open-door" x1="55" y1="56" x2="98" y2="101" gradientUnits="userSpaceOnUse"><stop stop-color="#82548f"/><stop offset="1" stop-color="#653b72"/></linearGradient>
+  </defs>
+  <rect x="2" y="6" width="42" height="42" rx="12" fill="url(#tile-one)"/>
+  <rect x="51" y="6" width="42" height="42" rx="12" fill="url(#tile-two)"/>
+  <rect x="2" y="54" width="42" height="42" rx="12" fill="url(#tile-three)"/>
+  <rect x="51" y="54" width="42" height="42" rx="12" fill="#fff0cb"/>
+  <path d="M63 59L86 54Q96 52 96 64V85Q96 94 87 96L63 102Q54 104 54 93V72Q54 62 63 59Z" fill="url(#open-door)"/>
+  <text x="60" y="89" fill="#fff0cb" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="27" textLength="34" lengthAdjust="spacingAndGlyphs" transform="rotate(-10 77 80)">24</text>
+  <text x="109" y="78" fill="#4d254f" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="70">luke</text>
+  <circle cx="258" cy="72.5" r="5.6" fill="#b580ac"/>
+</svg>
