@@ -1,5 +1,5 @@
 /* Cache only the public shell. Account data never enters the service-worker cache. */
-const CACHE = "luke-shell-2026-11-06-lockup-v11";
+const CACHE = "luke-shell-2026-11-06-glass-brand-v12";
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
@@ -7,11 +7,11 @@ self.addEventListener("install", (event) => {
       await cache.addAll([
         "/offline.html",
         "/brand/luke-lockup.svg",
-        "/icons/luke-192.png",
-        "/icons/luke-512.png",
-        "/icons/luke-apple-touch.png",
+        "/icons/luke-192-v2.png",
+        "/icons/luke-512-v2.png",
+        "/icons/luke-apple-touch-v2.png",
         "/icons/luke-maskable-512.png",
-        "/icons/luke-favicon.png",
+        "/icons/luke-favicon-v2.png",
       ]);
       try {
         const response = await fetch("/calendars", { cache: "reload" });

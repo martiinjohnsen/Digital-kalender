@@ -202,7 +202,7 @@ export function RecipientView({
         <div className="recipient-topbar-actions">
           {owner ? (
             <Link
-              className="button recipient-back"
+              className="button secondary recipient-back"
               href={`/calendar/${calendar.id}`}
             >
               <Icon name="back" size={16} />

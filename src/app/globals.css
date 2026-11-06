@@ -21,6 +21,10 @@
   --glass-nav-fill: 32%;
   --glass-shine: 28%;
   --glass-blur: 20px;
+  --glass-choice-tint: 32%;
+  --glass-choice-hover-tint: 40%;
+  --glass-choice-pressed-tint: 46%;
+  --glass-help-mix: 35%;
   --control-sheen: linear-gradient(135deg, color-mix(in srgb, white var(--glass-shine), transparent), #ffffff06);
   --neutral-fill: color-mix(in srgb, white var(--glass-neutral-fill), transparent);
   --neutral-hover: color-mix(in srgb, var(--neutral-fill) 85%, #c8b3d5);
@@ -337,17 +341,16 @@ textarea:focus-visible {
   padding: 14px 11px;
   border-radius: 13px;
   border: 1px solid #ffffffc9;
-  background: #ffffff50;
+  background-color: var(--neutral-fill);
+  background-image: var(--control-sheen);
   display: flex;
   align-items: center;
   text-align: left;
   gap: 9px;
   margin-bottom: 21px;
   box-shadow: var(--glass-shadow);
-  backdrop-filter: blur(18px);
-}
-.install-card:hover {
-  background: #ffffffbf;
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
 }
 .install-card strong {
   display: block;
@@ -888,11 +891,9 @@ textarea:focus-visible {
   width: 100%;
   text-align: left;
   font-size: 11px;
-  background: #ffffff40;
+  background-color: var(--neutral-fill);
+  background-image: var(--control-sheen);
   border-radius: 8px;
-}
-.card-menu button:hover {
-  background: #ede5f2;
 }
 .card-recipient {
   display: flex;
@@ -1538,7 +1539,8 @@ input[type="radio"] {
   padding: 10px 2px;
   border: 1px solid #ffffff80;
   border-radius: 11px;
-  background: #fff6;
+  background-color: var(--neutral-fill);
+  background-image: var(--control-sheen);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1935,7 +1937,8 @@ input[type="radio"] {
   gap: 22px;
 }
 .appearance-card {
-  background: #ffffff70;
+  background-color: var(--neutral-fill);
+  background-image: var(--control-sheen);
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 0;
@@ -2016,7 +2019,8 @@ input[type="radio"] {
   gap: 12px;
   padding: 11px 13px;
   border: 1px solid var(--line);
-  background: #fff7;
+  background-color: var(--neutral-fill);
+  background-image: var(--control-sheen);
   border-radius: 12px;
 }
 .template-choice strong {
@@ -2578,7 +2582,6 @@ input[type="radio"] {
   font-size: 10px;
   min-height: 36px;
   color: var(--theme-color);
-  background: #ffffff90;
 }
 .recipient-made {
   font: italic 12px var(--serif);
@@ -3663,13 +3666,7 @@ input[type="radio"] {
     transition: gap .25s ease, border-radius .25s ease, background-color .2s ease;
   }
   .bottom-nav > a.active {
-    /* A gentle purple tint follows the full transparency range. */
-    background-color: color-mix(in srgb, #c3abd5 var(--glass-choice-fill), transparent);
-    background-image: var(--control-sheen);
-    color: #3b224a;
     font-weight: 600;
-    border-color: var(--control-edge);
-    box-shadow: var(--control-shadow);
   }
   .bottom-nav > a > svg {
     width: 20px;
@@ -5759,9 +5756,25 @@ input[type="radio"] {
   outline-offset: 3px;
 }
 .button.secondary,
-.icon-button {
+.icon-button,
+.install-card,
+.theme-option,
+.appearance-card,
+.template-choice > button,
+.filter-tabs > button,
+.editor-tabs > button,
+.kind-picker > button,
+.color-option,
+.house-option,
+.sky-option,
+.scene-toggle,
+.effect-options > button,
+.question-type-switch > button,
+.collection-filters > button {
   background-color: var(--neutral-fill);
   background-image: var(--control-sheen);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
 }
 .button.danger {
   color: #79364a;
@@ -7740,7 +7753,10 @@ input[type="radio"] {
   padding: 12px;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: #ffffff70;
+  background-color: var(--neutral-fill);
+  background-image: var(--control-sheen);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
   color: var(--primary-dark);
   font-size: 12px;
   margin: 0;
@@ -7861,7 +7877,7 @@ input[type="radio"] {
 }
 .filter-tabs > button {
   border: 1px solid #c6b4d43b;
-  background-color: #ffffff35;
+  background-color: var(--neutral-fill);
   background-image: var(--control-sheen);
   box-shadow: inset 0 1px 0 #ffffffb0;
   color: #7b6687;
@@ -8415,8 +8431,9 @@ input[type="radio"] {
   min-width: 0;
 }
 .new-calendar-dialog > .dialog-header .icon-button {
-  color: white;
-  background: #ffffff20;
+  color: var(--control-ink);
+  background-color: var(--neutral-fill);
+  background-image: var(--control-sheen);
   border-color: #ffffff55;
   flex-shrink: 0;
 }
@@ -8918,7 +8935,10 @@ input[type="radio"] {
   padding: 6px 12px;
   border: 1px solid var(--line);
   border-radius: 20px;
-  background: #ffffff70;
+  background-color: var(--neutral-fill);
+  background-image: var(--control-sheen);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
   color: var(--muted);
   font-size: 11px;
 }
@@ -9077,7 +9097,7 @@ input[type="radio"] {
 
 .preview-sync-error { color: #a5434c; background: #fff4f3; border: 1px solid #e9b7b9; border-radius: 10px; padding: 12px 16px; margin: 14px auto 0; width: min(900px, calc(100% - 32px)); font-size: 12px; line-height: 1.6; }
 
-/* One glass material for primary actions and a lighter version for selections.
+/* Actions and active mobile navigation share one material; other selections are lighter.
    The sheen never changes image/layers on press, avoiding Safari repaint flashes. */
 :root,
 .recipient-view.calendar-palette {
@@ -9086,16 +9106,19 @@ input[type="radio"] {
   --action-fill: color-mix(in srgb, var(--action-tint) var(--glass-action-fill), transparent);
   --action-hover: color-mix(in srgb, color-mix(in srgb, var(--control-accent) 88%, #e4d7ec) var(--glass-action-fill), transparent);
   --action-pressed: color-mix(in srgb, color-mix(in srgb, var(--control-accent) 94%, #e4d7ec) var(--glass-action-fill), transparent);
-  --choice-fill: color-mix(in srgb, color-mix(in srgb, var(--control-accent) 32%, white) var(--glass-choice-fill), transparent);
-  --choice-hover: color-mix(in srgb, color-mix(in srgb, var(--control-accent) 40%, white) var(--glass-choice-fill), transparent);
-  --choice-pressed: color-mix(in srgb, color-mix(in srgb, var(--control-accent) 46%, white) var(--glass-choice-fill), transparent);
+  --choice-fill: color-mix(in srgb, color-mix(in srgb, var(--control-accent) var(--glass-choice-tint), white) var(--glass-choice-fill), transparent);
+  --choice-hover: color-mix(in srgb, color-mix(in srgb, var(--control-accent) var(--glass-choice-hover-tint), white) var(--glass-choice-fill), transparent);
+  --choice-pressed: color-mix(in srgb, color-mix(in srgb, var(--control-accent) var(--glass-choice-pressed-tint), white) var(--glass-choice-fill), transparent);
 }
-.button.primary {
+.button.primary,
+.bottom-nav > a.active {
   color: var(--control-ink);
   background-color: var(--action-fill);
   background-image: var(--control-sheen);
   border-color: var(--control-edge);
   box-shadow: var(--control-shadow);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.45);
 }
 .nav-item.active,
 .topbar .avatar.is-active,
@@ -9105,7 +9128,10 @@ input[type="radio"] {
 :is(.color-option, .house-option, .sky-option, .theme-option, .appearance-card).selected,
 .template-choice > button.selected,
 .account-tabs .selected,
-.overview-sections > button[aria-pressed="true"] {
+.overview-sections > button[aria-pressed="true"],
+.collection-filters > button[aria-pressed="true"],
+.calendar-settings-button[aria-pressed="true"],
+.quiz-play-option.is-selected:not(.is-correct):not(.is-incorrect) {
   color: var(--control-ink);
   background-color: var(--choice-fill);
   background-image: var(--control-sheen);
@@ -9119,15 +9145,17 @@ input[type="radio"] {
   --control-ink: var(--primary-dark);
 }
 @media (hover: hover) and (pointer: fine) {
-  .button.primary:hover:not(:disabled) { background-color: var(--action-hover); }
-  .button.secondary:hover:not(:disabled), .button.text:hover:not(:disabled), .icon-button:hover:not(:disabled), .text-link:hover { background-color: var(--neutral-hover); }
+  .button.primary:hover:not(:disabled), .bottom-nav > a.active:hover { background-color: var(--action-hover); }
+  .button.secondary:hover:not(:disabled), .button.text:hover:not(:disabled), .icon-button:hover:not(:disabled), .text-link:hover,
+  .install-card:hover, .card-menu button:hover { background-color: var(--neutral-hover); }
   :is(.filter-tabs, .editor-tabs, .kind-picker, .effect-options, .question-type-switch) > button:hover:not(:disabled),
   :is(.color-option, .house-option, .sky-option):hover,
   .account-tabs .selected:hover,
-  .overview-sections > button:hover { background-color: var(--choice-hover); }
+  .calendar-settings-button[aria-pressed="true"]:hover,
+  .overview-sections > button:hover,
+  .collection-filters > button:hover { background-color: var(--choice-hover); }
 }
-.button.primary:active:not(:disabled) { background-color: var(--action-pressed); }
-.bottom-nav > a.active:active { background-color: color-mix(in srgb, #b699ce var(--glass-choice-fill), transparent); }
+.button.primary:active:not(:disabled), .bottom-nav > a.active:active { background-color: var(--action-pressed); }
 :is(.filter-tabs, .editor-tabs, .effect-options, .question-type-switch) > button:active:not(:disabled) { background-color: var(--choice-pressed); }
 .button.secondary:active:not(:disabled), .icon-button:active:not(:disabled) { background-color: var(--neutral-hover); }
 .account-login-panel .settings-card-heading { margin-bottom: 18px; }
@@ -9200,7 +9228,7 @@ input[type="radio"] {
 }
 
 .topbar .help-button {
-  background-color: color-mix(in srgb, var(--neutral-fill) 35%, #fbf9fd);
+  background-color: color-mix(in srgb, var(--neutral-fill) var(--glass-help-mix), #fbf9fd);
   background-image: var(--control-sheen);
   color: #655078;
   backdrop-filter: none;
@@ -9278,7 +9306,7 @@ input[type="radio"] {
 }
 @media (prefers-reduced-motion: reduce) { .scene-fireworks { display: none; } }
 @media (hover: hover) and (pointer: fine) {
-  .topbar .help-button:hover:not(:disabled) { background-color: color-mix(in srgb, var(--neutral-fill) 25%, #f2edf8); }
+  .topbar .help-button:hover:not(:disabled) { background-color: color-mix(in srgb, var(--neutral-fill) calc(var(--glass-help-mix) - 10%), #f2edf8); }
 }
 .topbar .help-button:active:not(:disabled) { background-color: #eee6f5; }
 .button.danger { background-color: color-mix(in srgb, #d995a4 var(--glass-action-fill), transparent); background-image: var(--control-sheen); }
