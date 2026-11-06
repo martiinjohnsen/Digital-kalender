@@ -29,7 +29,7 @@ export const DOOR_EFFECTS = [
 export type DoorEffect = (typeof DOOR_EFFECTS)[number];
 export interface SceneSettings {
   house: "classic" | "cabin" | "townhouse" | "park" | "forest" | "village";
-  sky: "stars" | "moon" | "clear";
+  sky: "stars" | "moon" | "clear" | "fullmoon" | "cloudy";
   snowman: boolean;
   reindeer: boolean;
   trees: boolean;
@@ -37,6 +37,13 @@ export interface SceneSettings {
   snowfall: boolean;
   wind?: boolean;
   twinkle?: boolean;
+  santa?: boolean;
+  sleigh?: boolean;
+  skis?: boolean;
+  christmasTree?: boolean;
+  lanterns?: boolean;
+  storm?: boolean;
+  shootingStars?: boolean;
 }
 export const DEFAULT_SCENE: SceneSettings = {
   house: "classic",
@@ -598,11 +605,11 @@ export function isScene(value: unknown): value is SceneSettings {
     ["classic", "cabin", "townhouse", "park", "forest", "village"].includes(
       String(value.house),
     ) &&
-    ["stars", "moon", "clear"].includes(String(value.sky)) &&
+    ["stars", "moon", "clear", "fullmoon", "cloudy"].includes(String(value.sky)) &&
     ["snowman", "reindeer", "trees", "lights", "snowfall"].every(
       (key) => typeof value[key] === "boolean",
     ) &&
-    ["wind", "twinkle"].every(
+    ["wind", "twinkle", "santa", "sleigh", "skis", "christmasTree", "lanterns", "storm", "shootingStars"].every(
       (key) => value[key] === undefined || typeof value[key] === "boolean",
     )
   );

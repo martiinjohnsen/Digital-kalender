@@ -1,21 +1,38 @@
 import Link from "next/link";
+import { Icon } from "@/components/icons";
 
 export default function PrivacyPage() {
   return (
-    <article className="settings-page page-enter">
-      <div className="page-heading"><h1>Personvern i Luke</h1></div>
-      <section className="settings-card">
-        <h2>Opplysninger vi bruker</h2>
-        <p>Når du logger inn med Google, mottar Luke navn, e-postadresse, bruker-ID og eventuelt profilbilde. Luke får ikke passordet ditt eller tilgang til Gmail og Google-kalenderen din.</p>
-        <h2>Kalendere og deling</h2>
-        <p>Vi lagrer kalenderne du lager, profilnavnet ditt og fremdriften og quizsvarene dine. Dette brukes til å vise kalenderne på kontoen din og gi mottakere tilgang til kalendere du deler. De som får delingslenken din, kan bruke den til å få mottakertilgang med sin egen konto.</p>
-        <h2>Lagring og leverandører</h2>
-        <p>Supabase håndterer innlogging og lagring. Vercel drifter nettsiden. Nettleseren lagrer innloggingsøkten og en lokal kopi av kalenderdata, blant annet for å bevare utkast ved nettverksfeil. Videoer fra YouTube lastes først når du velger å spille dem av.</p>
-        <h2>Kontroll over innholdet ditt</h2>
-        <p>Du kan endre navn, redigere og slette egne kalendere og avslutte deling i appen. For spørsmål om opplysningene dine, innsyn eller sletting av kontoen kan du kontakte <a href="mailto:martin.johnsen@outlook.com">martin.johnsen@outlook.com</a>.</p>
-        <p>Sist oppdatert: 5. november 2026.</p>
-        <Link href="/settings" className="button secondary">Tilbake til konto</Link>
-      </section>
+    <article className="privacy-page page-enter">
+      <div className="page-heading">
+        <div><h1>Personvern i Luke</h1><p>Dette lagrer vi, og slik brukes opplysningene dine.</p></div>
+      </div>
+      <div className="settings-card privacy-card">
+        <section>
+          <h2><Icon name="user" size={19} /> Når du logger inn</h2>
+          <p>Du logger inn med Google. Luke mottar navn, e-postadresse, bruker-ID og eventuelt profilbilde. Vi får ikke passordet ditt eller tilgang til Gmail eller Google-kalenderen din.</p>
+        </section>
+        <section>
+          <h2><Icon name="calendar" size={19} /> Kalenderne dine</h2>
+          <p>Vi lagrer profilnavnet ditt, kalenderne du lager, åpnede luker og quizsvar. Det gjør at du kan bruke kalenderne dine på både mobil og PC. Når du slår på «Lagre fremdrift» i forhåndsvisningen, lagres også prøvesvarene dine på kontoen.</p>
+        </section>
+        <section>
+          <h2><Icon name="share" size={19} /> Når du deler en kalender</h2>
+          <p>En mottaker åpner invitasjonen og logger inn med sin egen konto. Alle som får invitasjonslenken, kan bruke den til å få mottakertilgang. Mottakeren kan åpne kalenderen og svare på quiz, men kan ikke redigere innholdet ditt.</p>
+        </section>
+        <section>
+          <h2><Icon name="cloud" size={19} /> Hvor opplysningene lagres</h2>
+          <p>Supabase håndterer innlogging og lagring på kontoen. Vercel drifter nettsiden. Nettleseren lagrer innloggingsøkten og en lokal kopi av kalenderdata, slik at blant annet utkast kan beholdes ved nettverksfeil. YouTube-videoer lastes først når du velger å spille dem av.</p>
+        </section>
+        <section>
+          <h2><Icon name="settings" size={19} /> Du styrer innholdet ditt</h2>
+          <p>Du kan endre navnet ditt, redigere og slette egne kalendere og avslutte deling i appen. For spørsmål om opplysningene dine, innsyn eller sletting av kontoen kan du kontakte <a href="mailto:martin.johnsen@outlook.com">martin.johnsen@outlook.com</a>.</p>
+        </section>
+        <footer className="privacy-footer">
+          <span>Sist oppdatert 6. november 2026</span>
+          <Link href="/settings" className="button secondary"><Icon name="back" size={16} />Tilbake til konto</Link>
+        </footer>
+      </div>
     </article>
   );
 }

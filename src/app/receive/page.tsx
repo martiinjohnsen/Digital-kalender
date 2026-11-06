@@ -6,7 +6,7 @@ import { decodeCalendar } from "@/lib/share";
 import type { AdventCalendar } from "@/lib/model";
 import { isReceived } from "@/lib/calendar-library";
 import { RecipientView } from "@/components/recipient-view";
-import { Icon } from "@/components/icons";
+import { BrandMark, Icon } from "@/components/icons";
 import { useStore } from "@/components/provider";
 import { useAccount } from "@/components/account-provider";
 import { inviteToken } from "@/lib/cloud/workspace";
@@ -72,9 +72,9 @@ function LinkedReceive({ token }: { token: string }) {
   return (
     <main className="receive-invitation">
       <div className="settings-card invitation-card">
-        <span className="soft-icon">
-          <Icon name="gift" size={30} />
-        </span>
+        <Link href="/calendars" className="brand invitation-brand" aria-label="Luke, til forsiden">
+          <BrandMark /><span>luke<span className="brand-period">.</span></span>
+        </Link>
         <h1>
           {error
             ? "Kalenderen kunne ikke åpnes"

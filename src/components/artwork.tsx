@@ -1,5 +1,6 @@
 import { useId, type CSSProperties } from "react";
 import { DEFAULT_SCENE, type SceneSettings, type Theme } from "@/lib/model";
+import { ChristmasTree, Lanterns, Reindeer, Santa, Skis, SkyClouds, Sleigh } from "./scene-details";
 
 function Window({
   x,
@@ -60,7 +61,7 @@ export function Artwork({
     cabin = settings.house === "cabin";
   return (
     <svg
-      className={`artwork theme-${theme} ${settings.wind ? "has-wind" : ""} ${className}`}
+      className={`artwork theme-${theme} ${settings.wind || settings.storm ? "has-wind" : ""} ${settings.storm ? "is-storm" : ""} ${className}`}
       viewBox="0 0 600 380"
       preserveAspectRatio={fit === "cover" ? "xMidYMax slice" : "xMidYMid meet"}
       fill="none"
@@ -80,7 +81,7 @@ export function Artwork({
         fill="var(--scene-halo)"
         opacity=".42"
       />
-      {(settings.sky !== "clear" || settings.twinkle) && (
+      {((settings.sky !== "clear" && settings.sky !== "cloudy") || settings.twinkle) && (
         <g
           className={settings.twinkle ? "scene-twinkle" : ""}
           fill="#f9ead1"
@@ -112,6 +113,22 @@ export function Artwork({
           <circle cx="503" cy="57" r="22" fill="var(--scene-bg)" />
         </g>
       )}
+      {settings.sky === "fullmoon" && (
+        <g>
+          <circle cx="491" cy="66" r="48" fill="#f5e4b9" opacity=".1" />
+          <circle cx="491" cy="66" r="34" fill="#f5e4b9" />
+          <circle cx="481" cy="55" r="7" fill="#dac598" opacity=".45" />
+          <circle cx="504" cy="75" r="9" fill="#dac598" opacity=".35" />
+          <circle cx="480" cy="80" r="4" fill="#dac598" opacity=".4" />
+        </g>
+      )}
+      {settings.sky === "cloudy" && <SkyClouds />}
+      {settings.shootingStars && (
+        <g className="scene-shooting-stars" stroke="#fff0cf" strokeWidth="2" strokeLinecap="round">
+          {[25, 70, 110].map((y, i) => <path key={y} className="shooting-star" d={`M-70 ${y}l-45-12`} style={{ animationDelay: `${-i * 4.7}s`, animationDuration: `${11 + i * 3}s` }} />)}
+        </g>
+      )}
+      {settings.sleigh && <Sleigh />}
       <path
         d="M0 318c90-19 150 1 222-8s132-19 214-2c52 11 103-10 164-5v77H0Z"
         fill="var(--scene-snow)"
@@ -449,33 +466,7 @@ export function Artwork({
           <circle cy="3" r="2" fill="#756479" />
         </g>
       )}
-      {settings.reindeer && (
-        <g transform="translate(443 304)">
-          <ellipse cx="0" cy="0" rx="24" ry="12" fill="#b68a64" />
-          <path
-            d="m-17 4-4 23m14-18-3 18m20-20 1 20m8-26 3 26"
-            stroke="#9f7858"
-            strokeWidth="4"
-            strokeLinecap="round"
-          />
-          <path d="m15-3 9-21 7 2-5 28" fill="#b68a64" />
-          <ellipse cx="29" cy="-24" rx="11" ry="8" fill="#ba916b" />
-          <circle cx="37" cy="-24" r="2.5" fill="#ae6f75" />
-          <path
-            d="m25-30-5-14m3 8-9-4m13 9 3-15m-2 8 9-5"
-            stroke="#9f7858"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          <circle cx="31" cy="-27" r="1.3" fill="#4f4051" />
-          <path
-            d="m-21-4-10-9"
-            stroke="#b68a64"
-            strokeWidth="4"
-            strokeLinecap="round"
-          />
-        </g>
-      )}
+      {settings.reindeer && <Reindeer />}
       <g>
         <rect x="388" y="296" width="35" height="27" rx="2" fill="#bd806b" />
         <path
@@ -486,14 +477,18 @@ export function Artwork({
         <rect x="177" y="304" width="25" height="20" rx="2" fill="#bfa06d" />
         <path d="M188 304v20m-13-16h29" stroke="#f4ead4" strokeWidth="3" />
       </g>
-      {settings.wind && (
+      {settings.christmasTree && <ChristmasTree />}
+      {settings.santa && <Santa />}
+      {settings.skis && <Skis />}
+      {settings.lanterns && <Lanterns />}
+      {(settings.wind || settings.storm) && (
         <g
           className="scene-wind"
           stroke="#fff5e2"
           strokeWidth="1.8"
           strokeLinecap="round"
         >
-          {Array.from({ length: 9 }, (_, index) => {
+          {Array.from({ length: settings.storm ? 16 : 9 }, (_, index) => {
             const y = 48 + ((index * 83) % 245);
             const length = 50 + ((index * 31) % 70);
             return (
@@ -504,7 +499,7 @@ export function Artwork({
                 style={
                   {
                     animationDelay: `${-((index * 1.73) % 7)}s`,
-                    animationDuration: `${3.1 + ((index * 13) % 26) / 10}s`,
+                    animationDuration: `${(settings.storm ? 1.1 : 3.1) + ((index * 13) % 26) / 10}s`,
                     "--wind-rise": `${-9 - ((index * 11) % 30)}px`,
                   } as CSSProperties
                 }
@@ -513,12 +508,12 @@ export function Artwork({
           })}
         </g>
       )}
-      {settings.snowfall && (
+      {(settings.snowfall || settings.storm) && (
         <g
-          className={`scene-snowfall ${settings.wind ? "snow-in-wind" : ""}`}
+          className={`scene-snowfall ${settings.wind || settings.storm ? "snow-in-wind" : ""}`}
           fill="#fffaf1"
         >
-          {Array.from({ length: 32 }, (_, i) => (
+          {Array.from({ length: settings.storm ? 90 : 32 }, (_, i) => (
             <circle
               key={i}
               cx={10 + ((i * 83) % 580)}
@@ -526,7 +521,7 @@ export function Artwork({
               r={i % 4 === 0 ? 2.7 : 1.6}
               style={{
                 animationDelay: `${-i * 0.73}s`,
-                animationDuration: `${5 + (i % 5) * 0.8}s`,
+                animationDuration: `${settings.storm ? 1.1 + (i % 7) * .15 : 5 + (i % 5) * 0.8}s`,
               }}
             />
           ))}

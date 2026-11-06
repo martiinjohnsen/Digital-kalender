@@ -26,6 +26,11 @@ export function AppearancePicker({
         ["reindeer", "Reinsdyr"],
         ["trees", "Grantrær"],
         ["lights", "Julelys"],
+        ["santa", "Julenisse"],
+        ["sleigh", "Nissens slede"],
+        ["skis", "Ski og staver"],
+        ["christmasTree", "Pyntet juletre"],
+        ["lanterns", "Lykter"],
       ] as const,
     },
     {
@@ -34,6 +39,8 @@ export function AppearancePicker({
         ["snowfall", "Snøfall"],
         ["wind", "Vinterbris"],
         ["twinkle", "Blinkende stjerner"],
+        ["storm", "Snøstorm"],
+        ["shootingStars", "Stjerneskudd"],
       ] as const,
     },
   ];
@@ -82,7 +89,7 @@ export function AppearancePicker({
               className={`house-option ${value.scene.house === house ? "selected" : ""}`}
               onClick={() => scene({ house })}
             >
-              <Artwork theme={value.theme} scene={{ ...value.scene, house }} />
+              <Artwork className="scene-still" theme={value.theme} scene={{ ...value.scene, house }} />
               <span>
                 {label}
                 {value.scene.house === house && <Icon name="check" size={14} />}
@@ -118,7 +125,9 @@ export function AppearancePicker({
           {(
             [
               ["stars", "Stjernehimmel"],
-              ["moon", "Måneskinn"],
+              ["moon", "Halvmåne"],
+              ["fullmoon", "Fullmåne"],
+              ["cloudy", "Overskyet"],
               ["clear", "Rolig himmel"],
             ] as const
           ).map(([sky, label]) => (
@@ -134,8 +143,12 @@ export function AppearancePicker({
                   <Icon name="star" size={20} />
                 ) : sky === "moon" ? (
                   <span className="moon-swatch" />
+                ) : sky === "fullmoon" ? (
+                  <span className="fullmoon-swatch" />
+                ) : sky === "cloudy" ? (
+                  <Icon name="cloud" size={22} />
                 ) : (
-                  <span className="clear-swatch" />
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 9h16M6 15h12" /></svg>
                 )}
               </span>
               <span>{label}</span>
