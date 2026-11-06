@@ -15,7 +15,7 @@
   --serif: Georgia, "Times New Roman", serif;
   --control-accent: #aa8ac1;
   --control-ink: #442b52;
-  --glass-action-fill: 74%;
+  --glass-action-fill: 80%;
   --glass-choice-fill: 45%;
   --glass-neutral-fill: 42%;
   --glass-nav-fill: 32%;
@@ -252,32 +252,16 @@ textarea:focus-visible {
   letter-spacing: -0.07em;
   line-height: 1;
 }
-.brand-period {
-  color: #aa8c9e;
-}
-.brand-mark {
-  width: 30px;
-  height: 30px;
-  display: inline-grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 3px;
-  transform: rotate(-4deg);
-}
-.brand-mark i {
+.brand-logo {
   display: block;
-  border: 1px solid currentColor;
-  border-radius: 3px 3px 1px 1px;
-  background: currentColor;
-  opacity: 0.9;
+  width: 128px;
+  height: auto;
+  object-fit: contain;
+  flex-shrink: 0;
 }
-.brand-mark i:nth-child(2) {
-  opacity: 0.45;
-  transform: perspective(35px) rotateY(-35deg);
-  transform-origin: left;
-}
-.brand-mark i:nth-child(3) {
-  opacity: 0.65;
-}
+.recipient-brand .brand-logo { width: 110px; }
+.recipient-footer .brand-logo { width: 64px; }
+.invitation-brand .brand-logo { width: 136px; }
 .sidebar {
   position: fixed;
   top: 0;
@@ -975,17 +959,13 @@ progress::-moz-progress-bar {
   background: #8d9f83;
 }
 .card-edit {
-  color: #8e789c;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border: 1px solid #fff;
-  border-radius: 8px;
-  background: #f4eef76b;
-}
-.card-edit:hover {
-  background: #eee4f4;
+  width: 52px;
+  min-width: 52px;
+  height: 36px;
+  min-height: 36px;
+  padding: 7px 14px;
+  border-radius: 11px;
+  flex-shrink: 0;
 }
 .new-calendar-card {
   min-height: 307px;
@@ -1336,7 +1316,7 @@ label {
   font-weight: 500;
   margin: 19px 0 0;
 }
-input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
 select,
 textarea {
   display: block;
@@ -2587,10 +2567,6 @@ input[type="radio"] {
   letter-spacing: -0.05em;
   color: var(--theme-color);
 }
-.recipient-brand .brand-mark {
-  width: 24px;
-  height: 24px;
-}
 .preview-label {
   font-size: 8px;
   color: var(--theme-color);
@@ -3448,10 +3424,6 @@ input[type="radio"] {
     font-size: 30px;
     gap: 8px;
   }
-  .mobile-brand .brand-mark {
-    width: 25px;
-    height: 25px;
-  }
   .breadcrumb { display: none; }
   .help-button { display: grid; width: 34px; height: 34px; flex-shrink: 0; }
   .topbar-right {
@@ -3940,10 +3912,6 @@ input[type="radio"] {
   .recipient-brand {
     font-size: 26px;
   }
-  .recipient-brand .brand-mark {
-    width: 23px;
-    height: 23px;
-  }
   .recipient-back {
     padding: 8px 11px;
     min-height: 35px;
@@ -4418,7 +4386,7 @@ input[type="radio"] {
   label {
     font-size: 11px;
   }
-  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
   textarea,
   select {
     font-size: 16px;
@@ -4697,10 +4665,6 @@ input[type="radio"] {
   .recipient-brand {
     font-size: 25px;
     gap: 7px;
-  }
-  .recipient-brand .brand-mark {
-    width: 22px;
-    height: 22px;
   }
   .recipient-back {
     width: 32px;
@@ -7139,7 +7103,7 @@ input[type="radio"] {
 }
 .calendar-palette
   :is(
-    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
     textarea,
     select
   ) {
@@ -8840,7 +8804,7 @@ input[type="radio"] {
 .walkthrough-screen { container-type: inline-size; padding: 10px; border: 1px solid #e2d8e9; border-radius: 18px; background: linear-gradient(145deg,#e9dff0,#f2edf5); aspect-ratio: 1; overflow: hidden; }
 .example-screen { display: flex; flex-direction: column; height: 100%; overflow: hidden; border: 1px solid #d8cce2; border-radius: 10px; background: #fbf9fc; box-shadow: 0 9px 22px #49315b12; color: #514357; font-family: inherit; }
 .example-toolbar { display: flex; align-items: center; gap: 1.5cqw; padding: 2.5cqw 3.5cqw; border-bottom: 1px solid #e9e1ee; background: #ffffffd9; flex-shrink: 0; }
-.example-toolbar > span { font-weight: 700; font-size: 4.3cqw; letter-spacing: -.04em; margin-right: auto; line-height: 1.2; }
+.example-toolbar > .brand-logo { width: 18cqw; max-width: none; margin-right: auto; }
 .example-share { font-size: 2.8cqw; font-weight: 500; padding: 1cqw 2cqw; border-radius: 4px; background: #e8dfee; color: #6f527f; }
 .example-toolbar i { width: 1.5cqw; height: 1.5cqw; border-radius: 50%; background: #c5b7d0; }
 .example-page-title { font-family: var(--serif); font-size: 6cqw; line-height: 1.2; }
@@ -9115,10 +9079,10 @@ input[type="radio"] {
 :root,
 .recipient-view.calendar-palette {
   --control-edge: color-mix(in srgb, var(--control-accent) 38%, transparent);
-  --action-tint: color-mix(in srgb, var(--control-accent) 52%, #f7f1fb);
+  --action-tint: color-mix(in srgb, var(--control-accent) 80%, #e4d7ec);
   --action-fill: color-mix(in srgb, var(--action-tint) var(--glass-action-fill), transparent);
-  --action-hover: color-mix(in srgb, color-mix(in srgb, var(--control-accent) 62%, #f7f1fb) var(--glass-action-fill), transparent);
-  --action-pressed: color-mix(in srgb, color-mix(in srgb, var(--control-accent) 68%, #f7f1fb) var(--glass-action-fill), transparent);
+  --action-hover: color-mix(in srgb, color-mix(in srgb, var(--control-accent) 88%, #e4d7ec) var(--glass-action-fill), transparent);
+  --action-pressed: color-mix(in srgb, color-mix(in srgb, var(--control-accent) 94%, #e4d7ec) var(--glass-action-fill), transparent);
   --choice-fill: color-mix(in srgb, color-mix(in srgb, var(--control-accent) 32%, white) var(--glass-choice-fill), transparent);
   --choice-hover: color-mix(in srgb, color-mix(in srgb, var(--control-accent) 40%, white) var(--glass-choice-fill), transparent);
   --choice-pressed: color-mix(in srgb, color-mix(in srgb, var(--control-accent) 46%, white) var(--glass-choice-fill), transparent);
@@ -9194,7 +9158,6 @@ input[type="radio"] {
   transition: background-color .2s, border-color .2s, color .2s;
 }
 .invitation-brand { display: inline-flex; justify-content: center; margin: 0 auto 24px; font-size: 30px; color: var(--primary); }
-.invitation-brand .brand-mark { width: 25px; height: 25px; }
 
 .privacy-page { max-width: 880px; }
 .privacy-page > .page-heading { margin-bottom: 24px; }
@@ -9240,14 +9203,69 @@ input[type="radio"] {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
-.glass-demo { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 14px; padding: 22px 16px; margin-bottom: 22px; border-radius: 14px; background: radial-gradient(circle at 24% 80%, #e4bf97 0 15%, transparent 16%), radial-gradient(ellipse at 65% 0, #a88ac0 0 28%, transparent 29%), linear-gradient(135deg,#e6d9ed,#c5d3df); }
+.glass-settings { padding: 20px; }
+.glass-settings .settings-card-heading { gap: 12px; margin-bottom: 12px; }
+.glass-settings .settings-card-heading .soft-icon { width: 36px; height: 36px; }
+.glass-settings .settings-card-heading h2 { font-size: 24px; }
+.glass-demo { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; padding: 12px; margin-bottom: 12px; border-radius: 12px; background: radial-gradient(circle at 24% 80%, #e4bf97 0 15%, transparent 16%), radial-gradient(ellipse at 65% 0, #a88ac0 0 28%, transparent 29%), linear-gradient(135deg,#e6d9ed,#c5d3df); }
 .glass-demo .button { cursor: default; }
 .glass-choice { display: inline-flex; align-items: center; padding: 10px 16px; min-height: 40px; border: 1px solid var(--control-edge); border-radius: 12px; font-size: 12px; }
-.glass-slider-label { display: block; margin: 0 0 10px; font-size: 12px; color: var(--primary); }
-input.glass-slider { width: 100%; height: 24px; padding: 0; margin: 0; border: 0; box-shadow: none; background: transparent; accent-color: #9873b0; cursor: ew-resize; }
-.glass-slider-ends { display: flex; justify-content: space-between; gap: 15px; margin-top: 8px; font-size: 11px; color: var(--muted); }
-.glass-settings-bottom { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-top: 20px; }
-.glass-settings-bottom > span { color: var(--muted); font-size: 11px; }
+.glass-slider-label { display: block; margin: 0 0 2px; font-size: 11px; color: var(--primary); }
+.glass-range { position: relative; height: 28px; }
+.glass-range::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 50%;
+  height: 5px;
+  transform: translateY(-50%);
+  border-radius: 10px;
+  background: linear-gradient(to right, #9670ad var(--range-value), #ded5e5 var(--range-value));
+  pointer-events: none;
+}
+.glass-settings input.glass-slider,
+.glass-settings input.glass-slider:focus {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 100%;
+  height: 28px;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+  background: transparent;
+  cursor: ew-resize;
+  touch-action: pan-y;
+}
+.glass-slider::-webkit-slider-runnable-track { height: 5px; background: transparent; border: 0; }
+.glass-slider::-moz-range-track { height: 5px; background: transparent; border: 0; }
+.glass-slider::-moz-range-progress { background: transparent; }
+.glass-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -7.5px;
+  border: 1px solid #9777aa;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px #49305e24;
+}
+.glass-slider::-moz-range-thumb {
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #9777aa;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px #49305e24;
+}
+.glass-slider:focus-visible::-webkit-slider-thumb { outline: 2px solid #79538f; outline-offset: 3px; }
+.glass-slider:focus-visible::-moz-range-thumb { outline: 2px solid #79538f; outline-offset: 3px; }
+.glass-slider-ends { display: flex; justify-content: space-between; gap: 15px; margin-top: 0; font-size: 10px; color: var(--muted); }
 .scene-firework-burst { stroke: #fff5df; stroke-width: 1.6; stroke-linecap: round; opacity: 0; transform-box: fill-box; transform-origin: center; animation: scene-sky-fireworks 7s ease-out infinite; }
 @keyframes scene-sky-fireworks {
   0%, 45% { transform: scale(.08); opacity: 0; }

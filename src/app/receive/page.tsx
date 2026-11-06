@@ -6,7 +6,8 @@ import { decodeCalendar } from "@/lib/share";
 import type { AdventCalendar } from "@/lib/model";
 import { isReceived } from "@/lib/calendar-library";
 import { RecipientView } from "@/components/recipient-view";
-import { BrandMark, Icon } from "@/components/icons";
+import { Icon } from "@/components/icons";
+import { BrandLogo } from "@/components/brand";
 import { useStore } from "@/components/provider";
 import { useAccount } from "@/components/account-provider";
 import { inviteToken } from "@/lib/cloud/workspace";
@@ -73,7 +74,7 @@ function LinkedReceive({ token }: { token: string }) {
     <main className="receive-invitation">
       <div className="settings-card invitation-card">
         <Link href="/calendars" className="brand invitation-brand" aria-label="Luke, til forsiden">
-          <BrandMark /><span>luke<span className="brand-period">.</span></span>
+          <BrandLogo />
         </Link>
         <h1>
           {error

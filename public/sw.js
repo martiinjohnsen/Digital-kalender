@@ -1,13 +1,17 @@
 /* Cache only the public shell. Account data never enters the service-worker cache. */
-const CACHE = "luke-shell-2026-11-05-account-flow-v8";
+const CACHE = "luke-shell-2026-11-06-brand-v9";
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE);
       await cache.addAll([
         "/offline.html",
-        "/icons/icon-192.png",
-        "/icons/icon-512.png",
+        "/brand/luke-logo.webp",
+        "/icons/luke-192.png",
+        "/icons/luke-512.png",
+        "/icons/luke-apple-touch.png",
+        "/icons/luke-maskable-512.png",
+        "/icons/luke-favicon.png",
       ]);
       try {
         const response = await fetch("/calendars", { cache: "reload" });
@@ -77,6 +81,7 @@ self.addEventListener("fetch", (event) => {
   } else if (
     url.pathname.startsWith("/_next/static/") ||
     url.pathname.startsWith("/icons/") ||
+    url.pathname.startsWith("/brand/") ||
     url.pathname === "/fonts.css"
   ) {
     event.respondWith(

@@ -9,7 +9,7 @@ export function glassStyle(value: number): Record<string, string> {
     ? low + (normal-low)*level/DEFAULT_GLASS
     : normal + (high-normal)*(level-DEFAULT_GLASS)/(100-DEFAULT_GLASS);
   return {
-    "--glass-action-fill": `${interpolate(42,74,98).toFixed(1)}%`,
+    "--glass-action-fill": `${interpolate(58,80,98).toFixed(1)}%`,
     "--glass-choice-fill": `${interpolate(18,45,92).toFixed(1)}%`,
     "--glass-neutral-fill": `${interpolate(16,42,96).toFixed(1)}%`,
     "--glass-nav-fill": `${interpolate(14,32,96).toFixed(1)}%`,

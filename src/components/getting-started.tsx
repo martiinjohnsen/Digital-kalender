@@ -1,5 +1,6 @@
 import { useId } from "react";
 import { Artwork } from "./artwork";
+import { BrandLogo } from "./brand";
 import { Icon } from "./icons";
 import { gettingStarted } from "@/lib/getting-started";
 
@@ -32,7 +33,7 @@ export function GettingStarted({ titleAs: Title = "h2" }: { titleAs?: "h1" | "h2
 function ExampleScreen({ step }: { step: number }) {
   return (
     <div className={`example-screen example-step-${step} theme-advent`} aria-hidden="true">
-      <div className="example-toolbar"><span>luke.</span>{step === 3 ? <b className="example-share">Del kalender ↗</b> : <><i /><i /><i /></>}</div>
+      <div className="example-toolbar"><BrandLogo />{step === 3 ? <b className="example-share">Del kalender ↗</b> : <><i /><i /><i /></>}</div>
       {step === 0 ? (
         <div className="example-login">
           <div className="example-login-mark"><Icon name="user" size={30} /></div>

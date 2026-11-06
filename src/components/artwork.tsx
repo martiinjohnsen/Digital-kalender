@@ -143,7 +143,7 @@ export function Artwork({
         <g>
           <Pine x={88} y={296} scale={1.1} />
           <Pine x={496} y={284} scale={1.1} />
-          <Pine x={548} y={308} scale={0.72} />
+          <Pine x={565} y={296} scale={0.72} />
         </g>
       )}
       {["classic", "cabin", "townhouse"].includes(settings.house) && (
@@ -347,29 +347,22 @@ export function Artwork({
       {settings.house === "forest" && (
         <g>
           <Pine x={244} y={286} scale={1.5} />
-          <Pine x={342} y={297} scale={1.85} />
-          <Pine x={417} y={298} scale={1.1} />
+          <Pine x={318} y={278} scale={1.85} />
+          <Pine x={470} y={298} scale={1.1} />
           <path
-            d="m192 243 26-2-13-19m90 3 23-2-13-22m31-48 14 2-11-24m50 92 16-1-8-15"
+            d="M192 243l26-2-13-19M271 206l23-2-13-22M322 134l14 2-11-24M443 222l16-1-8-15"
             stroke="#eee9dc"
             strokeWidth="5"
             strokeLinecap="round"
             opacity=".85"
           />
-          <path
-            d="M286 300v-33m-9 0h18l-3 20h-12Z"
-            stroke="#aa8e68"
-            strokeWidth="3"
-            fill="#f1d497"
-          />
-          <circle cx="286" cy="277" r="42" fill={`url(#glow${id})`} />
           {settings.lights && (
             <g fill="#ffe7a5">
               {Array.from({ length: 15 }, (_, i) => (
                 <circle
                   key={i}
-                  cx={309 + (i % 5) * 16}
-                  cy={180 + Math.floor(i / 5) * 32 + ((i % 5) % 2) * 7}
+                  cx={285 + (i % 5) * 16}
+                  cy={161 + Math.floor(i / 5) * 32 + ((i % 5) % 2) * 7}
                   r="2.5"
                 />
               ))}

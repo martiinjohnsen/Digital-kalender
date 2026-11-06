@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
-import { BrandMark, Icon, type IconName } from "./icons";
+import { Icon, type IconName } from "./icons";
+import { BrandLogo } from "./brand";
 import { useAccount } from "./account-provider";
 import { useStore } from "./provider";
 import { InstallButton } from "./pwa";
@@ -118,10 +119,7 @@ export function Shell({ children }: { children: ReactNode }) {
             className="brand"
             aria-label="Luke, til mine kalendere"
           >
-            <BrandMark />
-            <span>
-              luke<span className="brand-period">.</span>
-            </span>
+            <BrandLogo />
           </Link>
           <nav aria-label="Hovedmeny">
             {links.slice(0, 2).map((link) => (
@@ -167,8 +165,7 @@ export function Shell({ children }: { children: ReactNode }) {
         {!preview && (
           <header className="topbar">
             <Link href="/calendars" className="brand mobile-brand">
-              <BrandMark />
-              <span>luke.</span>
+              <BrandLogo />
             </Link>
             <span className="breadcrumb">
               <strong>{pageName}</strong>

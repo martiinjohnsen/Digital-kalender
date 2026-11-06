@@ -121,10 +121,10 @@ export function CalendarCard({ calendar }: { calendar: AdventCalendar }) {
           </span>
           <Link
             href={destination}
-            className="card-edit"
+            className="button primary card-edit"
             aria-label={`${received ? "Åpne" : "Rediger"} ${calendar.title}`}
           >
-            <Icon name="arrow" size={18} />
+            <Icon name="arrow" size={22} />
           </Link>
         </div>
       </div>

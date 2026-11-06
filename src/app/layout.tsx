@@ -14,7 +14,13 @@ export const metadata: Metadata = {
     "Lag en personlig adventskalender til noen du er glad i. 24 små øyeblikk med hilsener, bilder, quiz og opplevelser.",
   applicationName: "Luke",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Luke" },
-  icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
+  icons: {
+    icon: [
+      { url: "/icons/luke-favicon.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/luke-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: "/icons/luke-apple-touch.png",
+  },
   robots: { index: false, follow: false },
 };
 export const viewport: Viewport = {

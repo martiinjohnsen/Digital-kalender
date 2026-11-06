@@ -22,7 +22,8 @@ import {
 } from "@/lib/quiz-progress";
 import { readLocalProgress, writeLocalProgress } from "@/lib/local-progress";
 import { Artwork } from "./artwork";
-import { BrandMark, Icon } from "./icons";
+import { Icon } from "./icons";
+import { BrandLogo } from "./brand";
 import { useStore } from "./provider";
 import { useAccount } from "./account-provider";
 import { authMessage } from "@/lib/cloud/client";
@@ -196,8 +197,7 @@ export function RecipientView({
     >
       <header className="recipient-topbar">
         <Link href="/calendars" className="recipient-brand">
-          <BrandMark />
-          <span>luke.</span>
+          <BrandLogo />
         </Link>
         <div className="recipient-topbar-actions">
           {owner ? (
@@ -350,7 +350,7 @@ export function RecipientView({
           Lag din egen kalender
           <Icon name="arrow" size={14} />
         </Link>
-        <span>luke.</span>
+        <BrandLogo />
       </footer>
       {transitionDay !== null && (
         <DoorTransition
