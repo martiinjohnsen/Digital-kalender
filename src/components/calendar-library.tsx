@@ -70,12 +70,12 @@ export function CalendarLibrary() {
           />
         </div>
       </section>
+      <div className="guest-devices">
+        <span><Icon name="monitor" size={18} /><Icon name="phone" size={15} /></span>
+        <div><strong>Luke på mobil og PC</strong><p>Bruk samme konto og fortsett der du slapp.</p></div>
+      </div>
       {!cloud ? (
         <>
-          <div className="guest-devices">
-            <span><Icon name="monitor" size={24} /><Icon name="phone" size={20} /></span>
-            <div><strong>Luke på mobil og PC</strong><p>Bruk samme konto og fortsett der du slapp.</p></div>
-          </div>
           <GettingStarted />
           <div className="guest-signin"><Link href="/settings" className="button primary">Fortsett med Google<Icon name="arrow" size={17} /></Link></div>
         </>

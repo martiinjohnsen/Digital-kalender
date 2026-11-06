@@ -78,7 +78,7 @@ export function AccountPanel() {
   }
   return (
     <section
-      className="settings-card account-panel"
+      className={`settings-card account-panel${account.user ? "" : " account-login-panel"}`}
       aria-labelledby="account-title"
     >
       <div className="settings-card-heading">
@@ -121,10 +121,8 @@ export function AccountPanel() {
           <p className="google-login-note">
             Ny her? Kontoen din opprettes første gang du logger inn.
           </p>
-          <p className="field-help"><Link href="/privacy">Personvern</Link></p>
-          <p className="field-help">
-            Du kan utforske Luke uten konto. For å lage og dele kalendere må du
-            være innlogget.
+          <p className="field-help account-login-help">
+            Du kan utforske Luke uten konto. <Link href="/privacy">Personvern</Link>
           </p>
         </>
       ) : (

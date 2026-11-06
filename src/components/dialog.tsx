@@ -9,6 +9,7 @@ export function Dialog({
   wide = false,
   className = "",
   overlay,
+  footer,
 }: {
   title: string;
   onClose: () => void;
@@ -16,6 +17,7 @@ export function Dialog({
   wide?: boolean;
   className?: string;
   overlay?: ReactNode;
+  footer?: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
@@ -130,6 +132,7 @@ export function Dialog({
       <div className="dialog-scroll" tabIndex={0}>
         {children}
       </div>
+      {footer && <div className="dialog-footer">{footer}</div>}
       {overlay && <div className="dialog-effects">{overlay}</div>}
     </dialog>
   );

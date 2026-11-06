@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   DOOR_BLOCKS,
   blockNames,
@@ -66,6 +66,7 @@ export function DoorEditor({
   const [validationAttempted, setValidationAttempted] = useState(false);
   const issues = validationAttempted ? validateDoor(draft) : {};
   const formRef = useRef<HTMLFormElement>(null);
+  const formId = useId();
   const [effectPreview, setEffectPreview] = useState<{
     effect: DoorEffect;
     replay: number;
@@ -425,6 +426,25 @@ export function DoorEditor({
       title={`Luke ${door.day} · ${door.day}. desember`}
       onClose={close}
       wide
+      footer={
+        <div className="dialog-actions">
+          <button type="button" className="button secondary" onClick={close}>
+            Avbryt
+          </button>
+          <span className="pill">
+            {isDoorComplete(draft) ? "Klar" : "Under arbeid"}
+          </span>
+          <button
+            type="submit"
+            form={formId}
+            className="button primary"
+            disabled={uploading}
+          >
+            Lagre luke
+            <Icon name="check" size={17} />
+          </button>
+        </div>
+      }
       overlay={effectPreview && (
         <Celebration key={effectPreview.replay} effect={effectPreview.effect} />
       )}
@@ -448,7 +468,7 @@ export function DoorEditor({
             </div>
           </div>
         )}
-        <form ref={formRef} noValidate
+        <form id={formId} ref={formRef} noValidate
           onSubmit={(event) => {
             event.preventDefault();
             save();
@@ -506,22 +526,6 @@ export function DoorEditor({
             }}
             onPreview={() => previewEffect(draft.effect ?? "none")}
           />
-          <div className="dialog-actions sticky-actions">
-            <button type="button" className="button secondary" onClick={close}>
-              Avbryt
-            </button>
-            <span className="pill">
-              {isDoorComplete(draft) ? "Klar" : "Under arbeid"}
-            </span>
-            <button
-              type="submit"
-              className="button primary"
-              disabled={uploading}
-            >
-              Lagre luke
-              <Icon name="check" size={17} />
-            </button>
-          </div>
         </form>
       </div>
     </Dialog>
