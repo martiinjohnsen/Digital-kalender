@@ -21,7 +21,7 @@ export function Dialog({
   const returnFocus = useRef<HTMLElement | null>(null);
   const focusFrame = useRef(0);
   const focusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  function revealFocusedField() {
+  function revealFocusedField(center = false) {
     cancelAnimationFrame(focusFrame.current);
     focusFrame.current = requestAnimationFrame(() => {
       const dialog = ref.current;
@@ -29,7 +29,15 @@ export function Dialog({
       const scroller = dialog?.querySelector<HTMLElement>(".dialog-scroll");
       if (!scroller || !(active instanceof HTMLElement) || !scroller.contains(active) ||
         !active.matches("input,textarea,select,[contenteditable='true']")) return;
-      const offset = fieldScrollOffset(scroller.getBoundingClientRect(), active.getBoundingClientRect());
+      const bounds = scroller.getBoundingClientRect();
+      let bottom = bounds.bottom;
+      // A pinned action row is inside the scroller but covers part of its view.
+      for (const footer of scroller.querySelectorAll<HTMLElement>(".sticky-actions, .calendar-settings-panel > .dialog-actions")) {
+        const rect = footer.getBoundingClientRect();
+        if (getComputedStyle(footer).position === "sticky" && rect.top < bottom && rect.bottom > bounds.top)
+          bottom = Math.max(bounds.top, rect.top);
+      }
+      const offset = fieldScrollOffset({ top: bounds.top, bottom }, active.getBoundingClientRect(), 16, center && window.matchMedia("(max-width: 760px)").matches);
       if (offset) scroller.scrollTop += offset;
     });
   }
@@ -38,6 +46,9 @@ export function Dialog({
     const dialog = ref.current;
     const viewport = window.visualViewport;
     const resize = () => {
+      const focused = document.activeElement;
+      const typing = focused instanceof HTMLElement && dialog?.contains(focused) && focused.matches("input:not([type='checkbox']):not([type='radio']),textarea,[contenteditable='true']");
+      dialog?.classList.toggle("is-keyboard-open", !!typing && Math.max(window.innerHeight, document.documentElement.clientHeight) - (viewport?.height ?? window.innerHeight) > 120);
       dialog?.style.setProperty(
         "--dialog-viewport-height",
         `${viewport?.height ?? window.innerHeight}px`,
@@ -80,10 +91,10 @@ export function Dialog({
       className={`dialog ${wide ? "dialog-wide" : ""} ${className}`}
       aria-label={title}
       onFocusCapture={() => {
-        revealFocusedField();
+        revealFocusedField(true);
         if (focusTimer.current) clearTimeout(focusTimer.current);
         // iOS changes the visible viewport throughout the keyboard animation.
-        focusTimer.current = setTimeout(revealFocusedField, 300);
+        focusTimer.current = setTimeout(() => revealFocusedField(true), 350);
       }}
       onCancel={(event) => {
         event.preventDefault();

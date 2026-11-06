@@ -29,13 +29,11 @@ try {
         ),
       );
   }
-  const result = await db.exec(
-    await readFile(
-      new URL("../supabase/tests/accounts.sql", import.meta.url),
-      "utf8",
-    ),
-  );
-  console.log(result.at(-1).rows[0].result);
+  for (const name of (await readdir(new URL("../supabase/tests/", import.meta.url))).sort()) {
+    if (!name.endsWith(".sql")) continue;
+    const result = await db.exec(await readFile(new URL("../supabase/tests/" + name, import.meta.url), "utf8"));
+    console.log(result.at(-1).rows[0].result);
+  }
 } catch (error) {
   console.error(error.message);
   if (error.where) console.error(error.where);

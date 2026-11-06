@@ -1,7 +1,12 @@
 export const gettingStarted = {
   title: "Slik bruker du Luke",
-  description: "Opprett kalenderen, fyll lukene og del den med noen du er glad i.",
+  description: "Logg inn, opprett kalenderen, fyll lukene og del den med noen du er glad i.",
   steps: [
+    {
+      icon: "user",
+      title: "Opprett bruker eller logg inn",
+      body: "Fortsett med Google. Kontoen opprettes automatisk første gang, og fungerer på både mobil og PC.",
+    },
     {
       icon: "calendar",
       title: "Opprett og velg utseende",

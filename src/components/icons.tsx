@@ -27,6 +27,7 @@ export type IconName =
   | "more"
   | "back"
   | "phone"
+  | "monitor"
   | "help"
   | "search"
   | "lock"
@@ -35,6 +36,7 @@ export type IconName =
   | "external"
   | "cloud";
 const paths: Record<IconName, React.ReactNode> = {
+  monitor: <><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8m-4-4v4" /></>,
   user: (
     <>
       <circle cx="12" cy="8" r="4" />

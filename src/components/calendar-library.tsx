@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useStore } from "./provider";
+import { GettingStarted } from "./getting-started";
 import { CalendarCard } from "./calendar-card";
 import { startNew } from "./new-calendar";
 import { Artwork } from "./artwork";
@@ -34,7 +35,9 @@ export function CalendarLibrary() {
   return (
     <div className="library-page page-enter">
       <div className="page-heading">
-        <h1>{cloud ? "Mine kalendere" : "Velkommen til Luke"}</h1>
+        <div><h1>{cloud ? "Mine kalendere" : "Velkommen til Luke"}</h1>
+          {!cloud && <p>Logg inn for å komme i gang.</p>}
+        </div>
       </div>
       <section className="hero library-hero" aria-label="Opprett kalender">
         <div className="hero-copy">
@@ -67,96 +70,100 @@ export function CalendarLibrary() {
           />
         </div>
       </section>
-      <div className="library-controls">
-        <div
-          className="filter-tabs library-filters"
-          aria-label="Vis kalendere"
-        >
-          {tabs.map((tab) => (
-            <button
-              key={tab.value}
-              className={filter === tab.value ? "active" : ""}
-              aria-pressed={filter === tab.value}
-              onClick={() => setFilter(tab.value)}
-            >
-              {tab.label}
-              <span>{tab.count}</span>
-            </button>
-          ))}
-        </div>
-        <div className="collection-toolbar">
-          <div className="search-field">
-            <Icon name="search" size={17} />
-            <input
-              aria-label="Søk i kalendere"
-              placeholder="Søk i kalendere"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-            {search && (
-              <button
-                className="icon-button"
-                aria-label="Tøm søk"
-                onClick={() => setSearch("")}
-              >
-                <Icon name="close" size={15} />
-              </button>
-            )}
+      {!cloud ? (
+        <>
+          <div className="guest-devices">
+            <span><Icon name="monitor" size={24} /><Icon name="phone" size={20} /></span>
+            <div><strong>Luke på mobil og PC</strong><p>Bruk samme konto og fortsett der du slapp.</p></div>
           </div>
-          <div className="sort-control">
-            <select
-              aria-label="Sorter kalendere"
-              value={sort}
-              onChange={(event) => setSort(event.target.value)}
+          <GettingStarted />
+          <div className="guest-signin"><Link href="/settings" className="button primary">Fortsett med Google<Icon name="arrow" size={17} /></Link></div>
+        </>
+      ) : (
+        <>
+          <div className="library-controls">
+            <div
+              className="filter-tabs library-filters"
+              aria-label="Vis kalendere"
             >
-              <option value="newest">Sist endret</option>
-              <option value="name">Navn A–Å</option>
-            </select>
-            <Icon name="chevron" size={16} />
+              {tabs.map((tab) => (
+                <button
+                  key={tab.value}
+                  className={filter === tab.value ? "active" : ""}
+                  aria-pressed={filter === tab.value}
+                  onClick={() => setFilter(tab.value)}
+                >
+                  {tab.label}
+                  <span>{tab.count}</span>
+                </button>
+              ))}
+            </div>
+            <div className="collection-toolbar">
+              <div className="search-field">
+                <Icon name="search" size={17} />
+                <input
+                  aria-label="Søk i kalendere"
+                  placeholder="Søk i kalendere"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+                {search && (
+                  <button
+                    className="icon-button"
+                    aria-label="Tøm søk"
+                    onClick={() => setSearch("")}
+                  >
+                    <Icon name="close" size={15} />
+                  </button>
+                )}
+              </div>
+              <div className="sort-control">
+                <select
+                  aria-label="Sorter kalendere"
+                  value={sort}
+                  onChange={(event) => setSort(event.target.value)}
+                >
+                  <option value="newest">Sist endret</option>
+                  <option value="name">Navn A–Å</option>
+                </select>
+                <Icon name="chevron" size={16} />
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-      <div className="calendar-grid">
-        {calendars.map((calendar) => (
-          <CalendarCard key={calendar.id} calendar={calendar} />
-        ))}
-      </div>
-      {!calendars.length && (
-        <div className="empty-state library-empty">
-          <Icon
-            name={
-              filter === "received"
-                ? "share"
-                : search
-                  ? "search"
-                  : "calendar"
-            }
-            size={29}
-          />
-          <h2>
-            {!cloud
-              ? "Logg inn for å komme i gang"
-              : search
-              ? "Ingen treff"
-              : filter === "received"
-                ? "Ingen delte kalendere ennå"
-                : "Her kommer kalenderne dine"}
-          </h2>
-          <p>
-            {!cloud
-              ? "Her samles kalenderne du lager og de andre deler med deg."
-              : search
-              ? "Prøv et annet søk."
-              : filter === "received"
-                ? "Kalendere andre deler med kontoen din, vises her."
-                : "Opprett en kalender for å begynne."}
-          </p>
-          {!cloud && (
-            <Link href="/settings" className="button primary">
-              Fortsett med Google <Icon name="arrow" size={17} />
-            </Link>
+          <div className="calendar-grid">
+            {calendars.map((calendar) => (
+              <CalendarCard key={calendar.id} calendar={calendar} />
+            ))}
+          </div>
+          {!calendars.length && (
+            <div className="empty-state library-empty">
+              <Icon
+                name={
+                  filter === "received"
+                    ? "share"
+                    : search
+                      ? "search"
+                      : "calendar"
+                }
+                size={29}
+              />
+              <h2>
+                {search
+                  ? "Ingen treff"
+                  : filter === "received"
+                    ? "Ingen delte kalendere ennå"
+                    : "Her kommer kalenderne dine"}
+              </h2>
+              <p>
+                {search
+                  ? "Prøv et annet søk."
+                  : filter === "received"
+                    ? "Kalendere andre deler med kontoen din, vises her."
+                    : "Opprett en kalender for å begynne."}
+              </p>
+            </div>
           )}
-        </div>
+        </>
       )}
       <footer className="field-help"><Link href="/privacy">Personvern</Link></footer>
     </div>

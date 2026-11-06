@@ -29,6 +29,7 @@ import { authMessage } from "@/lib/cloud/client";
 import { Dialog } from "./dialog";
 import { DoorQuizPlayer } from "./door-quiz-player";
 import { CalendarOverview } from "./calendar-overview";
+import { usePreviewProgress } from "./use-preview-progress";
 import { GiftCardView, VideoBlock } from "./door-content";
 import {
   DoorTransition,
@@ -61,22 +62,16 @@ export function RecipientView({
       nonce: number;
     } | null>(null);
   const storageKey = `luke:progress:${account.user ? account.user.id + ":" : ""}${calendar.receivedSourceId ?? calendar.id}:${calendar.year}:${owner ? (testMode ? "test" : "owner-date") : "recipient"}`;
-  const preferenceKey = `luke:preview-saving:${account.user?.id ?? "local"}:${calendar.id}:${calendar.year}`;
-  const [previewSaving, setPreviewSaving] = useState({ key: "", save: false });
-  const savePreviewProgress = previewSaving.key === preferenceKey && previewSaving.save;
-  const rememberProgress = !owner || savePreviewProgress;
-  const progressKey = `${storageKey}:${rememberProgress ? "saved" : "temporary"}`;
+  const preview = usePreviewProgress(owner ? account.user?.id ?? null : null, calendar.id, calendar.year);
+  const savePreviewProgress = owner && preview.data.enabled;
+  const savedPreview = savePreviewProgress ? preview.data[testMode ? "test" : "date"] : null;
+  const rememberProgress = !owner;
+  const progressKey = `${storageKey}:${savePreviewProgress ? "account" : rememberProgress ? "saved" : "temporary"}`;
   const [state, setState] = useState<{
     key: string;
     opened: number[];
     answers: QuizProgress;
   }>({ key: "", opened: [], answers: {} });
-  useEffect(() => {
-    if (!owner) return;
-    let save = false;
-    try { save = localStorage.getItem(preferenceKey) === "true"; } catch { /* Use a fresh preview. */ }
-    setPreviewSaving({ key: preferenceKey, save });
-  }, [owner, preferenceKey]);
   useEffect(() => {
     if (remote) return;
     let progress = { opened: [] as number[], answers: {} as QuizProgress };
@@ -88,7 +83,7 @@ export function RecipientView({
     setState({ key: progressKey, ...progress });
   }, [storageKey, progressKey, remote, rememberProgress]);
   useEffect(() => {
-    if (remote || !rememberProgress || state.key !== progressKey) return;
+    if (remote || owner || !rememberProgress || state.key !== progressKey) return;
     try {
       writeLocalProgress(localStorage, storageKey, state, rememberProgress);
     } catch {
@@ -96,7 +91,7 @@ export function RecipientView({
         "Fremdriften kunne ikke lagres på enheten. Den beholdes mens siden er åpen.",
       );
     }
-  }, [state, storageKey, progressKey, toast, remote, rememberProgress]);
+  }, [state, storageKey, progressKey, toast, remote, owner, rememberProgress]);
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 15000);
     return () => clearInterval(timer);
@@ -118,12 +113,16 @@ export function RecipientView({
         : availableDay(calendar.year, now);
   const opened = remote
     ? (store.progress[calendar.id]?.opened ?? [])
-    : state.key === progressKey
+    : savedPreview
+      ? savedPreview.opened
+      : state.key === progressKey
       ? state.opened
       : [];
   const answers = remote
     ? (store.progress[calendar.id]?.answers ?? {})
-    : state.key === progressKey
+    : savedPreview
+      ? savedPreview.answers
+      : state.key === progressKey
       ? state.answers
       : {};
   const summary = quizSummary(calendar, answers, limit);
@@ -131,7 +130,7 @@ export function RecipientView({
     if (
       transitionDay !== null ||
       day !== null ||
-      (!remote && state.key !== progressKey)
+      (!remote && !savedPreview && state.key !== progressKey)
     )
       return;
     if (door.day > limit) {
@@ -158,6 +157,9 @@ export function RecipientView({
       void store
         .openDoor(calendar.id, door.day)
         .catch((error) => toast(authMessage(error)));
+    else if (savedPreview && isDoorComplete(door))
+      void preview.merge(testMode ? "test" : "date", { opened: [door.day], answers: {} })
+        .catch(error => toast(authMessage(error)));
     else if (isDoorComplete(door))
       setState((previous) => ({
         ...previous,
@@ -178,6 +180,10 @@ export function RecipientView({
       return;
     }
     const key = questionKey(day, index, question);
+    if (savedPreview) {
+      await preview.merge(testMode ? "test" : "date", { opened: [day], answers: { [key]: response } });
+      return;
+    }
     setState((previous) =>
       previous.answers[key]
         ? previous
@@ -237,13 +243,8 @@ export function RecipientView({
               <input
                 type="checkbox"
                 checked={savePreviewProgress}
-                onChange={(event) => {
-                  const save = event.target.checked;
-                  setPreviewSaving({ key: preferenceKey, save });
-                  try { localStorage.setItem(preferenceKey, String(save)); } catch {
-                    toast("Valget brukes nå, men kunne ikke lagres til neste besøk.");
-                  }
-                }}
+                disabled={!preview.ready || preview.pending}
+                onChange={(event) => void preview.setSaving(event.target.checked)}
               />
               <span className="switch" />
               Lagre fremdrift
@@ -257,6 +258,7 @@ export function RecipientView({
           </div>
         </div>
       )}
+      {owner && preview.error && <p className="preview-sync-error" role="alert">Prøvefremdriften kunne ikke synkroniseres. {preview.error}</p>}
       <section className="recipient-content" aria-label="Kalenderen">
         <div className="recipient-title">
           <h1>{calendar.title}</h1>

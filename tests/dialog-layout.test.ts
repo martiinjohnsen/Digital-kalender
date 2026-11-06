@@ -15,3 +15,8 @@ test("a tall textarea is aligned by its top instead of repeatedly scrolling betw
   assert.equal(fieldScrollOffset({ top: 140, bottom: 260 }, { top: 180, bottom: 450 }), 24);
   assert.equal(fieldScrollOffset({ top: 140, bottom: 260 }, { top: 156, bottom: 426 }), 0);
 });
+
+test("focus centers a small field above the pinned footer while resize checks leave typing still", () => {
+  assert.equal(fieldScrollOffset({ top: 140, bottom: 340 }, { top: 320, bottom: 368 }, 16, true), 104);
+  assert.equal(fieldScrollOffset({ top: 140, bottom: 340 }, { top: 216, bottom: 264 }), 0);
+});
