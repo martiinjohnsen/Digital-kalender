@@ -44,6 +44,8 @@ export interface SceneSettings {
   lanterns?: boolean;
   storm?: boolean;
   shootingStars?: boolean;
+  fireworks?: boolean;
+  presents?: boolean;
 }
 export const DEFAULT_SCENE: SceneSettings = {
   house: "classic",
@@ -609,7 +611,7 @@ export function isScene(value: unknown): value is SceneSettings {
     ["snowman", "reindeer", "trees", "lights", "snowfall"].every(
       (key) => typeof value[key] === "boolean",
     ) &&
-    ["wind", "twinkle", "santa", "sleigh", "skis", "christmasTree", "lanterns", "storm", "shootingStars"].every(
+    ["wind", "twinkle", "santa", "sleigh", "skis", "christmasTree", "lanterns", "storm", "shootingStars", "fireworks", "presents"].every(
       (key) => value[key] === undefined || typeof value[key] === "boolean",
     )
   );

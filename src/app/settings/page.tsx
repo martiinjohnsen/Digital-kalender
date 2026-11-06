@@ -6,6 +6,7 @@ import { InstallButton } from "@/components/pwa";
 import { Dialog } from "@/components/dialog";
 import { downloadJson, repository } from "@/lib/storage";
 import { AccountPanel } from "@/components/account-panel";
+import { GlassSettings } from "@/components/glass-settings";
 import { useAccount } from "@/components/account-provider";
 import { authMessage } from "@/lib/cloud/client";
 export default function SettingsPage() {
@@ -56,6 +57,7 @@ export default function SettingsPage() {
           >
             <AccountPanel />
           </Suspense>
+          {account.user && <GlassSettings />}
           {store.conflict && (
             <section className="settings-card account-conflict" role="alert">
               <h2>To versjoner av utkastet</h2>

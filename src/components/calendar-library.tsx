@@ -70,10 +70,10 @@ export function CalendarLibrary() {
           />
         </div>
       </section>
-      <div className="guest-devices">
-        <span><Icon name="monitor" size={18} /><Icon name="phone" size={15} /></span>
+      {!cloud && <div className="guest-devices">
+        <span><Icon name="monitor" size={20} /><Icon name="phone" size={17} /></span>
         <div><strong>Luke på mobil og PC</strong><p>Bruk samme konto og fortsett der du slapp.</p></div>
-      </div>
+      </div>}
       {!cloud ? (
         <>
           <GettingStarted />

@@ -1,6 +1,6 @@
 import { useId, type CSSProperties } from "react";
 import { DEFAULT_SCENE, type SceneSettings, type Theme } from "@/lib/model";
-import { ChristmasTree, Lanterns, Reindeer, Santa, Skis, SkyClouds, Sleigh } from "./scene-details";
+import { ChristmasTree, Lanterns, Reindeer, Santa, Skis, SkyClouds, SkyFireworks, Sleigh } from "./scene-details";
 
 function Window({
   x,
@@ -125,10 +125,11 @@ export function Artwork({
       {settings.sky === "cloudy" && <SkyClouds />}
       {settings.shootingStars && (
         <g className="scene-shooting-stars" stroke="#fff0cf" strokeWidth="2" strokeLinecap="round">
-          {[25, 70, 110].map((y, i) => <path key={y} className="shooting-star" d={`M-70 ${y}l-45-12`} style={{ animationDelay: `${-i * 4.7}s`, animationDuration: `${11 + i * 3}s` }} />)}
+          {[25, 70, 110, 45].map((y, i) => <path key={y} className="shooting-star" d={`M-70 ${y}l-45-12`} style={{ animationDelay: `${-i * 2.3}s`, animationDuration: `${8 + i * 1.2}s` }} />)}
         </g>
       )}
       {settings.sleigh && <Sleigh />}
+      {settings.fireworks && <SkyFireworks />}
       <path
         d="M0 318c90-19 150 1 222-8s132-19 214-2c52 11 103-10 164-5v77H0Z"
         fill="var(--scene-snow)"
@@ -467,16 +468,20 @@ export function Artwork({
         </g>
       )}
       {settings.reindeer && <Reindeer />}
-      <g>
-        <rect x="388" y="296" width="35" height="27" rx="2" fill="#bd806b" />
-        <path
-          d="M405 296v27m-20-23h41m-21-4c-20-5-8-15 0 0Zm0 0c20-5 8-15 0 0Z"
-          stroke="#eee0c4"
-          strokeWidth="3"
-        />
-        <rect x="177" y="304" width="25" height="20" rx="2" fill="#bfa06d" />
-        <path d="M188 304v20m-13-16h29" stroke="#f4ead4" strokeWidth="3" />
-      </g>
+      {settings.presents !== false && (
+        <g>
+          <rect x="388" y="296" width="35" height="27" rx="2" fill="#bd806b" />
+          <path
+            d="M405 296v27m-20-23h41m-21-4c-20-5-8-15 0 0Zm0 0c20-5 8-15 0 0Z"
+            stroke="#eee0c4"
+            strokeWidth="3"
+          />
+          <g transform={settings.skis ? "translate(54 7)" : undefined}>
+            <rect x="177" y="304" width="25" height="20" rx="2" fill="#bfa06d" />
+            <path d="M188 304v20m-13-16h29" stroke="#f4ead4" strokeWidth="3" />
+          </g>
+        </g>
+      )}
       {settings.christmasTree && <ChristmasTree />}
       {settings.santa && <Santa />}
       {settings.skis && <Skis />}

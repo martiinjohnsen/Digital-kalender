@@ -27,20 +27,22 @@ export function AppearancePicker({
         ["trees", "Grantrær"],
         ["lights", "Julelys"],
         ["santa", "Julenisse"],
-        ["sleigh", "Nissens slede"],
         ["skis", "Ski og staver"],
         ["christmasTree", "Pyntet juletre"],
         ["lanterns", "Lykter"],
+        ["presents", "Presanger"],
       ] as const,
     },
     {
       title: "Animasjoner",
       options: [
         ["snowfall", "Snøfall"],
+        ["sleigh", "Nissens slede"],
         ["wind", "Vinterbris"],
         ["twinkle", "Blinkende stjerner"],
         ["storm", "Snøstorm"],
         ["shootingStars", "Stjerneskudd"],
+        ["fireworks", "Fyrverkeri"],
       ] as const,
     },
   ];
@@ -89,7 +91,7 @@ export function AppearancePicker({
               className={`house-option ${value.scene.house === house ? "selected" : ""}`}
               onClick={() => scene({ house })}
             >
-              <Artwork className="scene-still" theme={value.theme} scene={{ ...value.scene, house }} />
+              <Artwork theme={value.theme} scene={{ ...value.scene, house }} />
               <span>
                 {label}
                 {value.scene.house === house && <Icon name="check" size={14} />}
@@ -109,7 +111,7 @@ export function AppearancePicker({
                   <input
                     type="checkbox"
                     aria-label={label}
-                    checked={Boolean(value.scene[key])}
+                    checked={key === "presents" ? value.scene.presents !== false : Boolean(value.scene[key])}
                     onChange={(event) => scene({ [key]: event.target.checked })}
                   />
                   <span className="switch" />

@@ -3,6 +3,7 @@ import { Provider } from "@/components/provider";
 import { PwaProvider } from "@/components/pwa";
 import { Shell } from "@/components/shell";
 import { AccountProvider } from "@/components/account-provider";
+import { GlassProvider } from "@/components/glass-provider";
 import "./globals.css";
 export const metadata: Metadata = {
   title: {
@@ -32,9 +33,9 @@ export default function RootLayout({
       <body>
         <PwaProvider>
           <AccountProvider>
-            <Provider>
-              <Shell>{children}</Shell>
-            </Provider>
+            <GlassProvider>
+              <Provider><Shell>{children}</Shell></Provider>
+            </GlassProvider>
           </AccountProvider>
         </PwaProvider>
       </body>

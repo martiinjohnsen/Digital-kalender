@@ -196,8 +196,9 @@ export function Shell({ children }: { children: ReactNode }) {
               </button>
               <Link
                 href="/settings"
-                className={user ? "avatar" : "button secondary topbar-login"}
+                className={user ? `avatar${active === "/settings" ? " is-active" : ""}` : "button secondary topbar-login"}
                 aria-label={user ? "Åpne konto og innstillinger" : "Logg inn"}
+                aria-current={active === "/settings" ? "page" : undefined}
               >
                 {user ? <Icon name="user" size={21} /> : "Logg inn"}
               </Link>

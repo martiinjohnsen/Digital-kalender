@@ -5,14 +5,12 @@ export function Reindeer({ x = 474, y = 323, scale = 1, grounded = true }: { x?:
     <g transform={`translate(${x} ${y}) scale(${scale})`}>
       {grounded && <ellipse cy="25" rx="35" ry="5" fill="var(--scene-roof)" opacity=".13" />}
       <path d="m-17 0-5 22m17-18-2 19m17-20 4 20m8-25 7 23" stroke="#79543e" strokeWidth="4.5" strokeLinecap="round" />
-      <path d="m-22-8-10-8" stroke="#f8ecd8" strokeWidth="6" strokeLinecap="round" />
       <path d="m-22-8-10-8" stroke="#a47951" strokeWidth="3.5" strokeLinecap="round" />
-      <path d="M-24-7c2-18 34-19 46-5l8-24 11 2-7 30c-9 13-44 12-54 4Z" fill="#a47951" stroke="#f5e8d1" strokeWidth="1.8" />
+      <path d="M-24-7c2-18 34-19 46-5l8-24 11 2-7 30c-9 13-44 12-54 4Z" fill="#a47951" />
       <path d="m21-7 7-21 7 3-7 25Z" fill="#e4cba3" />
-      <path d={antlers} stroke="#f8ecd8" strokeWidth="5" strokeLinecap="round" />
       <path d={antlers} stroke="#72513c" strokeWidth="2.4" strokeLinecap="round" />
-      <path d="m25-36-8-7 11 1m10 8 10-7-5 10" fill="#b99068" stroke="#f5e8d1" strokeWidth="1.2" />
-      <path d="M23-36c3-10 20-8 21 0l9 5c2 5-4 8-13 6l-13-2Z" fill="#b99068" stroke="#f5e8d1" strokeWidth="1.5" />
+      <path d="m25-36-8-7 11 1m10 8 10-7-5 10" fill="#b99068" />
+      <path d="M23-36c3-10 20-8 21 0l9 5c2 5-4 8-13 6l-13-2Z" fill="#b99068" />
       <ellipse cx="46" cy="-29" rx="6" ry="4.3" fill="#e5c7a0" />
       <circle cx="51" cy="-30" r="3.4" fill="#b65d69" />
       <circle cx="36" cy="-35" r="1.8" fill="#3f3544" />
@@ -47,7 +45,7 @@ export function ChristmasTree() {
     <g transform="translate(49 327)">
       <ellipse cy="8" rx="32" ry="5" fill="var(--scene-roof)" opacity=".12" />
       <path d="M-10-14h20l-3 21H-7Z" fill="#b78069" />
-      <path d="m0-128-21 39h11l-21 36h13l-23 38h82L18-53h13L10-89h11Z" fill="#466c60" stroke="#d1d9bd" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="m0-128-21 39h11l-21 36h13l-23 38h82L18-53h13L10-89h11Z" fill="#466c60" strokeLinejoin="round" />
       <path d="m-10-89 22 8m-30 24 36 9m-45 23 52 6" stroke="#dfc78f" strokeWidth="2.5" strokeLinecap="round" />
       {[[-6,-99],[7,-77],[-12,-62],[18,-45],[-19,-29],[4,-21]].map(([x,y],i)=><circle key={i} cx={x} cy={y} r="4" fill={i%2 ? "#dfbd75" : "#c47d81"} stroke="#f7e9cc" strokeWidth=".8" />)}
       <path d="m0-140 3 8 9 1-7 5 2 9-7-5-7 5 2-9-7-5 9-1Z" fill="#efd092" stroke="#fff1cf" strokeWidth="1" />
@@ -107,6 +105,24 @@ export function SkyClouds() {
       <path d="M42 77c-25-4-25-30 0-32 3-24 40-24 46-4 24-10 45 5 40 22 25 3 24 22 3 25H48Z" opacity=".62" />
       <path d="M239 63c-21-1-23-23-4-28 8-24 39-20 44-1 20-7 38 6 35 19 24 1 25 20 6 22h-73Z" opacity=".48" />
       <path d="M423 104c-28-1-30-27-7-33 3-32 47-35 59-9 25-10 47 5 44 23 27-2 31 24 8 28h-90Z" opacity=".56" />
+    </g>
+  );
+}
+
+export function SkyFireworks() {
+  return (
+    <g className="scene-fireworks">
+      {[[125,100,0],[415,84,-3.4],[290,53,-6.2]].map(([x,y,delay],i)=>(
+        <g key={i} transform={`translate(${x} ${y})`}>
+          <g className="scene-firework-burst" style={{ animationDelay: `${delay}s`, animationDuration: `${7 + i*.6}s` }}>
+            {Array.from({length:12},(_,ray)=>{
+              const angle = ray*Math.PI/6;
+              return <path key={ray} d={`M${Math.cos(angle)*13} ${Math.sin(angle)*13}l${Math.cos(angle)*28} ${Math.sin(angle)*28}`} />;
+            })}
+            <circle r="3" fill="#fff5d9" stroke="none" />
+          </g>
+        </g>
+      ))}
     </g>
   );
 }
