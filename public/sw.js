@@ -1,12 +1,11 @@
 /* Cache only the public shell. Account data never enters the service-worker cache. */
-const CACHE = "luke-shell-2026-11-06-brand-v9";
+const CACHE = "luke-shell-2026-11-06-app-brand-v10";
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE);
       await cache.addAll([
         "/offline.html",
-        "/brand/luke-logo.webp",
         "/icons/luke-192.png",
         "/icons/luke-512.png",
         "/icons/luke-apple-touch.png",

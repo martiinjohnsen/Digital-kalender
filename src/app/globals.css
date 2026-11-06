@@ -254,14 +254,16 @@ textarea:focus-visible {
 }
 .brand-logo {
   display: block;
-  width: 128px;
+  width: 48px;
   height: auto;
+  aspect-ratio: 1;
+  border-radius: 22%;
   object-fit: contain;
   flex-shrink: 0;
 }
-.recipient-brand .brand-logo { width: 110px; }
-.recipient-footer .brand-logo { width: 64px; }
-.invitation-brand .brand-logo { width: 136px; }
+.recipient-brand .brand-logo { width: 38px; }
+.recipient-footer .brand-logo { width: 24px; }
+.invitation-brand .brand-logo { width: 52px; }
 .sidebar {
   position: fixed;
   top: 0;
@@ -3424,6 +3426,7 @@ input[type="radio"] {
     font-size: 30px;
     gap: 8px;
   }
+  .mobile-brand .brand-logo { width: 42px; }
   .breadcrumb { display: none; }
   .help-button { display: grid; width: 34px; height: 34px; flex-shrink: 0; }
   .topbar-right {
@@ -3661,11 +3664,12 @@ input[type="radio"] {
     transition: gap .25s ease, border-radius .25s ease, background-color .2s ease;
   }
   .bottom-nav > a.active {
-    background-color: var(--choice-fill);
+    /* Keep the selected destination visible at every glass setting. */
+    background-color: color-mix(in srgb, #a57cbc max(88%, var(--glass-choice-fill)), transparent);
     background-image: var(--control-sheen);
-    color: var(--control-ink);
+    color: #3b224a;
     font-weight: 600;
-    border-color: var(--control-edge);
+    border-color: #8c62a480;
     box-shadow: var(--control-shadow);
   }
   .bottom-nav > a > svg {
@@ -8804,7 +8808,7 @@ input[type="radio"] {
 .walkthrough-screen { container-type: inline-size; padding: 10px; border: 1px solid #e2d8e9; border-radius: 18px; background: linear-gradient(145deg,#e9dff0,#f2edf5); aspect-ratio: 1; overflow: hidden; }
 .example-screen { display: flex; flex-direction: column; height: 100%; overflow: hidden; border: 1px solid #d8cce2; border-radius: 10px; background: #fbf9fc; box-shadow: 0 9px 22px #49315b12; color: #514357; font-family: inherit; }
 .example-toolbar { display: flex; align-items: center; gap: 1.5cqw; padding: 2.5cqw 3.5cqw; border-bottom: 1px solid #e9e1ee; background: #ffffffd9; flex-shrink: 0; }
-.example-toolbar > .brand-logo { width: 18cqw; max-width: none; margin-right: auto; }
+.example-toolbar > .brand-logo { width: 7cqw; max-width: none; margin-right: auto; }
 .example-share { font-size: 2.8cqw; font-weight: 500; padding: 1cqw 2cqw; border-radius: 4px; background: #e8dfee; color: #6f527f; }
 .example-toolbar i { width: 1.5cqw; height: 1.5cqw; border-radius: 50%; background: #c5b7d0; }
 .example-page-title { font-family: var(--serif); font-size: 6cqw; line-height: 1.2; }
@@ -9124,7 +9128,7 @@ input[type="radio"] {
   .overview-sections > button:hover { background-color: var(--choice-hover); }
 }
 .button.primary:active:not(:disabled) { background-color: var(--action-pressed); }
-.bottom-nav > a.active:active { background-color: var(--choice-pressed); }
+.bottom-nav > a.active:active { background-color: color-mix(in srgb, #986ab2 max(90%, var(--glass-choice-fill)), transparent); }
 :is(.filter-tabs, .editor-tabs, .effect-options, .question-type-switch) > button:active:not(:disabled) { background-color: var(--choice-pressed); }
 .button.secondary:active:not(:disabled), .icon-button:active:not(:disabled) { background-color: var(--neutral-hover); }
 .account-login-panel .settings-card-heading { margin-bottom: 18px; }

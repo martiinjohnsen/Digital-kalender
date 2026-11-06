@@ -3,9 +3,9 @@ export function BrandLogo({ className = "" }: { className?: string }) {
   return (
     <img
       className={`brand-logo ${className}`}
-      src="/brand/luke-logo.webp"
-      width={960}
-      height={349}
+      src="/icons/luke-192.png"
+      width={192}
+      height={192}
       alt="Luke"
       draggable={false}
     />
