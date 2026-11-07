@@ -1,8 +1,8 @@
 # Bilder, lyd og hilsener tilbake
 
-Kjør `migrations/202611070001_media_greetings.sql` én gang i SQL-editoren i det samme Supabase-prosjektet som appen bruker. Publiser deretter appoppdateringen. SQL-en kan kjøres på nytt. Den sletter ikke kalendere, invitasjoner, prøvesvar eller fremdrift.
+Kjør `migrations/202611070001_media_greetings.sql` og deretter `migrations/202611070002_preview_greetings.sql` i SQL-editoren i det samme Supabase-prosjektet som appen bruker. Publiser deretter appoppdateringen. På et prosjekt som allerede har fillagring, trenger bare den siste migreringen kjøres. SQL-en kan kjøres på nytt. Den sletter ikke kalendere, invitasjoner, prøvesvar eller fremdrift.
 
-Oppdateringskommandoen kontrollerer at oppsettet er installert før den publiserer. Ved første kjøring kopierer den SQL-en til utklippstavlen og åpner SQL-editoren. Lim inn, trykk **Run**, og kjør oppdateringskommandoen igjen.
+Oppdateringskommandoen kontrollerer at oppsettet er installert før den publiserer. Ved behov kopierer den SQL-en til utklippstavlen og åpner SQL-editoren. Erstatt innholdet i kodefeltet med SQL-en og trykk **Run**. La terminalen stå åpen. Den kontrollerer oppsettet på nytt og fortsetter automatisk.
 
 ## Hva som lagres
 
@@ -10,7 +10,9 @@ Oppdateringskommandoen kontrollerer at oppsettet er installert før den publiser
 - Eldre innebygde bilder beholdes. De flyttes til fillagring når den aktuelle kalenderen lagres. Kopier og importer får egne vedlegg under sine nye kalender-ID-er.
 - Nedlastede sikkerhetskopier inkluderer selve bildene og lydfilene og kan importeres igjen. Maksimal sikkerhetskopistørrelse er 100 MB.
 - En hilsen tilhører én mottaker og én luke. Avsender ser sendte hilsener, mens øvrige mottakere ikke har tilgang. Avsender ser heller ikke usendte vedlegg.
-- Førstegangstilbudet om å sende en hilsen lagres på kontoen. En lukket invitasjon dukker ikke opp igjen neste gang på en annen enhet. Avsenderens forhåndsvisning sender ingen hilsener.
+- Førstegangstilbudet om å sende en hilsen lagres på kontoen. En lukket invitasjon dukker ikke opp igjen neste gang på en annen enhet.
+- Eieren kan prøve hilsener i forhåndsvisningen. De merkes «Prøvehilsen» i redigeringen og blir aldri ekte mottakerhilsener. Med «Lagre fremdrift» på lagres de separat under eierens prøvefremdrift, inkludert prompt, revisjon og lesestatus. De to prøvemodusene holdes adskilt. Med valget av brukes bare appøktens minne; «Start på nytt» eller en ny forhåndsvisning fjerner den midlertidige prøven. Å slå lagring av skjuler de lagrede prøvene, men sletter dem ikke. De kommer tilbake når lagringen slås på igjen.
+- Vedlegg i prøvehilsener er private eieropplastinger. De knyttes ikke til kalenderdokumentet og kan ikke lastes ned av mottakere. Lagrede prøvevedlegg er også beskyttet mot opprydding når prøvevisningen er slått av.
 - Oppdateringer sendes via Realtime, med oppfrisking ved fokus og hvert 30. sekund som reserve. Uleste merker følger revisjoner, slik at en ny endring blir ulest igjen.
 
 ## Grenser og vedlikehold

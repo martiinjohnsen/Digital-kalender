@@ -34,7 +34,7 @@ import { usePreviewProgress } from "./use-preview-progress";
 import { GiftCardView, VideoBlock } from "./door-content";
 import { MediaImage, AudioPlayer } from "./media";
 import { GreetingComposer } from "./greetings";
-import { useGreetings } from "./greetings-provider";
+import { useGreetings, type PreviewGreeting } from "./greetings-provider";
 import {
   DoorTransition,
   Celebration,
@@ -56,6 +56,7 @@ export function RecipientView({
   const account = useAccount();
   const greetings = useGreetings();
   const [greetingDay,setGreetingDay] = useState<number|null>(null);
+  const greetingContext=useRef<PreviewGreeting|undefined>(undefined);
   const firstVisit = useRef(false), openingRequest = useRef<Promise<void>|null>(null), interaction = useRef(0), alive = useRef(true);
   useEffect(()=>{alive.current=true;return()=>{alive.current=false;interaction.current++;};},[]);
   const remote = !!calendar.remote && !owner;
@@ -72,9 +73,15 @@ export function RecipientView({
   const storageKey = `luke:progress:${account.user ? account.user.id + ":" : ""}${calendar.receivedSourceId ?? calendar.id}:${calendar.year}:${owner ? (testMode ? "test" : "owner-date") : "recipient"}`;
   const preview = usePreviewProgress(owner ? account.user?.id ?? null : null, calendar.id, calendar.year);
   const savePreviewProgress = owner && preview.data.enabled;
+  const greetingPreview=owner ? {mode:testMode ? "test" as const : "date" as const,save:savePreviewProgress} : undefined;
   const savedPreview = savePreviewProgress ? preview.data[testMode ? "test" : "date"] : null;
   const rememberProgress = !owner;
   const progressKey = `${storageKey}:${savePreviewProgress ? "account" : rememberProgress ? "saved" : "temporary"}`;
+  useEffect(()=>{
+    interaction.current++;firstVisit.current=false;
+    if(owner) greetings.clearPreview(calendar.id);
+  },[owner,calendar.id,progressKey]);
+  useEffect(()=>{if(owner && preview.ready) void greetings.refresh();},[owner,calendar.id,savePreviewProgress,preview.ready]);
   const [state, setState] = useState<{
     key: string;
     opened: number[];
@@ -149,7 +156,8 @@ export function RecipientView({
       return;
     }
     interaction.current++;
-    firstVisit.current = remote && !opened.includes(door.day);
+    firstVisit.current = (remote || (owner && isDoorComplete(door))) && !opened.includes(door.day);
+    openingRequest.current=null;
     if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       const rect = element?.getBoundingClientRect();
       setOrigin(
@@ -168,9 +176,11 @@ export function RecipientView({
       openingRequest.current=request;
       void request.catch(error=>toast(authMessage(error)));
     }
-    else if (savedPreview && isDoorComplete(door))
-      void preview.merge(testMode ? "test" : "date", { opened: [door.day], answers: {} })
-        .catch(error => toast(authMessage(error)));
+    else if (savedPreview && isDoorComplete(door)) {
+      const request=preview.merge(testMode ? "test" : "date", { opened: [door.day], answers: {} });
+      openingRequest.current=request;
+      void request.catch(error => toast(authMessage(error)));
+    }
     else if (isDoorComplete(door))
       setState((previous) => ({
         ...previous,
@@ -185,11 +195,11 @@ export function RecipientView({
     firstVisit.current=false;
     const ticket=++interaction.current;
     setDay(null);
-    if(!remote || !offer || closedDay===null) return;
+    if((!remote && !owner) || !offer || closedDay===null) return;
     try {
       await openingRequest.current;
-      const show=await greetings.claim(calendar.id,closedDay);
-      if(show && alive.current && ticket===interaction.current) setGreetingDay(closedDay);
+      const show=await greetings.claim(calendar.id,closedDay,greetingPreview);
+      if(show && alive.current && ticket===interaction.current) {greetingContext.current=greetingPreview;setGreetingDay(closedDay);}
     } catch(error) { if(alive.current) toast(authMessage(error)); }
   }
   async function answerQuestion(
@@ -262,7 +272,7 @@ export function RecipientView({
               <span className="switch" />
               Åpne alle luker
             </label>
-            <label className="switch-label" title="Gjelder bare dine egne prøvesvar og åpnede luker.">
+            <label className="switch-label" title="Lagrer dine egne prøvesvar, åpnede luker og prøvehilsener på kontoen.">
               <input
                 type="checkbox"
                 checked={savePreviewProgress}
@@ -275,7 +285,7 @@ export function RecipientView({
             {!savePreviewProgress && (opened.length > 0 || Object.keys(answers).length > 0) && (
               <button
                 className="button secondary small-button preview-reset"
-                onClick={() => setState({ key: progressKey, opened: [], answers: {} })}
+                onClick={() => {greetings.clearPreview(calendar.id);setState({ key: progressKey, opened: [], answers: {} });}}
               >Start på nytt</button>
             )}
           </div>
@@ -352,7 +362,7 @@ export function RecipientView({
                   </span>
                 )}
               </button>
-              {remote && opened.includes(door.day) && door.day<=limit && <button type="button" className="door-greeting-shortcut button secondary" aria-label={`Gi eller rediger en hilsen til luke ${door.day}`} onClick={()=>{interaction.current++;setGreetingDay(door.day);}}><Icon name="message" size={11}/><span>{greetings.items.some(item=>item.calendarId===calendar.id && item.day===door.day && item.revision>0 && !item.owner) ? "Din hilsen" : "Gi hilsen"}</span></button>}
+              {(remote || owner) && opened.includes(door.day) && door.day<=limit && <button type="button" className="door-greeting-shortcut button secondary" aria-label={`Gi eller rediger en hilsen til luke ${door.day}`} onClick={()=>{interaction.current++;greetingContext.current=greetingPreview;setGreetingDay(door.day);}}><Icon name="message" size={11}/><span>{greetings.items.some(item=>item.calendarId===calendar.id && item.day===door.day && item.revision>0 && (owner ? item.previewMode===greetingPreview?.mode && !!item.temporary===!savePreviewProgress : !item.owner)) ? "Din hilsen" : "Gi hilsen"}</span></button>}
               </div>
             ))}
         </div>
@@ -408,7 +418,7 @@ export function RecipientView({
           onClose={() => void closeDoor()}
         />
       )}
-      {greetingDay!==null && remote && <GreetingComposer calendarId={calendar.id} day={greetingDay} onClose={()=>setGreetingDay(null)}/>}
+      {greetingDay!==null && (remote || owner) && <GreetingComposer calendarId={calendar.id} day={greetingDay} preview={greetingContext.current} onClose={()=>setGreetingDay(null)}/>}
     </div>
   );
 }

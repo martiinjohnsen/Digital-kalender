@@ -333,9 +333,11 @@ textarea:focus-visible {
   padding: 1px 6px;
 }
 .sidebar-create {
-  margin: 23px 9px 0;
-  width: calc(100% - 18px);
+  margin: 23px 0 0;
+  width: 100%;
 }
+.sidebar > .sidebar-create { justify-content: flex-start; padding-inline: 13px; gap: 11px; }
+.sidebar > .sidebar-create > svg { width: 24px; height: 24px; }
 .sidebar-bottom {
   margin-top: auto;
   padding-top: 30px;
@@ -6704,8 +6706,10 @@ input[type="radio"] {
     gap: 20px;
   }
   .calendar-settings-panel > .dialog-actions {
-    bottom: 83px;
+    bottom: calc(87px + env(safe-area-inset-bottom, 0px));
+    z-index: 31;
   }
+  .main-content:has(.calendar-settings-panel) { padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px)); }
   .recipient-grid-intro {
     font-size: 11px;
   }
@@ -9345,6 +9349,7 @@ input[type="radio"] {
 .greeting-form > label:not(.button) { display: grid; gap: 8px; color: var(--primary); }
 .greeting-form textarea { width: 100%; resize: vertical; }
 .greeting-intro { color: var(--muted); margin: 0 0 18px; line-height: 1.7; }
+.greeting-trial-note { color: var(--muted); font-size: 12px; line-height: 1.65; margin: 0 0 16px; }
 .greeting-image { position: relative; margin: 14px 0; }
 .greeting-image img { max-width: 100%; max-height: 320px; border-radius: 13px; }
 .greeting-image > button { position: absolute; top: 8px; right: 8px; }

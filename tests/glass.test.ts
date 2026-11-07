@@ -57,11 +57,21 @@ test("the transparent end retains purple pigment while the opaque appearance sta
 test("glass press feedback becomes softer towards the transparent end and adds no extra movement at the opaque end",()=>{
   const clear=glassMotion(0),solid=glassMotion(100);
   assert.equal(solid.strength,0);assert.equal(solid.pressX,1);assert.equal(solid.popY,1);
-  assert.ok(clear.pressY>=.9 && clear.pressY<.95);
-  assert.ok(clear.popY>1.03 && clear.popY<1.06);
+  assert.ok(clear.pressY>=.85 && clear.pressY<.90);
+  assert.ok(clear.popY>=1.09 && clear.popY<=1.12);
   for(let value=1;value<=100;value++) {
     const before=glassMotion(value-1),current=glassMotion(value);
     assert.ok(current.pressY>=before.pressY && current.popY<=before.popY);
     assert.ok(current.duration<=before.duration);
   }
+});
+test("touch feedback is stronger at every transparent setting and converges to the same solid behavior",()=>{
+  for(let level=0;level<100;level++) {
+    const mouse=glassMotion(level),touch=glassMotion(level,true);
+    assert.ok(touch.pressY<mouse.pressY);
+    assert.ok(touch.popY>mouse.popY);
+    assert.ok(touch.duration>mouse.duration);
+    assert.ok(touch.pressY>=.8 && touch.popY<=1.16);
+  }
+  assert.deepEqual(glassMotion(100,true),glassMotion(100));
 });
