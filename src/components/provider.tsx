@@ -32,6 +32,8 @@ import {
   type CloudProgress,
 } from "@/lib/cloud/workspace";
 import { useAccount } from "./account-provider";
+import { needsMediaMigration, prepareWorkspaceMedia, cleanUnusedMedia } from "@/lib/cloud/media";
+import { stageNewMedia, restoreStagedMedia } from "@/lib/media-workspace";
 import { Icon } from "./icons";
 type Store = {
   data: AppData;
@@ -150,6 +152,7 @@ export function Provider({ children }: { children: ReactNode }) {
     if (blocked.current)
       throw new Error("Utkastet må avklares før det kan lagres i skyen.");
     const generation = epoch.current;
+    const mediaCalendars = new Set<string>();
     const task = (async () => {
       while (
         dirty.current &&
@@ -158,20 +161,24 @@ export function Provider({ children }: { children: ReactNode }) {
         generation === epoch.current
       ) {
         const sent = current.current;
+        for(const change of workspacePatch(base.current!,sent).p_changes) mediaCalendars.add(change.document.id);
         setStatus("saving");
         await persistCloud();
+        if (generation !== epoch.current) return;
+        const prepared = await prepareWorkspaceMedia(sent, uid.current!, base.current!.versions, mediaCalendars);
+        const staged = stageNewMedia(prepared,base.current!.versions,mediaCalendars);
         if (generation !== epoch.current) return;
         const { data, error } = await rpcForUser(
           uid.current,
           "save_luke_workspace",
-          workspacePatch(base.current!, sent),
+          workspacePatch(base.current!, staged.data),
         );
         if (error) throw error;
         if (generation !== epoch.current) return;
         const result = parseCloudSnapshot(data);
-        const next = mergedAfterSave(sent, current.current!, result);
+        const next = restoreStagedMedia(mergedAfterSave(sent, current.current!, result),current.current!,staged.pending);
         base.current = result;
-        dirty.current = hasCloudChanges(result, next);
+        dirty.current = hasCloudChanges(result, next) || next.calendars.some(calendar => mediaCalendars.has(calendar.id) && needsMediaMigration(calendar));
         show(next);
         setProgress(result.progress);
         await persistCloud();
@@ -179,6 +186,7 @@ export function Provider({ children }: { children: ReactNode }) {
       if (generation === epoch.current) {
         setStatus("saved");
         setSaveError("");
+        void cleanUnusedMedia(uid.current!).catch(()=>{});
       }
     })()
       .catch(async (error) => {

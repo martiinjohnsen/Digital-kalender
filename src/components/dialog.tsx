@@ -30,7 +30,7 @@ export function Dialog({
       const active = document.activeElement;
       const scroller = dialog?.querySelector<HTMLElement>(".dialog-scroll");
       if (!scroller || !(active instanceof HTMLElement) || !scroller.contains(active) ||
-        !active.matches("input,textarea,select,[contenteditable='true']")) return;
+        !active.matches("input:not([type='file']),textarea,select,[contenteditable='true']")) return;
       const bounds = scroller.getBoundingClientRect();
       let bottom = bounds.bottom;
       // A pinned action row is inside the scroller but covers part of its view.
@@ -49,7 +49,7 @@ export function Dialog({
     const viewport = window.visualViewport;
     const resize = () => {
       const focused = document.activeElement;
-      const typing = focused instanceof HTMLElement && dialog?.contains(focused) && focused.matches("input:not([type='checkbox']):not([type='radio']),textarea,[contenteditable='true']");
+      const typing = focused instanceof HTMLElement && dialog?.contains(focused) && focused.matches("input:not([type='checkbox']):not([type='radio']):not([type='file']),textarea,[contenteditable='true']");
       dialog?.classList.toggle("is-keyboard-open", !!typing && Math.max(window.innerHeight, document.documentElement.clientHeight) - (viewport?.height ?? window.innerHeight) > 120);
       dialog?.style.setProperty(
         "--dialog-viewport-height",

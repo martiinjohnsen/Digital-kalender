@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { authMessage, rpcForUser, supabase } from "@/lib/cloud/client";
 import { DEFAULT_GLASS, glassLevel, glassStyle } from "@/lib/glass";
 import { useAccount } from "./account-provider";
+import { installGlassFeedback } from "@/lib/glass-motion";
 
 type Glass = { level: number; ready: boolean; status: "loading" | "saving" | "saved" | "error"; error: string; setLevel: (value: number) => void; flush: () => void; retry: () => void };
 const Context = createContext<Glass | null>(null);
@@ -23,6 +24,8 @@ export function GlassProvider({ children }: { children: ReactNode }) {
   const flush = useRef<() => void>(() => {});
   const retry = useRef<() => void>(() => {});
   const level = state.userId === userId ? state.level : DEFAULT_GLASS;
+  const levelRef=useRef(level);levelRef.current=level;
+  useEffect(()=>installGlassFeedback(()=>levelRef.current),[]);
   useEffect(() => {
     for (const [key,value] of Object.entries(glassStyle(level))) document.documentElement.style.setProperty(key,value);
   }, [level]);

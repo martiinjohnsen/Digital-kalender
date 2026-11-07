@@ -1,0 +1,47 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { mediaPath,mediaReference,isImageSource,isAudioSource,containsPrivateMedia } from "../src/lib/media-reference.ts";
+import { needsMediaMigration,stageNewMedia,restoreStagedMedia } from "../src/lib/media-workspace.ts";
+import { createCalendar,doorBlockOrder,isCalendar,isDoorComplete,parseBackup,removeDoorBlock } from "../src/lib/model.ts";
+import { calendarCollection } from "../src/lib/calendar-collection.ts";
+import { questionKey } from "../src/lib/quiz-progress.ts";
+const user="7a000000-0000-4000-8000-000000000001";
+const path=(id:string,day=1,ext="jpg")=>`${id}/door/${day}/${user}/${"a".repeat(64)}.${ext}`;
+const calendar=()=>createCalendar({title:"Test",recipient:"Venn",sender:"Meg",year:2026,theme:"advent"});
+test("private media references accept only scoped paths and supported attachment types",()=>{
+  const image=mediaReference(path("test"));const audio=mediaReference(path("test",24,"m4a"));
+  assert.equal(mediaPath(image),path("test"));assert.ok(isImageSource(image));assert.ok(isAudioSource(audio));
+  assert.ok(!isImageSource(audio));assert.ok(!isAudioSource(image));
+  for(const value of ["https://example.org/a.jpg","javascript:alert(1)","luke-media:../secret.jpg",mediaReference(path("test")).replace("/1/","/25/")]) assert.equal(mediaPath(value),null);
+  assert.ok(isImageSource("data:image/jpeg;base64,YQ=="));
+  assert.ok(isAudioSource("data:audio/mp4;base64,YQ=="));
+  assert.ok(containsPrivateMedia({doors:[{image}]}));
+  assert.ok(!containsPrivateMedia({body:"Eksempeltekst med luke-media: uten en filreferanse"}));
+});
+test("audio can stand alone in a door and survives sharing, backups and collections",()=>{
+  const c=calendar();c.doors[0].audio=mediaReference(path(c.id,1,"m4a"));c.doors[0].contentOrder=["audio"];
+  assert.ok(isDoorComplete(c.doors[0]));assert.deepEqual(doorBlockOrder(c.doors[0]),["audio"]);assert.ok(isCalendar(c));
+  const data={version:1 as const,calendars:[c],preferences:{name:"",snow:true}};
+  assert.deepEqual(parseBackup(JSON.stringify(data)),data);
+  assert.deepEqual(calendarCollection(c,[1],1).map(item=>item.kind),["audio"]);
+  assert.equal(calendarCollection(c,[1],0).length,0);
+  assert.equal(removeDoorBlock(c.doors[0],"audio").audio,undefined);
+  c.doors[0].audio="";assert.ok(!isDoorComplete(c.doors[0]));
+});
+test("new imports stage small documents without losing attachments or changing quiz keys",()=>{
+  const c=calendar();c.doors[0].image="data:image/jpeg;base64,YQ==";c.doors[0].audio="data:audio/mp4;base64,YQ==";
+  c.doors[0].questions=[{title:"Hei?",options:["Ja","Nei"],answerIndex:0,explanation:""}];
+  const key=questionKey(1,0,c.doors[0].questions[0]);
+  const data={version:1 as const,calendars:[c],preferences:{name:"",snow:true}};
+  const original=structuredClone(data);const ids=new Set([c.id]);
+  assert.ok(needsMediaMigration(c));
+  const staged=stageNewMedia(data,{},ids);
+  assert.equal(staged.data.calendars[0].doors[0].image,"");assert.equal(staged.data.calendars[0].doors[0].audio,"");
+  assert.equal(staged.data.calendars[0].id,c.id);assert.equal(questionKey(1,0,staged.data.calendars[0].doors[0].questions![0]),key);
+  assert.deepEqual(restoreStagedMedia(staged.data,data,staged.pending),data);
+  assert.deepEqual(data,original);
+  assert.deepEqual(stageNewMedia(data,{[c.id]:1},ids).data,data);
+  assert.deepEqual(stageNewMedia(data,{},new Set()).data,data);
+  c.doors[0].image=mediaReference(path(c.id));c.doors[0].audio=mediaReference(path(c.id,1,"m4a"));assert.ok(!needsMediaMigration(c));
+  c.id="copy";assert.ok(needsMediaMigration(c));
+});

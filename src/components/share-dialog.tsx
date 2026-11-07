@@ -173,8 +173,10 @@ export function ShareDialog({
         )}
         <button
           className="button secondary full"
-          onClick={() => {
-            downloadJson(
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);setError("");
+            try { await downloadJson(
               {
                 version: 1,
                 calendars: [calendar],
@@ -183,6 +185,8 @@ export function ShareDialog({
               `luke-kalender-${calendar.year}.json`,
             );
             store.toast("Kalenderfilen er lastet ned.");
+            } catch(error) { setError(authMessage(error)); }
+            finally { setBusy(false); }
           }}
         >
           <Icon name="download" size={17} />

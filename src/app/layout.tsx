@@ -4,6 +4,7 @@ import { PwaProvider } from "@/components/pwa";
 import { Shell } from "@/components/shell";
 import { AccountProvider } from "@/components/account-provider";
 import { GlassProvider } from "@/components/glass-provider";
+import { GreetingsProvider } from "@/components/greetings-provider";
 import "./globals.css";
 export const metadata: Metadata = {
   title: {
@@ -40,7 +41,7 @@ export default function RootLayout({
         <PwaProvider>
           <AccountProvider>
             <GlassProvider>
-              <Provider><Shell>{children}</Shell></Provider>
+              <Provider><GreetingsProvider><Shell>{children}</Shell></GreetingsProvider></Provider>
             </GlassProvider>
           </AccountProvider>
         </PwaProvider>

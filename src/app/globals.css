@@ -21,14 +21,18 @@
   --glass-nav-fill: 32%;
   --glass-shine: 28%;
   --glass-blur: 20px;
+  --glass-nav-blur: 20px;
+  --glass-nav-shine: 28%;
+  --glass-reflection: 18%;
+  --glass-edge-light: 40%;
   --glass-choice-tint: 32%;
   --glass-choice-hover-tint: 40%;
   --glass-choice-pressed-tint: 46%;
   --glass-help-mix: 35%;
-  --control-sheen: linear-gradient(135deg, color-mix(in srgb, white var(--glass-shine), transparent), #ffffff06);
+  --control-sheen: linear-gradient(165deg, color-mix(in srgb, white var(--glass-reflection), transparent), transparent 16% 80%, color-mix(in srgb, white var(--glass-reflection), transparent)), linear-gradient(135deg, color-mix(in srgb, white var(--glass-shine), transparent), #ffffff06);
   --neutral-fill: color-mix(in srgb, white var(--glass-neutral-fill), transparent);
   --neutral-hover: color-mix(in srgb, var(--neutral-fill) 85%, #c8b3d5);
-  --control-shadow: inset 0 1px 1px #ffffff52, inset 0 -1px 1px #69487d14, 0 3px 10px #49305e08;
+  --control-shadow: inset 0 1px 1px color-mix(in srgb, white var(--glass-edge-light), transparent), inset 0 -1px 1px #69487d14, 0 3px 10px #49305e08;
   --glass: rgba(255, 255, 255, 0.58);
   --glass-border: rgba(255, 255, 255, 0.88);
   --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 3px 12px #3d285a08;
@@ -3639,12 +3643,12 @@ input[type="radio"] {
     transform: translateX(-50%);
     margin-bottom: env(safe-area-inset-bottom, 0px);
     background-color: color-mix(in srgb, white var(--glass-nav-fill), transparent);
-    background-image: var(--control-sheen);
+    background-image: linear-gradient(135deg, color-mix(in srgb, white var(--glass-nav-shine), transparent), transparent);
     border: 1px solid #a58caf40;
     box-shadow: inset 0 1px 1px #ffffff47, inset 0 -1px 1px #76568a12;
     overflow: hidden;
-    backdrop-filter: blur(var(--glass-blur)) saturate(1.55);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.55);
+    backdrop-filter: blur(var(--glass-nav-blur)) saturate(1.55);
+    -webkit-backdrop-filter: blur(var(--glass-nav-blur)) saturate(1.55);
     border-radius: 22px;
     height: 65px;
     padding: 6px;
@@ -9239,7 +9243,7 @@ input[type="radio"] {
 .glass-settings .settings-card-heading .soft-icon { width: 36px; height: 36px; }
 .glass-settings .settings-card-heading h2 { font-size: 24px; }
 .glass-demo { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; padding: 12px; margin-bottom: 12px; border-radius: 12px; background: radial-gradient(circle at 24% 80%, #e4bf97 0 15%, transparent 16%), radial-gradient(ellipse at 65% 0, #a88ac0 0 28%, transparent 29%), linear-gradient(135deg,#e6d9ed,#c5d3df); }
-.glass-demo .button { cursor: default; }
+.glass-demo .button { cursor: pointer; }
 .glass-choice { display: inline-flex; align-items: center; padding: 10px 16px; min-height: 40px; border: 1px solid var(--control-edge); border-radius: 12px; font-size: 12px; }
 .glass-slider-label { display: block; margin: 0 0 2px; font-size: 11px; color: var(--primary); }
 .glass-range { position: relative; height: 28px; }
@@ -9313,3 +9317,50 @@ input[type="radio"] {
 @media (hover: hover) and (pointer: fine) {
   .button.danger:hover:not(:disabled) { background-color: color-mix(in srgb, #cc8394 var(--glass-action-fill), transparent); }
 }
+
+/* Private attachments and the small conversation around each opened door. */
+.audio-input { display: grid; gap: 10px; margin-top: 14px; }
+.audio-input-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.audio-input input[type=file], .greeting-form input[type=file] { position: absolute; width: 1px; height: 1px; padding: 0; opacity: 0; overflow: hidden; }
+.audio-player { display: grid; gap: 7px; min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 15px; background: var(--neutral-fill); }
+.audio-player > span { color: var(--primary); font-size: 12px; }
+.audio-player audio { width: 100%; max-width: 100%; height: 44px; }
+.recording-time { display: inline-flex; align-items: center; gap: 7px; font-variant-numeric: tabular-nums; color: var(--primary-dark); }
+.recording-time i { width: 8px; height: 8px; background: #b45e71; border-radius: 50%; }
+.media-placeholder { color: var(--muted); font-size: 12px; padding: 12px; overflow-wrap: anywhere; }
+.greeting-badge { min-height: 28px; padding: 4px 9px; border-radius: 12px; gap: 5px; flex-shrink: 0; }
+.greeting-inbox { margin: 0 0 22px; scroll-margin-top: 95px; }
+.greeting-inbox-toggle { display: flex; width: 100%; justify-content: flex-start; }
+.greeting-inbox-toggle > span { color: var(--primary); font-size: 11px; }
+.greeting-inbox-toggle > svg:last-child { margin-left: auto; transition: rotate .2s; }
+.greeting-inbox-toggle[aria-expanded=true] > svg:last-child { rotate: 180deg; }
+.greeting-inbox-content { display: grid; gap: 12px; padding: 16px 0 0; }
+.greeting-message { padding: 18px; border: 1px solid var(--line); border-radius: 17px; background: var(--paper); display: grid; gap: 12px; }
+.greeting-message > header { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 12px; }
+.greeting-message > header span, .greeting-message time { color: var(--muted); font-size: 11px; }
+.greeting-message time { margin-left: auto; }
+.greeting-message > p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.greeting-message > img { display: block; max-width: 100%; max-height: 380px; object-fit: contain; border-radius: 12px; justify-self: start; }
+.greeting-form { padding: 22px 28px; }
+.greeting-form > label:not(.button) { display: grid; gap: 8px; color: var(--primary); }
+.greeting-form textarea { width: 100%; resize: vertical; }
+.greeting-intro { color: var(--muted); margin: 0 0 18px; line-height: 1.7; }
+.greeting-image { position: relative; margin: 14px 0; }
+.greeting-image img { max-width: 100%; max-height: 320px; border-radius: 13px; }
+.greeting-image > button { position: absolute; top: 8px; right: 8px; }
+.greeting-form > .button { margin-top: 12px; }
+.greeting-form .form-error > button { margin: 10px 0 0; }
+.recipient-door-cell { position: relative; min-width: 0; aspect-ratio: .85; }
+.recipient-door-cell > .recipient-door { width: 100%; height: 100%; }
+.recipient-door-cell > .door-greeting-shortcut { position: absolute; z-index: 2; bottom: 8px; left: 50%; transform: translateX(-50%); min-height: 24px; padding: 3px 7px; gap: 4px; border-radius: 10px; font-size: 9px; color: var(--control-ink); white-space: nowrap; }
+@media (max-width: 760px) {
+  .greeting-form { padding: 18px 16px; }
+  .greeting-form .audio-input-actions > .button { padding-left: 12px; padding-right: 12px; }
+  .recipient-door-cell > .door-greeting-shortcut { bottom: 6px; min-height: 22px; font-size: 8px; padding: 3px 5px; }
+  .greeting-message { padding: 15px; }
+  .glass-demo { gap: 8px; }
+  .glass-demo .button, .glass-demo .glass-choice { font-size: 11px; padding: 9px 12px; }
+}
+@media (max-width: 460px) { .recipient-door-cell { aspect-ratio: .74; } }
+label.button:has(input:focus-visible) { outline: 3px solid #b09ac6; outline-offset: 4px; }
+.recipient-door-cell:has(.door-greeting-shortcut) > .recipient-door { padding-bottom: 22px; }

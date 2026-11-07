@@ -1,5 +1,5 @@
 /* Cache only the public shell. Account data never enters the service-worker cache. */
-const CACHE = "luke-shell-2026-11-06-glass-brand-v12";
+const CACHE = "luke-shell-2026-11-07-media-greetings-v13";
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {

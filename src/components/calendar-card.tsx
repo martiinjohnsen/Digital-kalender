@@ -6,6 +6,7 @@ import { useStore } from "./provider";
 import { Artwork } from "./artwork";
 import { Icon } from "./icons";
 import { Dialog } from "./dialog";
+import { GreetingBadge } from "./greetings";
 import { isReceived, ownerCopy } from "@/lib/calendar-library";
 export function CalendarCard({ calendar }: { calendar: AdventCalendar }) {
   const { add, remove, toast, progress, cloud } = useStore();
@@ -89,6 +90,7 @@ export function CalendarCard({ calendar }: { calendar: AdventCalendar }) {
           <h3>
             <Link href={destination}>{calendar.title}</Link>
           </h3>
+          {!received && <GreetingBadge calendarId={calendar.id}/>}
         </div>
         <p className="card-recipient">
           <Icon name="heart" size={13} />

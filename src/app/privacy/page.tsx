@@ -21,6 +21,10 @@ export default function PrivacyPage() {
           <p>En mottaker åpner invitasjonen og logger inn med sin egen konto. Alle som får invitasjonslenken, kan bruke den til å få mottakertilgang. Mottakeren kan åpne kalenderen og svare på quiz, men kan ikke redigere innholdet ditt.</p>
         </section>
         <section>
+          <h2><Icon name="mic" size={19} /> Bilder, lyd og hilsener tilbake</h2>
+          <p>Bilder og lydfiler lagres privat hos Supabase. Bare avsender og mottakere med tilgang til den aktuelle luka kan hente vedleggene. Mikrofonen brukes bare når du selv starter et opptak. Hilsener du sender tilbake, med tekst og eventuelle bilder eller lydopptak, vises til kalenderens avsender. Andre mottakere ser ikke hilsenene dine. Du kan endre en sendt hilsen senere.</p>
+        </section>
+        <section>
           <h2><Icon name="cloud" size={19} /> Hvor opplysningene lagres</h2>
           <p>Supabase håndterer innlogging og lagring på kontoen. Vercel drifter nettsiden. Nettleseren lagrer innloggingsøkten og en lokal kopi av kalenderdata, slik at blant annet utkast kan beholdes ved nettverksfeil. YouTube-videoer lastes først når du velger å spille dem av.</p>
         </section>
@@ -29,7 +33,7 @@ export default function PrivacyPage() {
           <p>Du kan endre navnet ditt, redigere og slette egne kalendere og avslutte deling i appen. For spørsmål om opplysningene dine, innsyn eller sletting av kontoen kan du kontakte <a href="mailto:martin.johnsen@outlook.com">martin.johnsen@outlook.com</a>.</p>
         </section>
         <footer className="privacy-footer">
-          <span>Sist oppdatert 6. november 2026</span>
+          <span>Sist oppdatert 7. november 2026</span>
           <Link href="/settings" className="button secondary"><Icon name="back" size={16} />Tilbake til konto</Link>
         </footer>
       </div>

@@ -16,6 +16,11 @@ import {
 import { validateDoor } from "@/lib/door-validation";
 import { FieldError, validationAttributes } from "./field-validation";
 import { compressImage } from "@/lib/storage";
+import { uploadMedia } from "@/lib/cloud/media";
+import { useAccount } from "./account-provider";
+import { useStore } from "./provider";
+import { AudioInput } from "./audio-input";
+import { MediaImage } from "./media";
 import { Icon, type IconName } from "./icons";
 import { Dialog } from "./dialog";
 import { DoorQuestionsEditor, blankQuestion } from "./door-questions";
@@ -45,6 +50,7 @@ function editorDraft(door: Door, calendar: AdventCalendar): Door {
 const blockIcons: Record<DoorBlockKind, IconName> = {
   giftcard: "gift",
   image: "image",
+  audio: "mic",
   video: "video",
   quiz: "quiz",
   link: "external",
@@ -62,6 +68,8 @@ export function DoorEditor({
   onSave: (door: Door) => void;
   onClose: () => void;
 }) {
+  const { user } = useAccount();
+  const store = useStore();
   const [draft, setDraft] = useState(() => editorDraft(door, calendar));
   const [validationAttempted, setValidationAttempted] = useState(false);
   const issues = validationAttempted ? validateDoor(draft) : {};
@@ -77,6 +85,7 @@ export function DoorEditor({
     stackAnchor = useRef<HTMLDivElement>(null);
   const [error, setError] = useState(""),
     [uploading, setUploading] = useState(false),
+    [audioBusy, setAudioBusy] = useState(false),
     [discard, setDiscard] = useState(false);
   useEffect(() => {
     alive.current = true;
@@ -87,11 +96,11 @@ export function DoorEditor({
   }, []);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
-      if (JSON.stringify(draft) !== baseline.current) event.preventDefault();
+      if (JSON.stringify(draft) !== baseline.current || uploading || audioBusy) event.preventDefault();
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [draft]);
+  }, [draft, uploading, audioBusy]);
   const order = doorBlockOrder(draft).filter((block) => block !== "effect");
   function change(patch: Partial<Door>) {
     setError("");
@@ -119,7 +128,7 @@ export function DoorEditor({
     return false;
   }
   function close() {
-    if (JSON.stringify(draft) === baseline.current && !uploading) { onClose(); return; }
+    if (JSON.stringify(draft) === baseline.current && !uploading && !audioBusy) { onClose(); return; }
     setDiscard(true);
     if (validate())
       requestAnimationFrame(() => formRef.current?.closest(".dialog-scroll")?.scrollTo({ top: 0, behavior: "smooth" }));
@@ -129,6 +138,7 @@ export function DoorEditor({
     if (block === "giftcard") patch.giftCard = emptyGift();
     if (block === "quiz") patch.questions = [blankQuestion()];
     if (block === "image") patch.image = "";
+    if (block === "audio") patch.audio = "";
     if (block === "video") patch.videoUrl = "";
     if (block === "link") patch.link = { label: "Åpne lenken", url: "" };
     if (block === "activity") patch.activity = { title: "", body: "" };
@@ -160,7 +170,10 @@ export function DoorEditor({
     setUploading(true);
     setError("");
     try {
-      const image = await compressImage(file);
+      if (!user) throw new Error("Logg inn før du legger til bilder.");
+      const compressed = await compressImage(file);
+      await store.syncNow();
+      const image = await uploadMedia(await (await fetch(compressed)).blob(), {userId:user.id,calendarId:calendar.id,day:door.day,scope:"door"});
       if (alive.current && uploadToken.current === token)
         setDraft((previous) =>
           doorBlockOrder(previous).includes("image")
@@ -180,7 +193,7 @@ export function DoorEditor({
     change({ giftCard: { ...(draft.giftCard ?? emptyGift()), ...patch } });
   }
   function save() {
-    if (!validate() || uploading) return;
+    if (!validate() || uploading || audioBusy) return;
     onSave({ ...draft, contentOrder: order, videoUrl: draft.videoUrl?.trim() });
   }
   function renderBlock(block: DoorBlockKind): ReactNode {
@@ -264,7 +277,7 @@ export function DoorEditor({
           <div className="image-upload" {...validationAttributes({ ...issues, ...(error ? { image: error } : {}) }, "image")}>
             {draft.image ? (
               <>
-                <img src={draft.image} alt={draft.imageAlt || "Valgt bilde"} />
+                <MediaImage src={draft.image} alt={draft.imageAlt || "Valgt bilde"} />
                 <label className="button secondary small-button">
                   {uploading ? "Behandler bildet …" : "Bytt bilde"}
                   <input
@@ -310,6 +323,8 @@ export function DoorEditor({
             <FieldError issues={{ ...issues, ...(error ? { image: error } : {}) }} field="image" />
           </div>
         );
+      case "audio":
+        return user ? <div {...validationAttributes(issues,"audio")}><AudioInput value={draft.audio} context={{userId:user.id,calendarId:calendar.id,day:door.day,scope:"door"}} onChange={audio=>change({audio})} onBusyChange={setAudioBusy} beforeUpload={store.syncNow} /><FieldError issues={issues} field="audio" /></div> : null;
       case "video":
         return (
           <label>
@@ -438,7 +453,7 @@ export function DoorEditor({
             type="submit"
             form={formId}
             className="button primary"
-            disabled={uploading}
+            disabled={uploading || audioBusy}
           >
             Lagre luke
             <Icon name="check" size={17} />

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { DEFAULT_GLASS, glassLevel, glassStyle } from "../src/lib/glass.ts";
+import { glassMotion } from "../src/lib/glass-motion.ts";
 
 test("glass settings clamp out-of-range input and keep a safe default", () => {
   assert.equal(glassLevel(undefined), DEFAULT_GLASS);
@@ -18,7 +19,7 @@ test("every material responds continuously while action buttons remain stronger 
     for (const value of Object.values(current)) assert.ok(Number.isFinite(parseFloat(value)));
     if (previous) for (const key of Object.keys(current)) {
       const change = parseFloat(current[key]) - parseFloat(previous[key]);
-      const pigmentOrHelp = key.includes("tint") || key === "--glass-help-mix";
+      const pigmentOrHelp = key.includes("tint") || ["--glass-help-mix","--glass-reflection","--glass-edge-light"].includes(key);
       assert.ok(pigmentOrHelp ? change <= 0 : change >= 0, key);
       assert.ok(Math.abs(change) < 2, key);
     }
@@ -43,9 +44,24 @@ test("the transparent end retains purple pigment while the opaque appearance sta
     '--glass-nav-fill': '96.0%',
     '--glass-shine': '35.0%',
     '--glass-blur': '26.0px',
+    '--glass-nav-blur': '26.0px',
+    '--glass-nav-shine': '35.0%',
+    '--glass-reflection': '0.0%',
+    '--glass-edge-light': '32.2%',
     '--glass-choice-tint': '32.0%',
     '--glass-choice-hover-tint': '40.0%',
     '--glass-choice-pressed-tint': '46.0%',
     '--glass-help-mix': '35.0%',
   });
+});
+test("glass press feedback becomes softer towards the transparent end and adds no extra movement at the opaque end",()=>{
+  const clear=glassMotion(0),solid=glassMotion(100);
+  assert.equal(solid.strength,0);assert.equal(solid.pressX,1);assert.equal(solid.popY,1);
+  assert.ok(clear.pressY>=.9 && clear.pressY<.95);
+  assert.ok(clear.popY>1.03 && clear.popY<1.06);
+  for(let value=1;value<=100;value++) {
+    const before=glassMotion(value-1),current=glassMotion(value);
+    assert.ok(current.pressY>=before.pressY && current.popY<=before.popY);
+    assert.ok(current.duration<=before.duration);
+  }
 });

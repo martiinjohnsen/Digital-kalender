@@ -35,11 +35,11 @@ export default function SettingsPage() {
       active = false;
     };
   }, [account.user?.id, store.data.calendars]);
-  function backupDraft() {
-    downloadJson(
+  async function backupDraft() {
+    try { await downloadJson(
       store.data,
       `luke-utkast-${new Date().toISOString().slice(0, 10)}.json`,
-    );
+    ); } catch(error) { store.toast(authMessage(error)); }
   }
   return (
     <div className="page-enter settings-page">

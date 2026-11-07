@@ -1,4 +1,5 @@
 import { correctChoices, doorBlockOrder, safeLink, youtubeId, type Door } from "./model.ts";
+import { isAudioSource } from "./media-reference.ts";
 
 export type DoorIssues = Record<string, string>;
 
@@ -11,6 +12,9 @@ export function validateDoor(door: Door): DoorIssues {
     switch (block) {
       case "image":
         if (!door.image) issues.image = "Velg et bilde, eller fjern bildeboksen.";
+        break;
+      case "audio":
+        if (!door.audio || !isAudioSource(door.audio)) issues.audio = "Spill inn eller velg en lydhilsen, eller fjern lydboksen.";
         break;
       case "video":
         if (!youtubeId(door.videoUrl?.trim() ?? ""))

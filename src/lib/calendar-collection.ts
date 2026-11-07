@@ -9,6 +9,7 @@ import {
 type Content =
   | { kind: "message"; body: string }
   | { kind: "image"; src: string; alt: string }
+  | { kind: "audio"; src: string }
   | { kind: "giftcard"; gift: GiftCard }
   | { kind: "video"; url: string; title: string }
   | { kind: "link"; url: string; label: string }
@@ -42,6 +43,9 @@ export function calendarCollection(
         case "giftcard":
           if (door.giftCard && (door.giftCard.merchant.trim() || door.giftCard.code.trim() || safeLink(door.giftCard.url)))
             add({ kind: "giftcard", gift: door.giftCard });
+          break;
+        case "audio":
+          if (door.audio) add({kind:"audio",src:door.audio});
           break;
         case "video":
           if (door.videoUrl && youtubeId(door.videoUrl))

@@ -1,4 +1,5 @@
 import { parseBackup, type AppData } from "./model.ts";
+import { containsPrivateMedia } from "./media-reference.ts";
 const DATABASE = "luke-advent";
 const STORE = "workspace";
 function openDatabase(): Promise<IDBDatabase> {
@@ -83,9 +84,18 @@ export async function saveRecord(key: string, value: unknown): Promise<void> {
     db.close();
   }
 }
-export function downloadJson(value: unknown, filename: string): void {
+export async function downloadJson(value: unknown, filename: string): Promise<void> {
+  if (containsPrivateMedia(value)) {
+    const { supabase } = await import('./cloud/client');
+    const { portableMediaCopy } = await import('./cloud/media');
+    const { data,error } = await supabase().auth.getSession();
+    if (error || !data.session) throw new Error('Logg inn og koble til nettet for å hente vedleggene i sikkerhetskopien.');
+    value = await portableMediaCopy(value,data.session.user.id);
+  }
+  const text=JSON.stringify(value,null,2);
+  if(text.length>100000000) throw new Error('Sikkerhetskopien er større enn 100 MB. Last ned én kalender om gangen.');
   const url = URL.createObjectURL(
-    new Blob([JSON.stringify(value, null, 2)], { type: "application/json" }),
+    new Blob([text], { type: "application/json" }),
   );
   const link = document.createElement("a");
   link.href = url;

@@ -24,6 +24,10 @@ export async function rpcForUser(
   name: string,
   args?: Record<string, unknown>,
 ) {
+  const scoped = await clientForUser(userId);
+  return scoped.rpc(name, args);
+}
+export async function clientForUser(userId: string | null): Promise<SupabaseClient> {
   const { data, error } = await supabase().auth.getSession();
   if (error) throw error;
   if (!userId || !data.session || data.session.user.id !== userId)
@@ -31,10 +35,9 @@ export async function rpcForUser(
   // Bind the request to this user's token, even if another tab changes the
   // active account while a queued save is waiting for its network request.
   const token = data.session.access_token;
-  const scoped = createClient(url, publishableKey, {
+  return createClient(url, publishableKey, {
     accessToken: async () => token,
   });
-  return scoped.rpc(name, args);
 }
 export function authMessage(error: unknown): string {
   const raw =

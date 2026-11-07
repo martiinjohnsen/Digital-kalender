@@ -62,7 +62,7 @@ export function PwaProvider({ children }: { children: ReactNode }) {
     <InstallContext.Provider value={{ install, installed }}>
       {offline && (
         <div className="offline-banner" role="status">
-          Du er frakoblet. Det du gjør, lagres fortsatt på denne enheten.
+          Du er frakoblet. Kalenderutkast beholdes på enheten. Bilder, lyd og hilsener krever nett.
         </div>
       )}
       {children}

@@ -8,14 +8,16 @@ import {
 import type { quizSummary } from "@/lib/quiz-progress";
 import { Dialog } from "./dialog";
 import { GiftCardView } from "./door-content";
+import { MediaImage, AudioPlayer } from "./media";
 import { Icon } from "./icons";
 import { QuizOverview } from "./quiz-overview";
 
 type Keepsake = Exclude<CollectedItem, { kind: "message" | "activity" }>;
-type KeepsakeFilter = "all" | "giftcard" | "image" | "link";
+type KeepsakeFilter = "all" | "giftcard" | "image" | "audio" | "link";
 const contentLabels = {
   giftcard: { label: "Gavekort", icon: "gift" },
   image: { label: "Bilder", icon: "image" },
+  audio: { label: "Lydhilsener", icon: "mic" },
   link: { label: "Lenker", icon: "external" },
 } as const;
 const category = (item: Keepsake) => item.kind === "video" ? "link" : item.kind;
@@ -39,7 +41,7 @@ export function CalendarOverview({
   return (
     <Dialog title="Kalenderoversikt" onClose={onClose} wide>
       <div className="calendar-overview">
-        <p className="overview-intro">Gavekort, bilder og lenker fra lukene du har åpnet, samlet på ett sted.</p>
+        <p className="overview-intro">Gavekort, bilder, lydhilsener og lenker fra lukene du har åpnet, samlet på ett sted.</p>
         <div className="overview-sections" role="group" aria-label="Velg oversikt">
           <button type="button" aria-pressed={section === "content"} onClick={() => setSection("content")}>
             <Icon name="gift" size={17} />Innhold <span>{items.length}</span>
@@ -95,7 +97,9 @@ function CollectedContent({ item }: { item: Keepsake }) {
     case "video":
       return <a className="button secondary collection-link" href={item.url} target="_blank" rel="noopener noreferrer"><Icon name="video" size={18} />{item.title || "Se video"}<Icon name="external" size={15} /></a>;
     case "image":
-      return <img className="collection-image" src={item.src} alt={item.alt} loading="lazy" />;
+      return <MediaImage className="collection-image" src={item.src} alt={item.alt} loading="lazy" />;
+    case "audio":
+      return <AudioPlayer src={item.src}/>;
     case "link":
       return <a className="button secondary collection-link" href={item.url} target="_blank" rel="noopener noreferrer">{item.label}<Icon name="external" size={17} /></a>;
   }

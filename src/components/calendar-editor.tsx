@@ -8,6 +8,7 @@ import { Artwork } from "./artwork";
 import { DoorEditor } from "./door-editor";
 import { ShareDialog } from "./share-dialog";
 import { AppearancePicker } from "./appearance-picker";
+import { GreetingInbox } from "./greetings";
 import {
   completedCount,
   calendarContentSummary,
@@ -88,6 +89,7 @@ export function CalendarEditor({ id }: { id: string }) {
     { kind: "message", icon: "message", one: "tekst", many: "tekster" },
     { kind: "giftcard", icon: "gift", one: "gavekort", many: "gavekort" },
     { kind: "image", icon: "image", one: "bilde", many: "bilder" },
+    { kind: "audio", icon: "mic", one: "lydhilsen", many: "lydhilsener" },
     { kind: "video", icon: "video", one: "video", many: "videoer" },
     { kind: "link", icon: "external", one: "lenke", many: "lenker" },
     { kind: "quiz", icon: "quiz", one: "quiz", many: "quizer" },
@@ -168,6 +170,7 @@ export function CalendarEditor({ id }: { id: string }) {
           </button>
         </div>
       </div>
+      <GreetingInbox calendarId={calendar.id}/>
       {calendar.demo && (
         <div className="example-notice">
           <span>Eksempelkalender</span>

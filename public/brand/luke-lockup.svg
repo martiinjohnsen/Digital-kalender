@@ -10,9 +10,9 @@
   <rect x="51" y="6" width="42" height="42" rx="12" fill="url(#tile-two)"/>
   <rect x="2" y="54" width="42" height="42" rx="12" fill="url(#tile-three)"/>
   <rect x="51" y="54" width="42" height="42" rx="12" fill="#ffe099"/>
-  <path d="M63 59L86 54Q96 52 96 64V85Q96 94 87 96L63 102Q54 104 54 93V72Q54 62 63 59Z" fill="url(#open-door)"/>
-  <g transform="matrix(1 -0.2 0 1 56 63)">
-    <text x="3" y="29" fill="#fff0cb" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="27" textLength="34" lengthAdjust="spacingAndGlyphs">24</text>
+  <path d="M67 61L87 56Q98 53 98 65V86Q98 96 87 99L67 104Q58 106 58 94V74Q58 64 67 61Z" fill="url(#open-door)"/>
+  <g transform="matrix(1 -0.2 0 1 60 65)">
+    <text x="3" y="29" fill="#fff0cb" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="29" textLength="30" lengthAdjust="spacingAndGlyphs">24</text>
   </g>
   <text x="109" y="78" fill="#4d254f" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="70">luke</text>
   <circle cx="258" cy="72.5" r="5.6" fill="#b580ac"/>

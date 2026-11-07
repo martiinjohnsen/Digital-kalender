@@ -15,6 +15,7 @@ export type IconName =
   | "leaf"
   | "gift"
   | "image"
+  | "mic"
   | "quiz"
   | "video"
   | "message"
@@ -36,6 +37,7 @@ export type IconName =
   | "external"
   | "cloud";
 const paths: Record<IconName, React.ReactNode> = {
+  mic: <><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2m-7 9v3m-4 0h8"/></>,
   monitor: <><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8m-4-4v4" /></>,
   user: (
     <>

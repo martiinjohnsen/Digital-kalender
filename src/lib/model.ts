@@ -1,3 +1,4 @@
+import { isImageSource, isAudioSource } from "./media-reference.ts";
 export const THEMES = [
   "advent",
   "forest",
@@ -84,6 +85,7 @@ export interface CalendarQuiz {
 export const DOOR_BLOCKS = [
   "giftcard",
   "image",
+  "audio",
   "video",
   "link",
   "quiz",
@@ -94,6 +96,7 @@ export type DoorBlockKind = (typeof DOOR_BLOCKS)[number];
 export const blockNames: Record<DoorBlockKind, string> = {
   giftcard: "Gavekort",
   image: "Bilde",
+  audio: "Lydhilsen",
   video: "Video",
   link: "Lenke",
   quiz: "Quiz",
@@ -117,6 +120,7 @@ export interface Door {
   title: string;
   body: string;
   image?: string;
+  audio?: string;
   imageAlt?: string;
   videoUrl?: string;
   quiz?: { options: string[]; answerIndex: number; explanation: string };
@@ -217,6 +221,7 @@ export function hasDoorContent(door: Door): boolean {
     door.title.trim() ||
       door.body.trim() ||
       door.image ||
+      door.audio ||
       door.videoUrl?.trim() ||
       door.link?.url ||
       door.showCalendarQuiz ||
@@ -285,6 +290,7 @@ export function isDoorComplete(door: Door): boolean {
   return Boolean(
     door.body.trim() ||
       door.image ||
+      door.audio ||
       youtubeId(door.videoUrl ?? "") ||
       door.link?.url ||
       (door.questions?.length && door.questions.every(isQuestionComplete)),
@@ -532,6 +538,7 @@ export function doorBlockOrder(door: Door): DoorBlockKind[] {
   )
     inferred.push("video");
   if (door.link) inferred.push("link");
+  if (door.audio !== undefined) inferred.push("audio");
   if (
     door.questions?.length ||
     door.quiz ||
@@ -566,6 +573,7 @@ export function removeDoorBlock(door: Door, block: DoorBlockKind): Door {
     delete next.imageAlt;
   }
   if (block === "video") delete next.videoUrl;
+  if (block === "audio") delete next.audio;
   if (block === "link") delete next.link;
   if (block === "quiz") {
     delete next.questions;
@@ -581,6 +589,8 @@ function isBlockComplete(door: Door, block: DoorBlockKind): boolean {
   switch (block) {
     case "image":
       return Boolean(door.image);
+    case "audio":
+      return Boolean(door.audio && isAudioSource(door.audio));
     case "video":
       return Boolean(youtubeId(door.videoUrl ?? ""));
     case "link":
@@ -772,13 +782,10 @@ export function isCalendar(value: unknown): value is AdventCalendar {
       return false;
     if (
       door.image !== undefined &&
-      (!string(door.image, 800000) ||
-        (door.image !== "" &&
-          !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(
-            door.image,
-          )))
+      !isImageSource(door.image)
     )
       return false;
+    if (door.audio !== undefined && !isAudioSource(door.audio)) return false;
     if (door.imageAlt !== undefined && !string(door.imageAlt, 300))
       return false;
     if (
@@ -817,8 +824,8 @@ export function isCalendar(value: unknown): value is AdventCalendar {
   return true;
 }
 export function parseBackup(text: string): AppData {
-  if (text.length > 15000000)
-    throw new Error("Filen er for stor. Maksimal størrelse er 15 MB.");
+  if (text.length > 100000000)
+    throw new Error("Filen er for stor. Maksimal størrelse er 100 MB.");
   let value: unknown;
   try {
     value = JSON.parse(text);
